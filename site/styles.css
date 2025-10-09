@@ -1,0 +1,382 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.link {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  background-color: #000000;
+  padding: 1rem 2rem;
+  border-bottom: 2px solid #ffffff;
+}
+
+header h1 {
+  color: #ffffff;
+  font-size: 1.8rem;
+  margin-bottom: 0.3rem;
+}
+
+header p {
+  color: #cccccc;
+  font-size: 0.9rem;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.toolbar {
+  width: 280px;
+  background-color: #000000;
+  padding: 1.5rem;
+  overflow-y: auto;
+  border-right: 2px solid #ffffff;
+}
+
+.toolbar h2 {
+  color: #ffffff;
+  font-size: 1.3rem;
+  margin-bottom: 1.5rem;
+}
+
+.toolbar h3 {
+  color: #ffffff;
+  font-size: 1rem;
+  margin-bottom: 0.8rem;
+  border-bottom: 1px solid white;
+  text-align: center;
+}
+
+.tool-section {
+  margin-bottom: 2rem;
+}
+
+.tool-section label {
+  display: block;
+  margin-bottom: 0.8rem;
+  color: #ffffff;
+}
+
+.tool-section input[type="text"],
+.tool-section input[type="number"],
+.tool-section textarea {
+  width: 100%;
+  padding: 0.5rem;
+  background-color: #000000;
+  border: 1px solid #ffffff;
+  color: #ffffff;
+  border-radius: 4px;
+  margin-top: 0.3rem;
+}
+
+.tool-section textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.tool-btn,
+.action-btn {
+  width: 100%;
+  padding: 0.7rem;
+  margin-bottom: 0.5rem;
+  background-color: #000000;
+  border: 2px solid #ffffff;
+  color: #ffffff;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.tool-btn:hover,
+.action-btn:hover {
+  background-color: #222222;
+}
+
+.tool-btn.active {
+  background-color: #ffffff;
+  border-color: #ffffff;
+  color: #000000;
+}
+
+.action-btn {
+  background-color: #000000;
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+.action-btn:hover {
+  background-color: #222222;
+}
+
+.hint {
+  color: #888888;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.canvas-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #000000;
+  overflow: auto;
+  padding: 1rem;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.floating-toolbar {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.9);
+  border: 2px solid #ffffff;
+  border-radius: 8px;
+  padding: 0.5rem;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(255, 255, 255, 0.2);
+}
+
+.floating-tool-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0.5rem;
+  background-color: #000000;
+  border: 2px solid #ffffff;
+  color: #ffffff;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.floating-tool-btn:hover {
+  background-color: #222222;
+  transform: scale(1.05);
+}
+
+.floating-tool-btn.active {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.floating-tool-btn svg {
+  pointer-events: none;
+}
+
+/* Context-sensitive toolbar (appears when item selected) */
+.context-toolbar {
+  top: 1.5rem;
+  left: 6rem; /* Position to the right of main toolbar */
+}
+
+.delete-btn-floating {
+  background-color: #8b0000 !important;
+  border-color: #ff4444 !important;
+}
+
+.delete-btn-floating:hover {
+  background-color: #ff0000 !important;
+  border-color: #ff6666 !important;
+}
+
+.marker-selector-toolbar {
+  top: 1.5rem;
+  right: 1.5rem;
+  left: auto;
+  min-width: 200px;
+}
+
+.item-details-panel {
+  top: auto;
+  right: 1.5rem;
+  left: auto;
+  min-width: 200px;
+  max-width: 250px;
+}
+
+.item-details-panel label {
+  color: #ffffff;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.item-details-panel input[type="text"] {
+  background-color: #000000;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  outline: none;
+  width: 100%;
+}
+
+.item-details-panel input[type="text"]:focus {
+  border-color: #4a9eff;
+}
+
+.item-details-panel .checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.item-details-panel input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.toolbar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.toolbar-label {
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.toolbar-select {
+  background-color: #000000;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.toolbar-select:hover:not(:disabled) {
+  background-color: #222222;
+}
+
+.toolbar-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbar-select:focus {
+  border-color: #4a9eff;
+}
+
+#mapCanvas {
+  background-color: #000000;
+  border: 2px solid #ffffff;
+  cursor: crosshair;
+}
+
+.checkbox-group {
+  margin-top: 0.5rem;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.checkbox-group input[type="checkbox"] {
+  margin-right: 0.5rem;
+}
+
+button.delete-btn {
+  background-color: #000000;
+  border-color: #ffffff;
+  color: #ffffff;
+  margin-top: 1rem;
+}
+
+button.delete-btn:hover {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+/* Instructions Section */
+.instructions {
+  color: #cccccc;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.instructions p {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.instructions strong {
+  color: #ffffff;
+  display: block;
+  margin-bottom: 0.1rem;
+}
+
+/* Legend Section */
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: #cccccc;
+}
+
+.legend-color {
+  width: 24px;
+  height: 24px;
+  border: 2px solid;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.legend-white {
+  background-color: #000000;
+  border-color: #ffffff;
+}
+
+.legend-blue {
+  background-color: #000000;
+  border-color: #0051ffff;
+}

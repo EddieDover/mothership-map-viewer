@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mothership Map Creator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Mothership Map Creator</h1>
+        <p>
+          Create maps for Mothership TTRPG in FoundryVTT, import them with the
+          <a
+            href="https://www.github.com/eddiedover/mothership-map-viewer"
+            class="link"
+            target="_blank"
+            >Mothership Map Viewer</a
+          >.
+        </p>
+      </header>
+
+      <div class="main-content">
+        <aside class="toolbar">
+          <div class="tool-section">
+            <h3>Legend</h3>
+            <div class="legend">
+              <div class="legend-item">
+                <span class="legend-color legend-white"></span>
+                <span>Normal objects</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color legend-blue"></span>
+                <span>Selected objects</span>
+              </div>
+            </div>
+            <p style="margin-top: 8px; font-size: 0.85em; color: #aaa">
+              <strong>Marker Types:</strong> Terminal, Hazard, Loot, NPC, Door,
+              Window
+            </p>
+          </div>
+
+          <div class="tool-section">
+            <h3>Map Properties</h3>
+            <label>
+              Map Name:
+              <input type="text" id="mapName" placeholder="Untitled Map" />
+            </label>
+          </div>
+
+          <div class="tool-section">
+            <h3>View</h3>
+            <button id="resetViewBtn" class="action-btn">Reset View</button>
+          </div>
+
+          <div class="tool-section">
+            <h3>Export/Import</h3>
+            <button id="exportBtn" class="action-btn">Export JSON</button>
+            <button id="importBtn" class="action-btn">Import JSON</button>
+            <button id="shareBtn" class="action-btn">
+              Generate Share String
+            </button>
+            <button id="loadShareBtn" class="action-btn">
+              Load from Share String
+            </button>
+          </div>
+        </aside>
+
+        <main>
+          <div
+            class="instructions"
+            style="
+              display: flex;
+              flex-direction: row;
+              justify-content: space-between;
+              align-items: center;
+              gap: 2rem;
+              padding-left: 20px;
+              padding-right: 20px;
+            "
+          >
+            <p>
+              <strong>Select Object:</strong> Click to select, drag rooms to
+              move them
+            </p>
+            <p><strong>Add Room:</strong> Click and drag to create a room</p>
+            <p>
+              <strong>Add Hallway:</strong> Click room edges or points to create
+              paths
+            </p>
+            <p><strong>Pan View:</strong> Right-click and drag</p>
+            <p><strong>Copy/Paste:</strong> Ctrl+C to copy, Ctrl+V to paste</p>
+            <p><strong>Delete:</strong> Select an item and press Delete key</p>
+          </div>
+          <div class="canvas-container">
+            <!-- Floating toolbar -->
+            <div class="floating-toolbar">
+              <button
+                id="floatingSelectBtn"
+                class="floating-tool-btn active"
+                title="Select Object (Arrow)"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M3 3 L3 17 L9 11 L12 16 L14 15 L11 10 L17 10 Z" />
+                </svg>
+              </button>
+              <button
+                id="floatingAddRoomBtn"
+                class="floating-tool-btn"
+                title="Add Room (Rectangle)"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="3" y="3" width="14" height="14" />
+                </svg>
+              </button>
+              <button
+                id="floatingAddCircleBtn"
+                class="floating-tool-btn"
+                title="Add Circle Room"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="10" cy="10" r="7" />
+                </svg>
+              </button>
+              <button
+                id="floatingAddHallwayBtn"
+                class="floating-tool-btn"
+                title="Add Hallway"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <path d="M3 10 L10 10 L10 17" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Context-sensitive floating toolbar (appears when item is selected) -->
+            <div
+              id="contextToolbar"
+              class="floating-toolbar context-toolbar"
+              style="display: none"
+            >
+              <!-- Add Marker button (only for rooms) -->
+              <button
+                id="floatingAddMarkerBtn"
+                class="floating-tool-btn"
+                title="Add Marker to Room"
+                style="display: none"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <polygon
+                    points="10,2 12,8 18,8 13,12 15,18 10,14 5,18 7,12 2,8 8,8"
+                  />
+                </svg>
+              </button>
+              <!-- Delete button -->
+              <button
+                id="floatingDeleteBtn"
+                class="floating-tool-btn delete-btn-floating"
+                title="Delete Selected Item"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M5 7 L15 7 M8 7 L8 4 L12 4 L12 7 M6 7 L6 17 L14 17 L14 7"
+                  />
+                  <line x1="8" y1="10" x2="8" y2="14" />
+                  <line x1="12" y1="10" x2="12" y2="14" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Marker selection toolbar -->
+            <div class="floating-toolbar marker-selector-toolbar">
+              <div class="toolbar-section">
+                <label for="roomSelector" class="toolbar-label"
+                  >Select Room:</label
+                >
+                <select id="roomSelector" class="toolbar-select">
+                  <option value="">-- No room --</option>
+                </select>
+              </div>
+              <div class="toolbar-section">
+                <label for="hallwaySelector" class="toolbar-label"
+                  >Select Hallway:</label
+                >
+                <select id="hallwaySelector" class="toolbar-select">
+                  <option value="">-- No hallway --</option>
+                </select>
+              </div>
+              <div class="toolbar-section">
+                <label for="markerSelector" class="toolbar-label"
+                  >Select Marker:</label
+                >
+                <select id="markerSelector" class="toolbar-select" disabled>
+                  <option value="">-- No marker --</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Selected item details panel -->
+            <div
+              id="itemDetailsPanel"
+              class="floating-toolbar item-details-panel"
+              style="display: none"
+            >
+              <!-- Content will be populated dynamically -->
+            </div>
+
+            <canvas id="mapCanvas"></canvas>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Hidden file input for import -->
+    <input type="file" id="fileInput" accept=".json" style="display: none" />
+
+    <!-- Pako for gzip compression -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script src="constants.js"></script>
+    <script src="map-schema.js"></script>
+    <script src="map-renderer.js"></script>
+    <script src="map-creator.js"></script>
+  </body>
+</html>

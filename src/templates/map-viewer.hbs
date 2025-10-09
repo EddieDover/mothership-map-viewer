@@ -1,0 +1,101 @@
+<div class="mothership-map-viewer-container">
+  <div class="map-controls">
+    <button
+      data-action="onImportJson"
+      id="import-json-btn"
+      title="{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.ImportJSON'}}"
+    >
+      <i class="fas fa-file-import"></i>
+      {{localize "MOTHERSHIP_MAP_VIEWER.forms.viewer.ImportJSON"}}
+    </button>
+    <button
+      data-action="onImportShareString"
+      id="import-share-btn"
+      title="{{localize
+        'MOTHERSHIP_MAP_VIEWER.forms.viewer.ImportShareString'
+      }}"
+    >
+      <i class="fas fa-share"></i>
+      {{localize "MOTHERSHIP_MAP_VIEWER.forms.viewer.ImportShareString"}}
+    </button>
+    <div style="flex-grow:1"></div>
+    <button
+      data-action="onFeedback"
+      type="button"
+      class="btn btn--primary"
+      style="max-width:50px"
+      name="feedback"
+      title="{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.Feedback'}}"
+    >
+      <i class="fas fa-comment"></i>
+    </button>
+    <button
+      data-action="onBugReport"
+      type="button"
+      class="btn btn--primary"
+      style="max-width:50px"
+      name="bugreport"
+      title="{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.BugReport'}}"
+    >
+      <i class="fas fa-bug"></i>
+    </button>
+    <button
+      data-action="onDiscord"
+      type="button"
+      class="btn btn--primary"
+      style="max-width:50px"
+      name="discord"
+      title="{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.Discord'}}"
+    >
+      <i class="fab fa-discord"></i>
+    </button>
+  </div>
+
+  {{#if hasMap}}
+    <div class="map-view-section">
+      <div class="map-content">
+        <div class="canvas-container">
+          <canvas id="map-canvas"></canvas>
+        </div>
+      </div>
+      <div class="visibility-panel">
+        <h2 id="visibility-header" class="collapsible-header">
+          <i class="fas fa-chevron-down collapse-icon"></i>
+          {{localize "MOTHERSHIP_MAP_VIEWER.forms.viewer.VisibilityControls"}}
+        </h2>
+        <div class="active-viewers-section">
+          <h2>Active Viewers</h2>
+          <div class="viewers-controls">
+            <button
+              id="show-all-players-btn"
+              class="show-all-players-btn"
+              title="{{localize
+                'MOTHERSHIP_MAP_VIEWER.forms.viewer.ShowToPlayers'
+              }}"
+            >
+              <i class="fas fa-users"></i>
+              {{localize "MOTHERSHIP_MAP_VIEWER.forms.viewer.ShowToPlayers"}}
+            </button>
+            <button
+              id="close-all-players-btn"
+              class="close-all-players-btn"
+              title="{{localize
+                'MOTHERSHIP_MAP_VIEWER.forms.viewer.ClosePlayerView'
+              }}"
+              style="display: none"
+            >
+              <i class="fas fa-times"></i>
+              {{localize "MOTHERSHIP_MAP_VIEWER.forms.viewer.ClosePlayerView"}}
+            </button>
+          </div>
+          <div id="active-viewers-list" class="active-viewers-list">
+            <p class="no-viewers">No players currently viewing</p>
+          </div>
+        </div>
+        <div id="visibility-controls" class="visibility-controls-content"></div>
+      </div>
+    </div>
+  {{else}}
+    <p>{{localize "MOTHERSHIP_MAP_VIEWER.forms.viewer.NoMapLoaded"}}</p>
+  {{/if}}
+</div>

@@ -1,0 +1,34 @@
+{
+  "MOTHERSHIP_MAP_VIEWER": {
+    "Title": "Visor de Mapas Mothership",
+    "Import": "Importar",
+    "PlayerMapTitle": "Mapa Mothership",
+    "ImportShareString": "Importar Cadena Compartida",
+    "notifications": {
+      "ImportSuccess": "Mapa importado exitosamente.",
+      "ImportError": "Error al importar el mapa. Por favor, revisa la consola para más detalles.",
+      "NoMapLoaded": "No hay mapa cargado. Por favor, importa un mapa primero.",
+      "MapShown": "Mapa mostrado a los jugadores.",
+      "MapUpdated": "Mapa actualizado para los jugadores.",
+      "MapClosed": "Mapa cerrado para los jugadores.",
+      "PlayerViewOpened": "Vista de jugador abierta.",
+      "PlayerViewUpdated": "Vista de jugador actualizada.",
+      "PlayerViewClosed": "Vista de jugador cerrada."
+    },
+    "forms": {
+      "viewer": {
+        "Feedback": "Comentarios",
+        "Discord": "Discord",
+        "BugReport": "Reportar Error",
+        "VisibilityControls": "Controles de Visibilidad",
+        "ImportJSON": "Importar JSON",
+        "ImportShareString": "Importar Cadena Compartida",
+        "ShowToPlayers": "Mostrar a Jugadores",
+        "UpdatePlayers": "Actualizar Jugadores",
+        "ClosePlayerView": "Cerrar Vista de Jugador",
+        "NoMapLoaded": "No hay mapa cargado. Importa un mapa para comenzar.",
+        "HallwayVisibility": "Visibilidad de Pasillos"
+      }
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "MOTHERSHIP_MAP_VIEWER": {
+    "Title": "Mothership Map Viewer",
+    "Import": "Import",
+    "PlayerMapTitle": "Mothership Map",
+    "ImportShareString": "Import Share String",
+    "notifications": {
+      "ImportSuccess": "Map imported successfully.",
+      "ImportError": "Error importing map. Please check the console for details.",
+      "NoMapLoaded": "No map loaded. Please import a map first.",
+      "MapShown": "Map shown to players.",
+      "MapUpdated": "Map updated for players.",
+      "MapClosed": "Map closed for players.",
+      "PlayerViewOpened": "Player view opened.",
+      "PlayerViewUpdated": "Player view updated.",
+      "PlayerViewClosed": "Player view closed."
+    },
+    "forms": {
+      "viewer": {
+        "Feedback": "Feedback",
+        "Discord": "Discord",
+        "BugReport": "Bug Report",
+        "VisibilityControls": "Visibility Controls",
+        "ImportJSON": "Import JSON",
+        "ImportShareString": "Import Share String",
+        "ShowToPlayers": "Show to Players",
+        "UpdatePlayers": "Update Players",
+        "ClosePlayerView": "Close Player View",
+        "NoMapLoaded": "No map loaded. Import a map to begin.",
+        "HallwayVisibility": "Hallway Visibility"
+      }
+    }
+  }
+}
