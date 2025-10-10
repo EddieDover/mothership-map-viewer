@@ -13,6 +13,7 @@ class MapData {
     this.hallways = [];
     this.walls = []; // Standalone walls not attached to rooms
     this.standaloneMarkers = []; // Standalone markers not attached to rooms
+    this.standaloneLabels = []; // Standalone labels
   }
 
   /**
@@ -67,7 +68,17 @@ class MapData {
   }
 
   /**
-   * Remove an item (room, hallway, wall, or standaloneMarker) from the map by ID
+   * Add a standalone label to the map
+   *
+   * @param {import("./types").StandaloneLabel} label
+   * @memberof MapData
+   */
+  addStandaloneLabel(label) {
+    this.standaloneLabels.push(label);
+  }
+
+  /**
+   * Remove an item (room, hallway, wall, standaloneMarker, or standaloneLabel) from the map by ID
    *
    * @param {string} type
    * @param {string} id
@@ -92,6 +103,11 @@ class MapData {
       case "standaloneMarker":
         this.standaloneMarkers = this.standaloneMarkers.filter(
           (m) => m.id !== id
+        );
+        break;
+      case "standaloneLabel":
+        this.standaloneLabels = this.standaloneLabels.filter(
+          (l) => l.id !== id
         );
         break;
     }
@@ -277,6 +293,13 @@ class MapData {
         marker.visible !== false ? 1 : 0,
         marker.label || "",
       ]),
+      sl: this.standaloneLabels.map((label) => [
+        label.id,
+        label.text,
+        label.x,
+        label.y,
+        label.visible !== false ? 1 : 0,
+      ]),
     };
   }
 
@@ -366,6 +389,15 @@ class MapData {
       y: m[3],
       visible: m[4] !== 0,
       label: m[5] || "",
+    }));
+
+    this.standaloneLabels = (compact.sl || []).map((l) => ({
+      id: l[0],
+      type: "standaloneLabel",
+      text: l[1],
+      x: l[2],
+      y: l[3],
+      visible: l[4] !== 0,
     }));
   }
 
@@ -484,5 +516,17 @@ class StandaloneMarker {
     this.y = y;
     this.visible = true;
     this.label = "";
+  }
+}
+
+/** @type {import("./types").StandaloneLabel} */
+class StandaloneLabel {
+  constructor(id, text, x, y) {
+    this.id = id;
+    this.type = "standaloneLabel";
+    this.text = text;
+    this.x = x; // Absolute position on map
+    this.y = y;
+    this.visible = true;
   }
 }

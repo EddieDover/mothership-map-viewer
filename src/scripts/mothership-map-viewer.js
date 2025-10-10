@@ -458,6 +458,18 @@ class PlayerMapDisplay extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
+    // Draw standalone labels (not in rooms)
+    if (
+      this.mapData.standaloneLabels &&
+      this.mapData.standaloneLabels.length > 0
+    ) {
+      this.mapData.standaloneLabels.forEach((label) => {
+        if (label.visible !== false) {
+          this._drawStandaloneLabel(ctx, label.x, label.y, label.text);
+        }
+      });
+    }
+
     // Restore context
     ctx.restore();
   }
@@ -582,6 +594,22 @@ class PlayerMapDisplay extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _drawRoomMarker(ctx, x, y, type) {
     drawRoomMarker(ctx, x, y, type);
+  }
+
+  _drawStandaloneLabel(ctx, x, y, text) {
+    // Draw text with white fill and black outline
+    ctx.font = "16px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    // Draw black outline
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 3;
+    ctx.strokeText(text, x, y);
+
+    // Draw white fill
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(text, x, y);
   }
 
   _drawHallwayMarker(ctx, x, y, type, hallwayWidth) {
@@ -1153,6 +1181,26 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
+    if (
+      this.mapData.standaloneLabels &&
+      this.mapData.standaloneLabels.length > 0
+    ) {
+      controlsHTML += `<h3 style="margin-top: 20px;">Standalone Labels</h3>`;
+      this.mapData.standaloneLabels.forEach((label, index) => {
+        const labelText = label.text || `Label ${index + 1}`;
+        controlsHTML += `
+          <div class="visibility-item">
+            <label>
+              <input type="checkbox" class="standalone-label-visibility" data-index="${index}" ${
+                label.visible !== false ? "checked" : ""
+              }>
+              ${labelText}
+            </label>
+          </div>
+        `;
+      });
+    }
+
     controlsHTML += "</div>";
     controlsContainer.innerHTML = controlsHTML;
 
@@ -1249,6 +1297,17 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
         checkbox.addEventListener("change", (e) => {
           const index = parseInt(e.target.dataset.index);
           this.mapData.standaloneMarkers[index].visible = e.target.checked;
+          this._renderMap(document.getElementById("map-canvas"));
+          this._autoUpdatePlayers();
+        });
+      });
+
+    controlsContainer
+      .querySelectorAll(".standalone-label-visibility")
+      .forEach((checkbox) => {
+        checkbox.addEventListener("change", (e) => {
+          const index = parseInt(e.target.dataset.index);
+          this.mapData.standaloneLabels[index].visible = e.target.checked;
           this._renderMap(document.getElementById("map-canvas"));
           this._autoUpdatePlayers();
         });
@@ -1603,6 +1662,18 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
+    // Draw standalone labels (not in rooms)
+    if (
+      this.mapData.standaloneLabels &&
+      this.mapData.standaloneLabels.length > 0
+    ) {
+      this.mapData.standaloneLabels.forEach((label) => {
+        if (label.visible !== false) {
+          this._drawStandaloneLabel(ctx, label.x, label.y, label.text);
+        }
+      });
+    }
+
     // Restore context
     ctx.restore();
   }
@@ -1727,6 +1798,22 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _drawRoomMarker(ctx, x, y, type) {
     drawRoomMarker(ctx, x, y, type);
+  }
+
+  _drawStandaloneLabel(ctx, x, y, text) {
+    // Draw text with white fill and black outline
+    ctx.font = "16px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    // Draw black outline
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 3;
+    ctx.strokeText(text, x, y);
+
+    // Draw white fill
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(text, x, y);
   }
 
   _drawHallwayMarker(ctx, x, y, type, hallwayWidth) {

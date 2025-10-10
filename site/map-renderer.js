@@ -142,6 +142,22 @@ class MapRenderer {
       });
     }
 
+    // Draw standalone labels
+    if (mapData.standaloneLabels && mapData.standaloneLabels.length > 0) {
+      mapData.standaloneLabels.forEach((label) => {
+        const isLabelSelected =
+          selectedItem?.type === "standaloneLabel" &&
+          selectedItem?.label.id === label.id;
+        this.drawStandaloneLabel(
+          this.ctx,
+          label.x,
+          label.y,
+          label.text,
+          isLabelSelected
+        );
+      });
+    }
+
     // Restore transformation
     this.ctx.restore();
   }
@@ -361,6 +377,27 @@ class MapRenderer {
         ctx.stroke();
         break;
     }
+  }
+
+  /**
+   * Draw a standalone label
+   * @param {CanvasRenderingContext2D} ctx - Canvas rendering context
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @param {string} text - Label text
+   * @param {boolean} isSelected - Whether the label is selected (for highlighting)
+   */
+  drawStandaloneLabel(ctx, x, y, text, isSelected = false) {
+    ctx.fillStyle = isSelected ? "#0051ffff" : "#ffffff";
+    ctx.strokeStyle = "#000000";
+    ctx.font = "bold 14px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineWidth = 3;
+
+    // Draw text with outline
+    ctx.strokeText(text, x, y);
+    ctx.fillText(text, x, y);
   }
 
   /**

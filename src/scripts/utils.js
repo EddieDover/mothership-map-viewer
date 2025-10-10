@@ -104,6 +104,14 @@ function fromCompactJSON(compact) {
       visible: m[4] !== 0,
       label: m[5] || "",
     })),
+    standaloneLabels: (compact.sl || []).map((l) => ({
+      id: l[0],
+      type: "standaloneLabel",
+      text: l[1],
+      x: l[2],
+      y: l[3],
+      visible: l[4] !== 0,
+    })),
   };
 
   return mapData;

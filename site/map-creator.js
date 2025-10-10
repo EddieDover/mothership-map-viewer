@@ -68,6 +68,9 @@ class MapCreator {
     document
       .getElementById("floatingAddStandaloneMarkerBtn")
       .addEventListener("click", () => this.setTool("standaloneMarker"));
+    document
+      .getElementById("floatingAddStandaloneLabelBtn")
+      .addEventListener("click", () => this.setTool("standaloneLabel"));
 
     // Context toolbar buttons
     document
@@ -518,7 +521,35 @@ class MapCreator {
         return;
       }
 
-      // Check for room markers (second priority)
+      // Check for standalone labels (second priority)
+      const standaloneLabelResult = this.getStandaloneLabelAtPosition(
+        mouseX,
+        mouseY
+      );
+      if (standaloneLabelResult) {
+        // Select and prepare to drag standalone label
+        this.selectedItem = {
+          type: "standaloneLabel",
+          label: standaloneLabelResult,
+        };
+        this.updatePropertiesPanel();
+        this.updateMarkerSelectors();
+        this.updateItemDetailsPanel();
+        this.render();
+
+        // Prepare to drag standalone label
+        this.dragState = {
+          type: "standaloneLabel",
+          label: standaloneLabelResult,
+          startX: mouseX,
+          startY: mouseY,
+          labelStartX: standaloneLabelResult.x,
+          labelStartY: standaloneLabelResult.y,
+        };
+        return;
+      }
+
+      // Check for room markers (third priority)
       const markerResult = this.getMarkerAtPosition(mouseX, mouseY);
       if (markerResult) {
         // Select and prepare to drag marker
@@ -688,6 +719,31 @@ class MapCreator {
       return;
     }
 
+    // For standalone label tool, place label at click location
+    if (this.currentTool === "standaloneLabel") {
+      // Create standalone label with default text
+      const label = new StandaloneLabel(
+        `standalone-label-${this.nextId++}`,
+        "Label",
+        x,
+        y
+      );
+      this.mapData.addStandaloneLabel(label);
+
+      // Switch back to select mode
+      this.setTool("select");
+
+      // Auto-select the new label
+      this.selectedItem = {
+        type: "standaloneLabel",
+        label: label,
+      };
+      this.updatePropertiesPanel();
+      this.updateItemDetailsPanel();
+      this.render();
+      return;
+    }
+
     // For room wall tool, handle two-point creation (room walls only)
     if (this.currentTool === "roomWall") {
       const selectedRoom =
@@ -802,6 +858,10 @@ class MapCreator {
         // Update standalone marker position (absolute on map)
         this.dragState.marker.x = this.dragState.markerStartX + deltaX;
         this.dragState.marker.y = this.dragState.markerStartY + deltaY;
+      } else if (this.dragState.type === "standaloneLabel") {
+        // Update standalone label position (absolute)
+        this.dragState.label.x = this.dragState.labelStartX + deltaX;
+        this.dragState.label.y = this.dragState.labelStartY + deltaY;
       } else if (this.dragState.type === "marker") {
         // Update marker position (relative to room)
         this.dragState.marker.x = this.dragState.markerStartX + deltaX;
@@ -939,6 +999,18 @@ class MapCreator {
         );
         this.dragState.marker.y = this.renderer.snapToGrid(
           this.dragState.markerStartY + deltaY
+        );
+      } else if (this.dragState.type === "standaloneLabel") {
+        // Finalize standalone label position with grid snapping (absolute)
+        const deltaX = x - this.dragState.startX;
+        const deltaY = y - this.dragState.startY;
+
+        // Snap label position
+        this.dragState.label.x = this.renderer.snapToGrid(
+          this.dragState.labelStartX + deltaX
+        );
+        this.dragState.label.y = this.renderer.snapToGrid(
+          this.dragState.labelStartY + deltaY
         );
       } else if (this.dragState.type === "marker") {
         // Finalize marker position with grid snapping (relative to room)
@@ -1941,6 +2013,45 @@ class MapCreator {
   }
 
   /**
+   * Get a standalone label at a given position (if any)
+   *
+   * @param {number} x
+   * @param {number} y
+   * @return {import("./types").StandaloneLabel|null}
+   * @memberof MapCreator
+   */
+  getStandaloneLabelAtPosition(x, y) {
+    const hitRadius = 30; // Larger hit area for text labels
+
+    // If a standalone label is currently selected, check it first for priority
+    if (this.selectedItem && this.selectedItem.type === "standaloneLabel") {
+      const label = this.selectedItem.label;
+      const distance = Math.sqrt(
+        Math.pow(x - label.x, 2) + Math.pow(y - label.y, 2)
+      );
+
+      if (distance <= hitRadius) {
+        return label;
+      }
+    }
+
+    // Check all standalone labels
+    if (this.mapData.standaloneLabels) {
+      for (let label of this.mapData.standaloneLabels) {
+        const distance = Math.sqrt(
+          Math.pow(x - label.x, 2) + Math.pow(y - label.y, 2)
+        );
+
+        if (distance <= hitRadius) {
+          return label;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Get a marker at a given position within a room (if any)
    *
    * @param {number} x
@@ -2307,6 +2418,16 @@ class MapCreator {
                 <input type="checkbox" id="detailsStandaloneMarkerVisible" ${item.marker.visible !== false ? "checked" : ""}>
                 <label for="detailsStandaloneMarkerVisible" style="margin: 0;">Visible by Default</label>
               </div>`;
+    } else if (item.type === "standaloneLabel") {
+      // Standalone label details
+      html += `<label>
+                Label Text:
+                <input type="text" id="detailsStandaloneLabelText" value="${item.label.text || ""}" placeholder="Enter text">
+              </label>`;
+      html += `<div class="checkbox-container">
+                <input type="checkbox" id="detailsStandaloneLabelVisible" ${item.label.visible !== false ? "checked" : ""}>
+                <label for="detailsStandaloneLabelVisible" style="margin: 0;">Visible by Default</label>
+              </div>`;
     } else if (item.type === "room") {
       // Room details
       html += `<label>
@@ -2429,6 +2550,20 @@ class MapCreator {
         ?.addEventListener("change", (e) => {
           item.marker.visible = e.target.checked;
           this.updatePropertiesPanel();
+          this.render();
+        });
+    } else if (item.type === "standaloneLabel") {
+      document
+        .getElementById("detailsStandaloneLabelText")
+        ?.addEventListener("input", (e) => {
+          item.label.text = e.target.value;
+          this.render();
+        });
+
+      document
+        .getElementById("detailsStandaloneLabelVisible")
+        ?.addEventListener("change", (e) => {
+          item.label.visible = e.target.checked;
           this.render();
         });
     } else if (item.type === "room") {
@@ -2834,6 +2969,9 @@ class MapCreator {
     } else if (this.selectedItem.type === "standaloneMarker") {
       // Delete standalone marker
       this.mapData.removeItem("standaloneMarker", this.selectedItem.marker.id);
+    } else if (this.selectedItem.type === "standaloneLabel") {
+      // Delete standalone label
+      this.mapData.removeItem("standaloneLabel", this.selectedItem.label.id);
     } else if (
       this.selectedItem.type === "wall" &&
       this.selectedItem.parentRoomId
