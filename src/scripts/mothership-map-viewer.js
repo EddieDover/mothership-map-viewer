@@ -450,6 +450,30 @@ class PlayerMapDisplay extends HandlebarsApplicationMixin(ApplicationV2) {
       this._drawRoomMarker(ctx, marker.x, marker.y, marker.type);
     });
 
+    // Draw standalone markers (not in rooms)
+    if (
+      this.mapData.standaloneMarkers &&
+      this.mapData.standaloneMarkers.length > 0
+    ) {
+      this.mapData.standaloneMarkers.forEach((marker) => {
+        if (marker.visible !== false) {
+          this._drawRoomMarker(ctx, marker.x, marker.y, marker.type);
+        }
+      });
+    }
+
+    // Draw standalone labels (not in rooms)
+    if (
+      this.mapData.standaloneLabels &&
+      this.mapData.standaloneLabels.length > 0
+    ) {
+      this.mapData.standaloneLabels.forEach((label) => {
+        if (label.visible !== false) {
+          this._drawStandaloneLabel(ctx, label.x, label.y, label.text);
+        }
+      });
+    }
+
     // Restore context
     ctx.restore();
   }
@@ -511,23 +535,85 @@ class PlayerMapDisplay extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _drawWall(ctx, wall) {
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = wall.width || 10; // Default to 10 if width is missing
-    ctx.lineCap = "butt";
-    ctx.lineJoin = "miter";
+    if (wall.isDotted) {
+      // Dotted walls are drawn with dashes parallel to direction
+      const lineWidth = wall.width || 10;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      ctx.lineCap = "butt";
 
-    if (!wall.segments || wall.segments.length === 0) return;
+      if (!wall.segments || wall.segments.length === 0) return;
 
-    wall.segments.forEach((segment) => {
-      ctx.beginPath();
-      ctx.moveTo(segment.x1, segment.y1);
-      ctx.lineTo(segment.x2, segment.y2);
-      ctx.stroke();
-    });
+      wall.segments.forEach((segment) => {
+        const isHorizontal = segment.y1 === segment.y2;
+        const dashLength = 8;
+        const gapLength = 12;
+        const dashSpacing = dashLength + gapLength;
+
+        if (isHorizontal) {
+          const startX = Math.min(segment.x1, segment.x2);
+          const endX = Math.max(segment.x1, segment.x2);
+          const y = segment.y1;
+
+          for (let x = startX; x <= endX; x += dashSpacing) {
+            ctx.beginPath();
+            ctx.moveTo(x, y - lineWidth / 2);
+            ctx.lineTo(Math.min(x + dashLength, endX), y - lineWidth / 2);
+            ctx.moveTo(x, y + lineWidth / 2);
+            ctx.lineTo(Math.min(x + dashLength, endX), y + lineWidth / 2);
+            ctx.stroke();
+          }
+        } else {
+          const startY = Math.min(segment.y1, segment.y2);
+          const endY = Math.max(segment.y1, segment.y2);
+          const x = segment.x1;
+
+          for (let y = startY; y <= endY; y += dashSpacing) {
+            ctx.beginPath();
+            ctx.moveTo(x - lineWidth / 2, y);
+            ctx.lineTo(x - lineWidth / 2, Math.min(y + dashLength, endY));
+            ctx.moveTo(x + lineWidth / 2, y);
+            ctx.lineTo(x + lineWidth / 2, Math.min(y + dashLength, endY));
+            ctx.stroke();
+          }
+        }
+      });
+    } else {
+      // Regular walls are drawn with solid lines
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = wall.width || 10; // Default to 10 if width is missing
+      ctx.lineCap = "butt";
+      ctx.lineJoin = "miter";
+
+      if (!wall.segments || wall.segments.length === 0) return;
+
+      wall.segments.forEach((segment) => {
+        ctx.beginPath();
+        ctx.moveTo(segment.x1, segment.y1);
+        ctx.lineTo(segment.x2, segment.y2);
+        ctx.stroke();
+      });
+    }
   }
 
   _drawRoomMarker(ctx, x, y, type) {
     drawRoomMarker(ctx, x, y, type);
+  }
+
+  _drawStandaloneLabel(ctx, x, y, text) {
+    // Draw text with white fill and black outline
+    ctx.font = "16px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    // Draw black outline
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 3;
+    ctx.strokeText(text, x, y);
+
+    // Draw white fill
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(text, x, y);
   }
 
   _drawHallwayMarker(ctx, x, y, type, hallwayWidth) {
@@ -925,6 +1011,15 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       });
     }
+
+    // Initialize standalone marker visibility flags
+    if (!this.mapData.standaloneMarkers) {
+      this.mapData.standaloneMarkers = [];
+    } else {
+      this.mapData.standaloneMarkers.forEach((marker) => {
+        if (marker.visible === undefined) marker.visible = true;
+      });
+    }
   }
 
   _setupVisibilityControls(document) {
@@ -1074,6 +1169,46 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
+    if (
+      this.mapData.standaloneMarkers &&
+      this.mapData.standaloneMarkers.length > 0
+    ) {
+      controlsHTML += `<h3 style="margin-top: 20px;">Standalone Markers</h3>`;
+      this.mapData.standaloneMarkers.forEach((marker, index) => {
+        const label = marker.label || `${marker.type} ${index + 1}`;
+        controlsHTML += `
+          <div class="visibility-item">
+            <label>
+              <input type="checkbox" class="standalone-marker-visibility" data-index="${index}" ${
+                marker.visible !== false ? "checked" : ""
+              }>
+              ${label}
+            </label>
+          </div>
+        `;
+      });
+    }
+
+    if (
+      this.mapData.standaloneLabels &&
+      this.mapData.standaloneLabels.length > 0
+    ) {
+      controlsHTML += `<h3 style="margin-top: 20px;">Standalone Labels</h3>`;
+      this.mapData.standaloneLabels.forEach((label, index) => {
+        const labelText = label.text || `Label ${index + 1}`;
+        controlsHTML += `
+          <div class="visibility-item">
+            <label>
+              <input type="checkbox" class="standalone-label-visibility" data-index="${index}" ${
+                label.visible !== false ? "checked" : ""
+              }>
+              ${labelText}
+            </label>
+          </div>
+        `;
+      });
+    }
+
     controlsHTML += "</div>";
     controlsContainer.innerHTML = controlsHTML;
 
@@ -1159,6 +1294,28 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
         checkbox.addEventListener("change", (e) => {
           const index = parseInt(e.target.dataset.index);
           this.mapData.walls[index].visible = e.target.checked;
+          this._renderMap(document.getElementById("map-canvas"));
+          this._autoUpdatePlayers();
+        });
+      });
+
+    controlsContainer
+      .querySelectorAll(".standalone-marker-visibility")
+      .forEach((checkbox) => {
+        checkbox.addEventListener("change", (e) => {
+          const index = parseInt(e.target.dataset.index);
+          this.mapData.standaloneMarkers[index].visible = e.target.checked;
+          this._renderMap(document.getElementById("map-canvas"));
+          this._autoUpdatePlayers();
+        });
+      });
+
+    controlsContainer
+      .querySelectorAll(".standalone-label-visibility")
+      .forEach((checkbox) => {
+        checkbox.addEventListener("change", (e) => {
+          const index = parseInt(e.target.dataset.index);
+          this.mapData.standaloneLabels[index].visible = e.target.checked;
           this._renderMap(document.getElementById("map-canvas"));
           this._autoUpdatePlayers();
         });
@@ -1501,6 +1658,30 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
       this._drawRoomMarker(ctx, marker.x, marker.y, marker.type);
     });
 
+    // Draw standalone markers (not in rooms)
+    if (
+      this.mapData.standaloneMarkers &&
+      this.mapData.standaloneMarkers.length > 0
+    ) {
+      this.mapData.standaloneMarkers.forEach((marker) => {
+        if (marker.visible !== false) {
+          this._drawRoomMarker(ctx, marker.x, marker.y, marker.type);
+        }
+      });
+    }
+
+    // Draw standalone labels (not in rooms)
+    if (
+      this.mapData.standaloneLabels &&
+      this.mapData.standaloneLabels.length > 0
+    ) {
+      this.mapData.standaloneLabels.forEach((label) => {
+        if (label.visible !== false) {
+          this._drawStandaloneLabel(ctx, label.x, label.y, label.text);
+        }
+      });
+    }
+
     // Restore context
     ctx.restore();
   }
@@ -1562,23 +1743,85 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _drawWall(ctx, wall) {
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = wall.width || 10; // Default to 10 if width is missing
-    ctx.lineCap = "butt";
-    ctx.lineJoin = "miter";
+    if (wall.isDotted) {
+      // Dotted walls are drawn with dashes parallel to direction
+      const lineWidth = wall.width || 10;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      ctx.lineCap = "butt";
 
-    if (!wall.segments || wall.segments.length === 0) return;
+      if (!wall.segments || wall.segments.length === 0) return;
 
-    wall.segments.forEach((segment) => {
-      ctx.beginPath();
-      ctx.moveTo(segment.x1, segment.y1);
-      ctx.lineTo(segment.x2, segment.y2);
-      ctx.stroke();
-    });
+      wall.segments.forEach((segment) => {
+        const isHorizontal = segment.y1 === segment.y2;
+        const dashLength = 8;
+        const gapLength = 12;
+        const dashSpacing = dashLength + gapLength;
+
+        if (isHorizontal) {
+          const startX = Math.min(segment.x1, segment.x2);
+          const endX = Math.max(segment.x1, segment.x2);
+          const y = segment.y1;
+
+          for (let x = startX; x <= endX; x += dashSpacing) {
+            ctx.beginPath();
+            ctx.moveTo(x, y - lineWidth / 2);
+            ctx.lineTo(Math.min(x + dashLength, endX), y - lineWidth / 2);
+            ctx.moveTo(x, y + lineWidth / 2);
+            ctx.lineTo(Math.min(x + dashLength, endX), y + lineWidth / 2);
+            ctx.stroke();
+          }
+        } else {
+          const startY = Math.min(segment.y1, segment.y2);
+          const endY = Math.max(segment.y1, segment.y2);
+          const x = segment.x1;
+
+          for (let y = startY; y <= endY; y += dashSpacing) {
+            ctx.beginPath();
+            ctx.moveTo(x - lineWidth / 2, y);
+            ctx.lineTo(x - lineWidth / 2, Math.min(y + dashLength, endY));
+            ctx.moveTo(x + lineWidth / 2, y);
+            ctx.lineTo(x + lineWidth / 2, Math.min(y + dashLength, endY));
+            ctx.stroke();
+          }
+        }
+      });
+    } else {
+      // Regular walls are drawn with solid lines
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = wall.width || 10; // Default to 10 if width is missing
+      ctx.lineCap = "butt";
+      ctx.lineJoin = "miter";
+
+      if (!wall.segments || wall.segments.length === 0) return;
+
+      wall.segments.forEach((segment) => {
+        ctx.beginPath();
+        ctx.moveTo(segment.x1, segment.y1);
+        ctx.lineTo(segment.x2, segment.y2);
+        ctx.stroke();
+      });
+    }
   }
 
   _drawRoomMarker(ctx, x, y, type) {
     drawRoomMarker(ctx, x, y, type);
+  }
+
+  _drawStandaloneLabel(ctx, x, y, text) {
+    // Draw text with white fill and black outline
+    ctx.font = "16px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    // Draw black outline
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 3;
+    ctx.strokeText(text, x, y);
+
+    // Draw white fill
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(text, x, y);
   }
 
   _drawHallwayMarker(ctx, x, y, type, hallwayWidth) {

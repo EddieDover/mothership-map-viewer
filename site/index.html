@@ -37,7 +37,7 @@
             </div>
             <p style="margin-top: 8px; font-size: 0.85em; color: #aaa">
               <strong>Marker Types:</strong> Terminal, Hazard, Loot, NPC, Door,
-              Window
+              Ladder, Window, Airlock, Elevator
             </p>
           </div>
 
@@ -52,8 +52,19 @@
           <div class="tool-section">
             <h3>View</h3>
             <button id="resetViewBtn" class="action-btn">Reset View</button>
-            <label style="display: flex; align-items: center; margin-top: 8px; cursor: pointer;">
-              <input type="checkbox" id="snapToGridToggle" style="margin-right: 8px;" />
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                margin-top: 8px;
+                cursor: pointer;
+              "
+            >
+              <input
+                type="checkbox"
+                id="snapToGridToggle"
+                style="margin-right: 8px"
+              />
               <span>Snap to Grid</span>
             </label>
           </div>
@@ -178,6 +189,49 @@
                   <path d="M3 10 L17 10" />
                 </svg>
               </button>
+              <button
+                id="floatingAddStandaloneMarkerBtn"
+                class="floating-tool-btn"
+                title="Add Standalone Marker"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="0"
+                  stroke="none"
+                  width="20"
+                  height="20"
+                >
+                  <path
+                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+                  />
+                </svg>
+              </button>
+              <button
+                id="floatingAddStandaloneLabelBtn"
+                class="floating-tool-btn"
+                title="Add Standalone Label"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <text
+                    x="5"
+                    y="15"
+                    font-size="14"
+                    font-weight="bold"
+                    fill="currentColor"
+                  >
+                    T
+                  </text>
+                </svg>
+              </button>
             </div>
 
             <!-- Context-sensitive floating toolbar (appears when item is selected) -->
@@ -195,16 +249,15 @@
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
+                  fill="currentColor"
                   viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="size-6"
+                  stroke-width="0"
+                  stroke="none"
+                  width="20"
+                  height="20"
                 >
                   <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5"
+                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
                   />
                 </svg>
               </button>
