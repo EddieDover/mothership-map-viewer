@@ -113,6 +113,13 @@ class MapCreator {
 
     // Export/Import buttons
     document
+      .getElementById("seeCommunityMaps")
+      .addEventListener("click", () => {
+        const wikiURL =
+          "https://github.com/EddieDover/mothership-map-viewer/wiki/Map-Share-Strings";
+        window.open(wikiURL, "_blank");
+      });
+    document
       .getElementById("exportBtn")
       .addEventListener("click", () => this.exportJSON());
     document
