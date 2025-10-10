@@ -253,28 +253,32 @@ class PlayerMapDisplay extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _setupCanvasZoom(canvas) {
-    canvas.addEventListener("wheel", (e) => {
-      e.preventDefault();
+    canvas.addEventListener(
+      "wheel",
+      (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
 
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
+        // Zoom in/out
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        const newScale = Math.max(
+          this.minScale,
+          Math.min(this.maxScale, this.scale * delta)
+        );
 
-      // Zoom in/out
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      const newScale = Math.max(
-        this.minScale,
-        Math.min(this.maxScale, this.scale * delta)
-      );
+        // Zoom towards cursor position
+        const scaleDiff = newScale / this.scale;
+        this.scrollOffset.x =
+          mouseX - (mouseX - this.scrollOffset.x) * scaleDiff;
+        this.scrollOffset.y =
+          mouseY - (mouseY - this.scrollOffset.y) * scaleDiff;
 
-      // Zoom towards cursor position
-      const scaleDiff = newScale / this.scale;
-      this.scrollOffset.x = mouseX - (mouseX - this.scrollOffset.x) * scaleDiff;
-      this.scrollOffset.y = mouseY - (mouseY - this.scrollOffset.y) * scaleDiff;
-
-      this.scale = newScale;
-      this._renderMap(canvas);
-    });
+        this.scale = newScale;
+        this._renderMap(canvas);
+      },
+      { passive: true }
+    );
   }
 
   _renderMap(canvas) {
@@ -882,28 +886,32 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _setupCanvasZoom(canvas) {
-    canvas.addEventListener("wheel", (e) => {
-      e.preventDefault();
+    canvas.addEventListener(
+      "wheel",
+      (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
 
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
+        // Zoom in/out
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        const newScale = Math.max(
+          this.minScale,
+          Math.min(this.maxScale, this.scale * delta)
+        );
 
-      // Zoom in/out
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      const newScale = Math.max(
-        this.minScale,
-        Math.min(this.maxScale, this.scale * delta)
-      );
+        // Zoom towards cursor position
+        const scaleDiff = newScale / this.scale;
+        this.scrollOffset.x =
+          mouseX - (mouseX - this.scrollOffset.x) * scaleDiff;
+        this.scrollOffset.y =
+          mouseY - (mouseY - this.scrollOffset.y) * scaleDiff;
 
-      // Zoom towards cursor position
-      const scaleDiff = newScale / this.scale;
-      this.scrollOffset.x = mouseX - (mouseX - this.scrollOffset.x) * scaleDiff;
-      this.scrollOffset.y = mouseY - (mouseY - this.scrollOffset.y) * scaleDiff;
-
-      this.scale = newScale;
-      this._renderMap(canvas);
-    });
+        this.scale = newScale;
+        this._renderMap(canvas);
+      },
+      { passive: true }
+    );
   }
 
   async _onImportJSON() {
