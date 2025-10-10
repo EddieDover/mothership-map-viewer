@@ -779,6 +779,82 @@ class MapCreator {
   }
 
   /**
+   * Check if a new room would overlap with existing rooms
+   *
+   * @param {number} x - Top-left X coordinate
+   * @param {number} y - Top-left Y coordinate
+   * @param {number} width - Room width
+   * @param {number} height - Room height
+   * @param {string} shape - Room shape ("rectangle" or "circle")
+   * @return {boolean} - True if overlaps with an existing room
+   * @memberof MapCreator
+   */
+  checkRoomOverlap(x, y, width, height, shape = "rectangle") {
+    for (let existingRoom of this.mapData.rooms) {
+      if (shape === "circle" && existingRoom.shape === "circle") {
+        // Circle-to-circle collision
+        const radius1 = width / 2;
+        const radius2 = existingRoom.width / 2;
+        const centerX1 = x + radius1;
+        const centerY1 = y + radius1;
+        const centerX2 = existingRoom.x + radius2;
+        const centerY2 = existingRoom.y + radius2;
+        const distance = Math.sqrt(
+          Math.pow(centerX2 - centerX1, 2) + Math.pow(centerY2 - centerY1, 2)
+        );
+        if (distance < radius1 + radius2) {
+          return true;
+        }
+      } else if (shape === "circle" && existingRoom.shape !== "circle") {
+        // Circle-to-rectangle collision
+        const radius = width / 2;
+        const circleCenterX = x + radius;
+        const circleCenterY = y + radius;
+
+        // Find closest point on rectangle to circle center
+        const closestX = Math.max(existingRoom.x, Math.min(circleCenterX, existingRoom.x + existingRoom.width));
+        const closestY = Math.max(existingRoom.y, Math.min(circleCenterY, existingRoom.y + existingRoom.height));
+
+        const distance = Math.sqrt(
+          Math.pow(closestX - circleCenterX, 2) + Math.pow(closestY - circleCenterY, 2)
+        );
+
+        if (distance < radius) {
+          return true;
+        }
+      } else if (shape !== "circle" && existingRoom.shape === "circle") {
+        // Rectangle-to-circle collision
+        const radius = existingRoom.width / 2;
+        const circleCenterX = existingRoom.x + radius;
+        const circleCenterY = existingRoom.y + radius;
+
+        // Find closest point on new rectangle to circle center
+        const closestX = Math.max(x, Math.min(circleCenterX, x + width));
+        const closestY = Math.max(y, Math.min(circleCenterY, y + height));
+
+        const distance = Math.sqrt(
+          Math.pow(closestX - circleCenterX, 2) + Math.pow(closestY - circleCenterY, 2)
+        );
+
+        if (distance < radius) {
+          return true;
+        }
+      } else {
+        // Rectangle-to-rectangle collision (AABB)
+        if (
+          x < existingRoom.x + existingRoom.width &&
+          x + width > existingRoom.x &&
+          y < existingRoom.y + existingRoom.height &&
+          y + height > existingRoom.y
+        ) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
    * Create and add a new room to the map
    *
    * @param {number} x1
@@ -794,13 +870,16 @@ class MapCreator {
     const height = Math.abs(y2 - y1);
     if (width < 20 || height < 20) return; // Minimum size
 
-    const room = new Room(
-      id,
-      Math.min(x1, x2),
-      Math.min(y1, y2),
-      width,
-      height
-    );
+    const x = Math.min(x1, x2);
+    const y = Math.min(y1, y2);
+
+    // Check for overlap with existing rooms
+    if (this.checkRoomOverlap(x, y, width, height, "rectangle")) {
+      this.nextId--; // Revert ID increment
+      return; // Don't create room if it overlaps
+    }
+
+    const room = new Room(id, x, y, width, height);
     this.mapData.addRoom(room);
 
     // Enable selection mode and select the new room
@@ -832,14 +911,16 @@ class MapCreator {
 
     // Create circle room with diameter as width/height for bounding box
     const diameter = radius * 2;
-    const room = new Room(
-      id,
-      centerX - radius, // Top-left X
-      centerY - radius, // Top-left Y
-      diameter,
-      diameter,
-      "circle"
-    );
+    const x = centerX - radius; // Top-left X
+    const y = centerY - radius; // Top-left Y
+
+    // Check for overlap with existing rooms
+    if (this.checkRoomOverlap(x, y, diameter, diameter, "circle")) {
+      this.nextId--; // Revert ID increment
+      return; // Don't create room if it overlaps
+    }
+
+    const room = new Room(id, x, y, diameter, diameter, "circle");
     this.mapData.addRoom(room);
 
     // Enable selection mode and select the new room
