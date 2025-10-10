@@ -32,7 +32,7 @@ A Foundry VTT module for displaying and managing maps created with the Mothershi
 1. Visit [https://eddiedover.github.io/mothership-map-viewer/](https://eddiedover.github.io/mothership-map-viewer/) and create a map.
    - Draw Rectangular or Circular Rooms
    - Draw Hallways, with full control over if they have icons for their endpoints or not, to represent doors or grates. Selecting None allows you to merge multiple hallways together.
-   - Place Markers in rooms to represent terminals, npcs, hazards, etc. If you'd like a custom marker added, file an Issue! Even better if you can find an appropriate SVG from [HeroIcons](https://heroicons.com/) for me to embed.
+   - Place Markers in rooms to represent terminals, npcs, hazards, etc. If you'd like a custom marker added, file an Issue and we'll see if I can figure out how to draw it.
    - Decide which Rooms, Hallways, and Markers should be visible by default in Foundry. All Rooms, Hallways, and Markers can have their visibility toggled at any time inside Foundry, this is just give the GM less work after importing.
 2. Export as JSON or a Sharable String (Base64 encoded, gzip'd version of the same JSON).
 
