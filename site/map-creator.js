@@ -1869,6 +1869,9 @@ class MapCreator {
     const roomSelector = document.getElementById("roomSelector");
     const hallwaySelector = document.getElementById("hallwaySelector");
     const markerSelector = document.getElementById("markerSelector");
+    const markerSelectorSection = document.getElementById(
+      "markerSelectorSection"
+    );
 
     // Clear and repopulate room selector
     roomSelector.innerHTML = '<option value="">-- No room --</option>';
@@ -1897,6 +1900,7 @@ class MapCreator {
         hallwaySelector.value = "";
         this.populateMarkerSelector(roomIndex);
         markerSelector.value = this.selectedItem.markerIndex;
+        markerSelectorSection.style.display = "flex";
       }
     } else if (this.selectedItem?.type === "room") {
       // A room is selected - show room, clear marker
@@ -1905,7 +1909,8 @@ class MapCreator {
         roomSelector.value = roomIndex;
         hallwaySelector.value = "";
         this.populateMarkerSelector(roomIndex);
-        markerSelector.value = ""; // No marker selected
+        markerSelector.value = "";
+        markerSelectorSection.style.display = "flex";
       }
     } else if (this.selectedItem?.type === "hallway") {
       // A hallway is selected
@@ -1915,6 +1920,7 @@ class MapCreator {
         hallwaySelector.value = hallwayIndex;
         markerSelector.innerHTML = '<option value="">-- No marker --</option>';
         markerSelector.disabled = true;
+        markerSelectorSection.style.display = "none";
       }
     } else {
       // Nothing selected - clear all
@@ -1922,6 +1928,7 @@ class MapCreator {
       hallwaySelector.value = "";
       markerSelector.innerHTML = '<option value="">-- No marker --</option>';
       markerSelector.disabled = true;
+      markerSelectorSection.style.display = "none";
     }
   }
 
