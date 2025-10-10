@@ -28,7 +28,8 @@
     "release:dry": "commit-and-tag-version --dry-run",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "test:branch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage  --changedSince=master",
-    "release:upcoming": "commit-and-tag-version --dry-run --silent > UPCOMING_CHANGELOG.md"
+    "release:upcoming": "commit-and-tag-version --dry-run --silent > UPCOMING_CHANGELOG.md",
+    "update-site-version": "node scripts/update-site-version.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",
