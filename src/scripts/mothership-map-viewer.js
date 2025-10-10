@@ -519,19 +519,65 @@ class PlayerMapDisplay extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _drawWall(ctx, wall) {
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = wall.width || 10; // Default to 10 if width is missing
-    ctx.lineCap = "butt";
-    ctx.lineJoin = "miter";
+    if (wall.isDotted) {
+      // Dotted walls are drawn with dashes parallel to direction
+      const lineWidth = wall.width || 10;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      ctx.lineCap = "butt";
 
-    if (!wall.segments || wall.segments.length === 0) return;
+      if (!wall.segments || wall.segments.length === 0) return;
 
-    wall.segments.forEach((segment) => {
-      ctx.beginPath();
-      ctx.moveTo(segment.x1, segment.y1);
-      ctx.lineTo(segment.x2, segment.y2);
-      ctx.stroke();
-    });
+      wall.segments.forEach((segment) => {
+        const isHorizontal = segment.y1 === segment.y2;
+        const dashLength = 8;
+        const gapLength = 12;
+        const dashSpacing = dashLength + gapLength;
+
+        if (isHorizontal) {
+          const startX = Math.min(segment.x1, segment.x2);
+          const endX = Math.max(segment.x1, segment.x2);
+          const y = segment.y1;
+
+          for (let x = startX; x <= endX; x += dashSpacing) {
+            ctx.beginPath();
+            ctx.moveTo(x, y - lineWidth / 2);
+            ctx.lineTo(Math.min(x + dashLength, endX), y - lineWidth / 2);
+            ctx.moveTo(x, y + lineWidth / 2);
+            ctx.lineTo(Math.min(x + dashLength, endX), y + lineWidth / 2);
+            ctx.stroke();
+          }
+        } else {
+          const startY = Math.min(segment.y1, segment.y2);
+          const endY = Math.max(segment.y1, segment.y2);
+          const x = segment.x1;
+
+          for (let y = startY; y <= endY; y += dashSpacing) {
+            ctx.beginPath();
+            ctx.moveTo(x - lineWidth / 2, y);
+            ctx.lineTo(x - lineWidth / 2, Math.min(y + dashLength, endY));
+            ctx.moveTo(x + lineWidth / 2, y);
+            ctx.lineTo(x + lineWidth / 2, Math.min(y + dashLength, endY));
+            ctx.stroke();
+          }
+        }
+      });
+    } else {
+      // Regular walls are drawn with solid lines
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = wall.width || 10; // Default to 10 if width is missing
+      ctx.lineCap = "butt";
+      ctx.lineJoin = "miter";
+
+      if (!wall.segments || wall.segments.length === 0) return;
+
+      wall.segments.forEach((segment) => {
+        ctx.beginPath();
+        ctx.moveTo(segment.x1, segment.y1);
+        ctx.lineTo(segment.x2, segment.y2);
+        ctx.stroke();
+      });
+    }
   }
 
   _drawRoomMarker(ctx, x, y, type) {
@@ -1618,19 +1664,65 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _drawWall(ctx, wall) {
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = wall.width || 10; // Default to 10 if width is missing
-    ctx.lineCap = "butt";
-    ctx.lineJoin = "miter";
+    if (wall.isDotted) {
+      // Dotted walls are drawn with dashes parallel to direction
+      const lineWidth = wall.width || 10;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      ctx.lineCap = "butt";
 
-    if (!wall.segments || wall.segments.length === 0) return;
+      if (!wall.segments || wall.segments.length === 0) return;
 
-    wall.segments.forEach((segment) => {
-      ctx.beginPath();
-      ctx.moveTo(segment.x1, segment.y1);
-      ctx.lineTo(segment.x2, segment.y2);
-      ctx.stroke();
-    });
+      wall.segments.forEach((segment) => {
+        const isHorizontal = segment.y1 === segment.y2;
+        const dashLength = 8;
+        const gapLength = 12;
+        const dashSpacing = dashLength + gapLength;
+
+        if (isHorizontal) {
+          const startX = Math.min(segment.x1, segment.x2);
+          const endX = Math.max(segment.x1, segment.x2);
+          const y = segment.y1;
+
+          for (let x = startX; x <= endX; x += dashSpacing) {
+            ctx.beginPath();
+            ctx.moveTo(x, y - lineWidth / 2);
+            ctx.lineTo(Math.min(x + dashLength, endX), y - lineWidth / 2);
+            ctx.moveTo(x, y + lineWidth / 2);
+            ctx.lineTo(Math.min(x + dashLength, endX), y + lineWidth / 2);
+            ctx.stroke();
+          }
+        } else {
+          const startY = Math.min(segment.y1, segment.y2);
+          const endY = Math.max(segment.y1, segment.y2);
+          const x = segment.x1;
+
+          for (let y = startY; y <= endY; y += dashSpacing) {
+            ctx.beginPath();
+            ctx.moveTo(x - lineWidth / 2, y);
+            ctx.lineTo(x - lineWidth / 2, Math.min(y + dashLength, endY));
+            ctx.moveTo(x + lineWidth / 2, y);
+            ctx.lineTo(x + lineWidth / 2, Math.min(y + dashLength, endY));
+            ctx.stroke();
+          }
+        }
+      });
+    } else {
+      // Regular walls are drawn with solid lines
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = wall.width || 10; // Default to 10 if width is missing
+      ctx.lineCap = "butt";
+      ctx.lineJoin = "miter";
+
+      if (!wall.segments || wall.segments.length === 0) return;
+
+      wall.segments.forEach((segment) => {
+        ctx.beginPath();
+        ctx.moveTo(segment.x1, segment.y1);
+        ctx.lineTo(segment.x2, segment.y2);
+        ctx.stroke();
+      });
+    }
   }
 
   _drawRoomMarker(ctx, x, y, type) {

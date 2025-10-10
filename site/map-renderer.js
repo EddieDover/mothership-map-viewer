@@ -565,18 +565,63 @@ class MapRenderer {
    * @memberof MapRenderer
    */
   drawWall(wall, isSelected) {
-    // Walls are drawn with solid lines (no markers)
-    this.ctx.strokeStyle = isSelected ? "#0051ffff" : "#ffffff";
-    this.ctx.lineWidth = isSelected ? wall.width + 4 : wall.width;
-    this.ctx.lineCap = "butt";
-    this.ctx.lineJoin = "miter";
+    if (wall.isDotted) {
+      // Dotted walls are drawn with dashes parallel to direction
+      const lineWidth = isSelected ? wall.width + 4 : wall.width;
+      this.ctx.strokeStyle = isSelected ? "#0051ffff" : "#ffffff";
+      this.ctx.lineWidth = 2;
+      this.ctx.lineCap = "butt";
 
-    wall.segments.forEach((segment) => {
-      this.ctx.beginPath();
-      this.ctx.moveTo(segment.x1, segment.y1);
-      this.ctx.lineTo(segment.x2, segment.y2);
-      this.ctx.stroke();
-    });
+      wall.segments.forEach((segment) => {
+        const isHorizontal = segment.y1 === segment.y2;
+        const dashLength = 8;
+        const gapLength = 12;
+        const dashSpacing = dashLength + gapLength;
+
+        if (isHorizontal) {
+          // For horizontal lines (left to right), draw horizontal dashes
+          const startX = Math.min(segment.x1, segment.x2);
+          const endX = Math.max(segment.x1, segment.x2);
+          const y = segment.y1;
+
+          for (let x = startX; x <= endX; x += dashSpacing) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, y - lineWidth / 2);
+            this.ctx.lineTo(Math.min(x + dashLength, endX), y - lineWidth / 2);
+            this.ctx.moveTo(x, y + lineWidth / 2);
+            this.ctx.lineTo(Math.min(x + dashLength, endX), y + lineWidth / 2);
+            this.ctx.stroke();
+          }
+        } else {
+          // For vertical lines (top to bottom), draw vertical dashes
+          const startY = Math.min(segment.y1, segment.y2);
+          const endY = Math.max(segment.y1, segment.y2);
+          const x = segment.x1;
+
+          for (let y = startY; y <= endY; y += dashSpacing) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(x - lineWidth / 2, y);
+            this.ctx.lineTo(x - lineWidth / 2, Math.min(y + dashLength, endY));
+            this.ctx.moveTo(x + lineWidth / 2, y);
+            this.ctx.lineTo(x + lineWidth / 2, Math.min(y + dashLength, endY));
+            this.ctx.stroke();
+          }
+        }
+      });
+    } else {
+      // Regular walls are drawn with solid lines (no markers)
+      this.ctx.strokeStyle = isSelected ? "#0051ffff" : "#ffffff";
+      this.ctx.lineWidth = isSelected ? wall.width + 4 : wall.width;
+      this.ctx.lineCap = "butt";
+      this.ctx.lineJoin = "miter";
+
+      wall.segments.forEach((segment) => {
+        this.ctx.beginPath();
+        this.ctx.moveTo(segment.x1, segment.y1);
+        this.ctx.lineTo(segment.x2, segment.y2);
+        this.ctx.stroke();
+      });
+    }
 
     // Label at midpoint of path
     if (wall.label && wall.segments.length > 0) {

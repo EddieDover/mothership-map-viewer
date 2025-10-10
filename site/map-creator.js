@@ -2371,6 +2371,10 @@ class MapCreator {
                   <input type="checkbox" id="detailsWallVisible" ${item.visible !== false ? "checked" : ""}>
                   <label for="detailsWallVisible" style="margin: 0;">Visible by Default</label>
                 </div>`;
+        html += `<div class="checkbox-container" style="margin-top: 8px;">
+                  <input type="checkbox" id="detailsWallDotted" ${item.isDotted ? "checked" : ""}>
+                  <label for="detailsWallDotted" style="margin: 0;">Dotted Line</label>
+                </div>`;
       }
       // Room walls don't show these fields (inherit from parent room)
     }
@@ -2540,6 +2544,14 @@ class MapCreator {
           .getElementById("detailsWallVisible")
           ?.addEventListener("change", (e) => {
             item.visible = e.target.checked;
+            this.updatePropertiesPanel();
+            this.render();
+          });
+
+        document
+          .getElementById("detailsWallDotted")
+          ?.addEventListener("change", (e) => {
+            item.isDotted = e.target.checked;
             this.updatePropertiesPanel();
             this.render();
           });

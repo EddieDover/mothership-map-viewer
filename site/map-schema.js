@@ -235,6 +235,7 @@ class MapData {
               wall.width,
               wall.label || "",
               wall.nodes || [],
+              wall.isDotted ? 1 : 0,
             ])
           : [],
       ]),
@@ -266,6 +267,7 @@ class MapData {
         wall.label || "",
         wall.nodes || [],
         wall.visible !== false ? 1 : 0,
+        wall.isDotted ? 1 : 0,
       ]),
       sm: this.standaloneMarkers.map((marker) => [
         marker.id,
@@ -321,6 +323,7 @@ class MapData {
           width: w[2],
           label: w[3] || "",
           nodes: w[4] || [],
+          isDotted: w[5] !== undefined ? w[5] !== 0 : false,
           parentRoomId: r[0], // Set parent room ID
         })),
       };
@@ -352,6 +355,7 @@ class MapData {
       label: w[3] || "",
       nodes: w[4] || [],
       visible: w[5] !== 0,
+      isDotted: w[6] !== undefined ? w[6] !== 0 : false,
       parentRoomId: null, // Standalone walls have no parent
     }));
 
@@ -465,6 +469,7 @@ class Wall {
     this.segments = segments; // Array of {x1, y1, x2, y2} for each segment
     this.width = width || CORRIDOR_WIDTH;
     this.label = "";
+    this.isDotted = false; // Toggle for dotted line appearance
     this.nodes = []; // Array of {x, y} for intermediate points
     this.parentRoomId = parentRoomId; // ID of room this wall belongs to, null if standalone
   }
