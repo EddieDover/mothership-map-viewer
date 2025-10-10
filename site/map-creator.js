@@ -801,6 +801,9 @@ class MapCreator {
       height
     );
     this.mapData.addRoom(room);
+
+    // Enable selection mode and select the new room
+    this.setTool("select");
     this.selectedItem = room;
     this.updatePropertiesPanel();
     this.updateMarkerSelectors();
@@ -837,6 +840,9 @@ class MapCreator {
       "circle"
     );
     this.mapData.addRoom(room);
+
+    // Enable selection mode and select the new room
+    this.setTool("select");
     this.selectedItem = room;
     this.updatePropertiesPanel();
     this.updateMarkerSelectors();
@@ -887,6 +893,9 @@ class MapCreator {
     hallway.endMarker = new HallwayMarker("door");
 
     this.mapData.addHallway(hallway);
+
+    // Enable selection mode and select the new hallway
+    this.setTool("select");
     this.selectedItem = hallway;
     this.hallwayCreationState = null;
     this.updatePropertiesPanel();
