@@ -23,24 +23,48 @@ function fromCompactJSON(compact) {
   const mapData = {
     version: compact.v || "1.0.0",
     mapName: compact.n || "Untitled Map",
-    rooms: (compact.r || []).map((r) => ({
-      id: r[0],
-      type: "room",
-      x: r[1],
-      y: r[2],
-      width: r[3],
-      height: r[4],
-      label: r[5] || "",
-      visible: r[6] !== 0,
-      markers: (r[7] || []).map((i) => ({
-        type: i[0],
-        x: i[1],
-        y: i[2],
-        visible: i[3] !== 0,
-        label: i[4] || "",
-      })),
-      shape: r[8] || "rectangle",
-    })),
+    rooms: (compact.r || []).map((r) => {
+      const shape = r[8] || "rectangle";
+      const markers = r[7] || [];
+      const wallsData = r[9] || [];
+      const room = {
+        id: r[0],
+        type: "room",
+        shape: shape,
+        x: r[1],
+        y: r[2],
+        width: r[3],
+        height: r[4],
+        label: r[5] || "",
+        visible: r[6] !== 0,
+        markers: markers.map((i) => ({
+          type: i[0],
+          x: i[1],
+          y: i[2],
+          visible: i[3] !== 0,
+          label: i[4] || "",
+        })),
+        walls: wallsData.map((w) => ({
+          id: w[0],
+          type: "wall",
+          segments: w[1].map((s) => ({
+            x1: s[0],
+            y1: s[1],
+            x2: s[2],
+            y2: s[3],
+          })),
+          width: w[2],
+          label: w[3] || "",
+          nodes: w[4] || [],
+          parentRoomId: r[0], // Set parent room ID
+        })),
+      };
+      // Calculate radius for circle rooms
+      if (shape === "circle") {
+        room.radius = Math.min(room.width, room.height) / 2;
+      }
+      return room;
+    }),
     hallways: (compact.h || []).map((h) => ({
       id: h[0],
       type: "hallway",
@@ -59,6 +83,16 @@ function fromCompactJSON(compact) {
         visible: i[3] !== 0,
         label: i[4] || "",
       })),
+    })),
+    walls: (compact.w || []).map((w) => ({
+      id: w[0],
+      type: "wall",
+      segments: w[1].map((s) => ({ x1: s[0], y1: s[1], x2: s[2], y2: s[3] })),
+      width: w[2],
+      label: w[3] || "",
+      nodes: w[4] || [],
+      visible: w[5] !== 0,
+      parentRoomId: null, // Standalone walls have no parent
     })),
   };
 

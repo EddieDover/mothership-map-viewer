@@ -11,6 +11,7 @@ class MapRenderer {
     this.ctx = canvas.getContext("2d");
     this.gridSize = GRID_SIZE;
     this.showGrid = true;
+    this.snapToGridEnabled = false; // Grid snapping toggle
     this.offsetX = 0;
     this.offsetY = 0;
   }
@@ -104,6 +105,25 @@ class MapRenderer {
       const isHallwaySelected =
         selectedItem?.type === "hallway" && selectedItem?.id === hallway.id;
       this.drawHallway(hallway, isHallwaySelected);
+    });
+
+    // Draw standalone walls (not in rooms)
+    mapData.walls.forEach((wall) => {
+      const isWallSelected =
+        selectedItem?.type === "wall" && selectedItem?.id === wall.id;
+      this.drawWall(wall, isWallSelected);
+    });
+
+    // Draw walls inside rooms
+    mapData.rooms.forEach((room) => {
+      if (room.walls && room.walls.length > 0) {
+        // Always show walls in rooms
+        room.walls.forEach((wall) => {
+          const isWallSelected =
+            selectedItem?.type === "wall" && selectedItem?.id === wall.id;
+          this.drawWall(wall, isWallSelected);
+        });
+      }
     });
 
     // Restore transformation
@@ -522,6 +542,43 @@ class MapRenderer {
   }
 
   /**
+   * Draw a wall
+   *
+   * @param {import("./types").Wall} wall
+   * @param {boolean} isSelected
+   * @memberof MapRenderer
+   */
+  drawWall(wall, isSelected) {
+    // Walls are drawn with solid lines (no markers)
+    this.ctx.strokeStyle = isSelected ? "#0051ffff" : "#ffffff";
+    this.ctx.lineWidth = isSelected ? wall.width + 4 : wall.width;
+    this.ctx.lineCap = "butt";
+    this.ctx.lineJoin = "miter";
+
+    wall.segments.forEach((segment) => {
+      this.ctx.beginPath();
+      this.ctx.moveTo(segment.x1, segment.y1);
+      this.ctx.lineTo(segment.x2, segment.y2);
+      this.ctx.stroke();
+    });
+
+    // Label at midpoint of path
+    if (wall.label && wall.segments.length > 0) {
+      const midSegment = wall.segments[Math.floor(wall.segments.length / 2)];
+      const midX = (midSegment.x1 + midSegment.x2) / 2;
+      const midY = (midSegment.y1 + midSegment.y2) / 2;
+      this.ctx.fillStyle = "#000000";
+      this.ctx.strokeStyle = "#ffffff";
+      this.ctx.lineWidth = 3;
+      this.ctx.font = "bold 12px sans-serif";
+      this.ctx.textAlign = "center";
+      this.ctx.textBaseline = "middle";
+      this.ctx.strokeText(wall.label, midX, midY);
+      this.ctx.fillText(wall.label, midX, midY);
+    }
+  }
+
+  /**
    * Snap a coordinate to the nearest grid line
    *
    * @param {number} coord
@@ -529,7 +586,9 @@ class MapRenderer {
    * @memberof MapRenderer
    */
   snapToGrid(coord) {
-    // Grid snapping disabled - return coordinate as-is
-    return coord;
+    if (!this.snapToGridEnabled) {
+      return coord; // Grid snapping disabled - return coordinate as-is
+    }
+    return Math.round(coord / this.gridSize) * this.gridSize;
   }
 }

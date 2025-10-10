@@ -5,8 +5,8 @@
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
+import { drawHallwayMarker, drawRoomMarker } from "./map-icons.js";
 import { decodeShareString } from "./utils.js";
-import { drawRoomMarker, drawHallwayMarker } from "./map-icons.js";
 
 // Socket handler for syncing map data to players
 class MothershipMapSocketHandler {
@@ -420,6 +420,26 @@ class PlayerMapDisplay extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
+    // Draw standalone walls (only visible ones)
+    if (this.mapData.walls) {
+      this.mapData.walls.forEach((wall) => {
+        if (wall.visible !== false) {
+          this._drawWall(ctx, wall);
+        }
+      });
+    }
+
+    // Draw room walls (always visible for visible rooms in player view)
+    if (this.mapData.rooms) {
+      this.mapData.rooms.forEach((room) => {
+        if (room.visible && room.walls && room.walls.length > 0) {
+          room.walls.forEach((wall) => {
+            this._drawWall(ctx, wall);
+          });
+        }
+      });
+    }
+
     // Draw room markers last (on top of hallways)
     roomMarkersToRender.forEach((marker) => {
       this._drawRoomMarker(ctx, marker.x, marker.y, marker.type);
@@ -482,6 +502,22 @@ class PlayerMapDisplay extends HandlebarsApplicationMixin(ApplicationV2) {
           ctx.stroke();
         }
       }
+    });
+  }
+
+  _drawWall(ctx, wall) {
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = wall.width || 10; // Default to 10 if width is missing
+    ctx.lineCap = "butt";
+    ctx.lineJoin = "miter";
+
+    if (!wall.segments || wall.segments.length === 0) return;
+
+    wall.segments.forEach((segment) => {
+      ctx.beginPath();
+      ctx.moveTo(segment.x1, segment.y1);
+      ctx.lineTo(segment.x2, segment.y2);
+      ctx.stroke();
     });
   }
 
@@ -925,6 +961,19 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
           controlsHTML += "</div>";
         }
 
+        // Room walls // Commented out because room walls are always visible in player view
+        // if (room.walls && room.walls.length > 0) {
+        //   controlsHTML +=
+        //     '<div class="wall-controls" style="margin-left: 20px;">';
+        //   room.walls.forEach((wall, wallIndex) => {
+        //     controlsHTML += `
+        //       <label style="display: block; font-size: 0.9em; color: #888;">
+        //         Wall ${wallIndex + 1} (always visible)
+        //       </label>
+        //     `;
+        //   });
+        // }
+
         controlsHTML += "</div>";
       });
     }
@@ -995,6 +1044,24 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         controlsHTML += `</div>`;
+      });
+    }
+
+    if (this.mapData.walls && this.mapData.walls.length > 0) {
+      controlsHTML += `<h3 style="margin-top: 20px;">${game.i18n.localize("MOTHERSHIP_MAP_VIEWER.forms.viewer.StandaloneWalls")}</h3>`;
+      this.mapData.walls.forEach((wall, index) => {
+        const label = wall.label || `Wall ${index + 1}`;
+        controlsHTML += `
+          <div class="visibility-item">
+            <label>
+              <input type="checkbox" class="wall-visibility" data-index="${index}" ${
+                wall.visible ? "checked" : ""
+              }>
+              ${label}
+            </label>
+        `;
+
+        controlsHTML += "</div>";
       });
     }
 
@@ -1072,6 +1139,17 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
           const markerIndex = parseInt(e.target.dataset.marker);
           this.mapData.hallways[hallwayIndex].markers[markerIndex].visible =
             e.target.checked;
+          this._renderMap(document.getElementById("map-canvas"));
+          this._autoUpdatePlayers();
+        });
+      });
+
+    controlsContainer
+      .querySelectorAll(".wall-visibility")
+      .forEach((checkbox) => {
+        checkbox.addEventListener("change", (e) => {
+          const index = parseInt(e.target.dataset.index);
+          this.mapData.walls[index].visible = e.target.checked;
           this._renderMap(document.getElementById("map-canvas"));
           this._autoUpdatePlayers();
         });
@@ -1388,6 +1466,26 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
+    // Draw standalone walls (only visible ones)
+    if (this.mapData.walls) {
+      this.mapData.walls.forEach((wall) => {
+        if (wall.visible !== false) {
+          this._drawWall(ctx, wall);
+        }
+      });
+    }
+
+    // Draw room walls (only for visible rooms)
+    if (this.mapData.rooms) {
+      this.mapData.rooms.forEach((room) => {
+        if (room.visible && room.walls && room.walls.length > 0) {
+          room.walls.forEach((wall) => {
+            this._drawWall(ctx, wall);
+          });
+        }
+      });
+    }
+
     // Draw room markers last (on top of hallways)
     roomMarkersToRender.forEach((marker) => {
       this._drawRoomMarker(ctx, marker.x, marker.y, marker.type);
@@ -1450,6 +1548,22 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
           ctx.stroke();
         }
       }
+    });
+  }
+
+  _drawWall(ctx, wall) {
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = wall.width || 10; // Default to 10 if width is missing
+    ctx.lineCap = "butt";
+    ctx.lineJoin = "miter";
+
+    if (!wall.segments || wall.segments.length === 0) return;
+
+    wall.segments.forEach((segment) => {
+      ctx.beginPath();
+      ctx.moveTo(segment.x1, segment.y1);
+      ctx.lineTo(segment.x2, segment.y2);
+      ctx.stroke();
     });
   }
 
