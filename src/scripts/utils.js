@@ -56,6 +56,7 @@ function fromCompactJSON(compact) {
           width: w[2],
           label: w[3] || "",
           nodes: w[4] || [],
+          isDotted: w[5] !== undefined ? w[5] !== 0 : false,
           parentRoomId: r[0], // Set parent room ID
         })),
       };
@@ -92,7 +93,24 @@ function fromCompactJSON(compact) {
       label: w[3] || "",
       nodes: w[4] || [],
       visible: w[5] !== 0,
+      isDotted: w[6] !== undefined ? w[6] !== 0 : false,
       parentRoomId: null, // Standalone walls have no parent
+    })),
+    standaloneMarkers: (compact.sm || []).map((m) => ({
+      id: m[0],
+      type: m[1],
+      x: m[2],
+      y: m[3],
+      visible: m[4] !== 0,
+      label: m[5] || "",
+    })),
+    standaloneLabels: (compact.sl || []).map((l) => ({
+      id: l[0],
+      type: "standaloneLabel",
+      text: l[1],
+      x: l[2],
+      y: l[3],
+      visible: l[4] !== 0,
     })),
   };
 

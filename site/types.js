@@ -32,6 +32,16 @@
  */
 
 /**
+ * @typedef {object} StandaloneMarker
+ * @property {string} id - Unique identifier for the marker
+ * @property {RoomMarkerType} type - Type of marker
+ * @property {number} x - Absolute X position on map
+ * @property {number} y - Absolute Y position on map
+ * @property {boolean} visible - Whether the marker is visible to players
+ * @property {string} label - Optional label for the marker
+ */
+
+/**
  * @typedef {object} Room
  * @property {string} id - Unique identifier for the room
  * @property {string} type - Should always be "room"
@@ -49,6 +59,7 @@
  * @property {string} mapName - Name of the map
  * @property {Array<Room>} rooms - Array of Room objects
  * @property {Array<Hallway>} hallways - Array of Hallway objects
+ * @property {Array<StandaloneMarker>} standaloneMarkers - Array of standalone marker objects
  */
 
 /**
