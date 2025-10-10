@@ -565,10 +565,11 @@ class MapCreator {
       this.selectedItem = room;
       this.updatePropertiesPanel();
       this.updateMarkerSelectors();
+      this.updateItemDetailsPanel();
 
       // Focus the label input field after a brief delay to ensure the properties panel is updated
       setTimeout(() => {
-        const labelInput = document.getElementById("itemLabel");
+        const labelInput = document.getElementById("detailsRoomLabel");
         if (labelInput) {
           labelInput.focus();
           labelInput.select(); // Also select all text for easy editing
