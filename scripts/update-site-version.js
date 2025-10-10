@@ -5,7 +5,7 @@
 
 import { execSync } from "child_process";
 import { readFileSync, writeFileSync } from "fs";
-import { join, dirname } from "path";
+import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -51,7 +51,7 @@ const VERSION_INFO = {
   const versionFilePath = join(rootDir, "site", "version.js");
   writeFileSync(versionFilePath, content, "utf8");
 
-  console.log(`✓ Updated site/version.js`);
+  console.log(`  Updated site/version.js`);
   console.log(`  Version: ${version}`);
   console.log(`  Commit:  ${commit}`);
   console.log(`  Date:    ${buildDate}`);
