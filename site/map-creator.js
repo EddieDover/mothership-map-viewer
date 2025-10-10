@@ -455,12 +455,15 @@ class MapCreator {
     // Marker placement mode
     if (this.markerPlacementMode) {
       const room = this.markerPlacementMode.room;
-      // Check if click is inside the room (use unsnapped coordinates)
+
+      const wallMargin = WALL_THICKNESS;
+
+      // Check if click is inside the room or on its walls (use unsnapped coordinates)
       if (
-        mouseX >= room.x &&
-        mouseX <= room.x + room.width &&
-        mouseY >= room.y &&
-        mouseY <= room.y + room.height
+        mouseX >= room.x - wallMargin &&
+        mouseX <= room.x + room.width + wallMargin &&
+        mouseY >= room.y - wallMargin &&
+        mouseY <= room.y + room.height + wallMargin
       ) {
         // Add marker at this position (relative to room)
         const marker = new RoomMarker(
@@ -737,15 +740,16 @@ class MapCreator {
         this.dragState.marker.x = this.dragState.markerStartX + deltaX;
         this.dragState.marker.y = this.dragState.markerStartY + deltaY;
 
-        // Clamp marker position to stay within room bounds
+        // Clamp marker position to allow placement on walls but stay within room bounds
         const room = this.dragState.room;
+        const wallMargin = WALL_THICKNESS;
         this.dragState.marker.x = Math.max(
-          0,
-          Math.min(room.width, this.dragState.marker.x)
+          -wallMargin,
+          Math.min(room.width + wallMargin, this.dragState.marker.x)
         );
         this.dragState.marker.y = Math.max(
-          0,
-          Math.min(room.height, this.dragState.marker.y)
+          -wallMargin,
+          Math.min(room.height + wallMargin, this.dragState.marker.y)
         );
       } else if (this.dragState.type === "room") {
         // Update room position
@@ -870,14 +874,15 @@ class MapCreator {
           this.dragState.markerStartY + deltaY
         );
 
-        // Clamp to room bounds
+        // Clamp to room bounds but allow placement on walls
+        const wallMargin = WALL_THICKNESS;
         this.dragState.marker.x = Math.max(
-          0,
-          Math.min(this.dragState.room.width - 16, newX)
+          -wallMargin,
+          Math.min(this.dragState.room.width + wallMargin - 16, newX)
         );
         this.dragState.marker.y = Math.max(
-          0,
-          Math.min(this.dragState.room.height - 16, newY)
+          -wallMargin,
+          Math.min(this.dragState.room.height + wallMargin - 16, newY)
         );
       } else if (this.dragState.type === "room") {
         // Room dragging
