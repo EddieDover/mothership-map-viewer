@@ -2111,6 +2111,8 @@ class MapCreator {
     };
 
     this.updatePropertiesPanel();
+    this.updateMarkerSelectors();
+    this.updateItemDetailsPanel();
     this.render();
   }
 
