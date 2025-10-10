@@ -40,10 +40,16 @@ class MapRenderer {
     this.ctx.lineWidth = 0.5;
 
     // Calculate visible grid bounds
-    const startX = Math.floor((-this.offsetX) / this.gridSize) * this.gridSize;
-    const endX = Math.floor((this.canvas.width - this.offsetX) / this.gridSize) * this.gridSize + this.gridSize;
-    const startY = Math.floor((-this.offsetY) / this.gridSize) * this.gridSize;
-    const endY = Math.floor((this.canvas.height - this.offsetY) / this.gridSize) * this.gridSize + this.gridSize;
+    const startX = Math.floor(-this.offsetX / this.gridSize) * this.gridSize;
+    const endX =
+      Math.floor((this.canvas.width - this.offsetX) / this.gridSize) *
+        this.gridSize +
+      this.gridSize;
+    const startY = Math.floor(-this.offsetY / this.gridSize) * this.gridSize;
+    const endY =
+      Math.floor((this.canvas.height - this.offsetY) / this.gridSize) *
+        this.gridSize +
+      this.gridSize;
 
     // Vertical lines
     for (let x = startX; x <= endX; x += this.gridSize) {
@@ -137,6 +143,7 @@ class MapRenderer {
         room.markers.forEach((marker, index) => {
           const isMarkerSelected = selectedMarkerIndex === index;
           this.drawRoomMarker(
+            this.ctx,
             room.x + marker.x,
             room.y + marker.y,
             marker.type,
@@ -169,6 +176,7 @@ class MapRenderer {
         room.markers.forEach((marker, index) => {
           const isMarkerSelected = selectedMarkerIndex === index;
           this.drawRoomMarker(
+            this.ctx,
             room.x + marker.x,
             room.y + marker.y,
             marker.type,
@@ -193,81 +201,213 @@ class MapRenderer {
   }
 
   /**
-   * Draw a room marker
-   *
-   * @param {number} x
-   * @param {number} y
-   * @param {import("./types").RoomMarkerType} type
-   * @param {boolean} isSelected
-   * @memberof MapRenderer
+   * Draw a room marker icon
+   * @param {CanvasRenderingContext2D} ctx - Canvas rendering context
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @param {string} type - Marker type (terminal, hazard, loot, npc, door, ladder, window, airlock, custom)
+   * @param {boolean} isSelected - Whether the marker is selected (for highlighting)
+   * @param {number} size - Size of the marker (default 16)
    */
-  drawRoomMarker(x, y, type, isSelected = false) {
-    const size = 16;
-    this.ctx.strokeStyle = isSelected ? "#0051ffff" : "#ffffff";
-    this.ctx.fillStyle = isSelected ? "#0051ffff" : "#ffffff";
-    this.ctx.lineWidth = 2;
+  drawRoomMarker(ctx, x, y, type, isSelected = false, size = 16) {
+    ctx.strokeStyle = isSelected ? "#0051ffff" : "#ffffff";
+    ctx.fillStyle = "#ffffff";
+    ctx.lineWidth = 2;
 
     switch (type) {
       case "terminal":
-        // Draw terminal marker - rectangle with lines
-        this.ctx.strokeRect(x - size / 2, y - size / 2, size, size);
-        this.ctx.fillText(">", x, y);
+        ctx.strokeRect(x - size / 2, y - size / 2, size, size);
+        ctx.font = "bold 12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(">", x, y);
         break;
+
       case "hazard":
-        // Draw hazard marker - triangle with exclamation
-        this.ctx.beginPath();
-        this.ctx.moveTo(x, y - size / 2);
-        this.ctx.lineTo(x - size / 2, y + size / 2);
-        this.ctx.lineTo(x + size / 2, y + size / 2);
-        this.ctx.closePath();
-        this.ctx.stroke();
-        this.ctx.font = "bold 12px sans-serif";
-        this.ctx.textAlign = "center";
-        this.ctx.textBaseline = "middle";
-        this.ctx.fillText("!", x, y + 2);
+        ctx.beginPath();
+        ctx.moveTo(x, y - size / 2);
+        ctx.lineTo(x - size / 2, y + size / 2);
+        ctx.lineTo(x + size / 2, y + size / 2);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.font = "bold 12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("!", x, y + 2);
         break;
+
       case "loot":
-        // Draw loot marker - chest/box
-        this.ctx.fillRect(x - size / 2, y - size / 3, size, (size * 2) / 3);
-        this.ctx.strokeRect(x - size / 2, y - size / 3, size, (size * 2) / 3);
+        ctx.fillRect(x - size / 2, y - size / 3, size, (size * 2) / 3);
+        ctx.strokeRect(x - size / 2, y - size / 3, size, (size * 2) / 3);
         break;
+
       case "npc":
-        // Draw NPC marker - circle (head)
-        this.ctx.beginPath();
-        this.ctx.arc(x, y, size / 2, 0, Math.PI * 2);
-        this.ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+        ctx.stroke();
         break;
+
       case "door":
         // Draw door marker - rectangle with arc (swinging door)
-        this.ctx.strokeRect(x - size / 2, y - size / 2, size / 4, size);
-        this.ctx.beginPath();
-        this.ctx.arc(x - size / 2, y - size / 2, size, 0, Math.PI / 2);
-        this.ctx.stroke();
+        ctx.strokeRect(x - size / 2, y - size / 2, size / 4, size);
+        ctx.beginPath();
+        ctx.arc(x - size / 2, y - size / 2, size, 0, Math.PI / 2);
+        ctx.stroke();
         break;
+
+      case "ladder":
+        // Draw ladder marker - two vertical lines with rungs
+        ctx.strokeRect(x - size / 2, y - size / 2, size, size);
+        ctx.beginPath();
+        ctx.moveTo(x - size / 4, y - size / 2);
+        ctx.lineTo(x - size / 4, y + size / 2);
+        ctx.moveTo(x + size / 4, y - size / 2);
+        ctx.lineTo(x + size / 4, y + size / 2);
+        for (let i = -size / 2; i <= size / 2; i += size / 4) {
+          ctx.moveTo(x - size / 4, y + i);
+          ctx.lineTo(x + size / 4, y + i);
+        }
+        ctx.stroke();
+        break;
+
       case "window":
         // Draw window marker - rectangle with cross
-        this.ctx.strokeRect(x - size / 2, y - size / 2, size, size);
-        this.ctx.beginPath();
-        this.ctx.moveTo(x, y - size / 2);
-        this.ctx.lineTo(x, y + size / 2);
-        this.ctx.moveTo(x - size / 2, y);
-        this.ctx.lineTo(x + size / 2, y);
-        this.ctx.stroke();
+        ctx.strokeRect(x - size / 2, y - size / 2, size, size);
+        ctx.beginPath();
+        ctx.moveTo(x, y - size / 2);
+        ctx.lineTo(x, y + size / 2);
+        ctx.moveTo(x - size / 2, y);
+        ctx.lineTo(x + size / 2, y);
+        ctx.stroke();
         break;
+
+      case "airlock":
+        // Draw airlock marker - circle with slanted spokes
+        ctx.strokeRect(x - size / 2, y - size / 2, size, size);
+        ctx.beginPath();
+        ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + size / 4, y - size / 4);
+        ctx.moveTo(x, y);
+        ctx.lineTo(x - size / 4, y - size / 4);
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + size / 4, y + size / 4);
+        ctx.moveTo(x, y);
+        ctx.lineTo(x - size / 4, y + size / 4);
+        ctx.stroke();
+        break;
+
+      case "elevator":
+        // Draw elevator marker - rectangle with up/down arrows
+        ctx.strokeRect(x - size / 2, y - size / 2, size, size);
+        ctx.beginPath();
+        ctx.moveTo(x, y - size / 2);
+        ctx.lineTo(x, y + size / 2);
+        ctx.moveTo(x - size / 4, y - size / 4);
+        ctx.lineTo(x + size / 4, y + size / 4);
+        ctx.moveTo(x - size / 4, y + size / 4);
+        ctx.lineTo(x + size / 4, y - size / 4);
+        ctx.stroke();
+        break;
+
       case "custom":
       default:
-        // Draw custom marker - star
-        this.ctx.beginPath();
+        // Draw a star for custom markers
+        ctx.beginPath();
         for (let i = 0; i < 5; i++) {
           const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
           const px = x + (Math.cos(angle) * size) / 2;
           const py = y + (Math.sin(angle) * size) / 2;
-          if (i === 0) this.ctx.moveTo(px, py);
-          else this.ctx.lineTo(px, py);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
         }
-        this.ctx.closePath();
-        this.ctx.stroke();
+        ctx.closePath();
+        ctx.stroke();
         break;
+    }
+  }
+
+  /**
+   * Draw a hallway marker icon
+   * @param {CanvasRenderingContext2D} ctx - Canvas rendering context
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @param {string} type - Marker type (door, grate, airlock)
+   * @param {number} hallwayWidth - Width of the hallway (affects marker size)
+   * @param {boolean} isSelected - Whether the marker is selected (for highlighting)
+   */
+
+  drawHallwayMarker(ctx, x, y, type, hallwayWidth, isSelected = false) {
+    const size = hallwayWidth * 1.5;
+
+    if (type === "door") {
+      // Draw door marker - rectangle with line
+      ctx.strokeStyle = isSelected ? "#0051ffff" : "#ffffff";
+      ctx.fillStyle = "#000000";
+      ctx.lineWidth = 2;
+
+      // Fill black background
+      ctx.fillRect(x - size / 2, y - size / 2, size, size);
+      ctx.strokeRect(x - size / 2, y - size / 2, size, size);
+
+      // Door line
+      ctx.beginPath();
+      ctx.moveTo(x, y - size / 2);
+      ctx.lineTo(x, y + size / 2);
+      ctx.stroke();
+    } else if (type === "grate") {
+      // Draw grate marker - grid pattern
+      ctx.strokeStyle = isSelected ? "#0051ffff" : "#ffffff";
+      ctx.lineWidth = 2;
+
+      // Draw grid
+      const gridSize = size / 3;
+      for (let i = 0; i <= 3; i++) {
+        // Vertical lines
+        ctx.beginPath();
+        ctx.moveTo(x - size / 2 + i * gridSize, y - size / 2);
+        ctx.lineTo(x - size / 2 + i * gridSize, y + size / 2);
+        ctx.stroke();
+
+        // Horizontal lines
+        ctx.beginPath();
+        ctx.moveTo(x - size / 2, y - size / 2 + i * gridSize);
+        ctx.lineTo(x + size / 2, y - size / 2 + i * gridSize);
+        ctx.stroke();
+      }
+    } else if (type === "airlock") {
+      // Draw airlock marker - circle with slanted spokes
+      ctx.strokeStyle = isSelected ? "#0051ffff" : "#ffffff";
+      ctx.fillStyle = "#000000";
+      ctx.lineWidth = 2;
+
+      // Fill black background
+      ctx.fillRect(x - size / 2, y - size / 2, size, size);
+
+      ctx.beginPath();
+      ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + size / 4, y - size / 4);
+      ctx.moveTo(x, y);
+      ctx.lineTo(x - size / 4, y - size / 4);
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + size / 4, y + size / 4);
+      ctx.moveTo(x, y);
+      ctx.lineTo(x - size / 4, y + size / 4);
+      ctx.stroke();
+    } else if (type === "elevator") {
+      ctx.strokeStyle = isSelected ? "#0051ffff" : "#ffffff";
+      ctx.fillStyle = "#000000";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x - size / 2, y - size / 2, size, size);
+      ctx.beginPath();
+      ctx.moveTo(x, y - size / 2);
+      ctx.lineTo(x, y + size / 2);
+      ctx.moveTo(x - size / 4, y - size / 4);
+      ctx.lineTo(x + size / 4, y + size / 4);
+      ctx.moveTo(x - size / 4, y + size / 4);
+      ctx.lineTo(x + size / 4, y - size / 4);
+      ctx.stroke();
     }
   }
 
@@ -344,6 +484,7 @@ class MapRenderer {
 
       if (hallway.startMarker && hallway.startMarker.type !== "none") {
         this.drawHallwayMarker(
+          this.ctx,
           firstNode.x,
           firstNode.y,
           hallway.startMarker.type,
@@ -353,6 +494,7 @@ class MapRenderer {
       }
       if (hallway.endMarker && hallway.endMarker.type !== "none") {
         this.drawHallwayMarker(
+          this.ctx,
           lastNode.x,
           lastNode.y,
           hallway.endMarker.type,
@@ -376,56 +518,6 @@ class MapRenderer {
       this.ctx.textBaseline = "middle";
       this.ctx.strokeText(hallway.label, midX, midY);
       this.ctx.fillText(hallway.label, midX, midY);
-    }
-  }
-
-  /**
-   * Draw a hallway marker
-   *
-   * @param {number} x
-   * @param {number} y
-   * @param {import("./types").HallwayMarkerType} type
-   * @param {number} hallwayWidth
-   * @param {boolean} isSelected
-   * @memberof MapRenderer
-   */
-  drawHallwayMarker(x, y, type, hallwayWidth, isSelected = false) {
-    const size = hallwayWidth * 1.5;
-
-    if (type === "door") {
-      // Draw door marker - rectangle with line
-      this.ctx.strokeStyle = isSelected ? "#0051ffff" : "#ffffff";
-      this.ctx.fillStyle = "#000000";
-      this.ctx.lineWidth = 2;
-
-      this.ctx.fillRect(x - size / 2, y - size / 2, size, size);
-      this.ctx.strokeRect(x - size / 2, y - size / 2, size, size);
-
-      // Door line
-      this.ctx.beginPath();
-      this.ctx.moveTo(x, y - size / 2);
-      this.ctx.lineTo(x, y + size / 2);
-      this.ctx.stroke();
-    } else if (type === "grate") {
-      // Draw grate marker - grid pattern
-      this.ctx.strokeStyle = isSelected ? "#0051ffff" : "#ffffff";
-      this.ctx.lineWidth = 2;
-
-      // Draw grid
-      const gridSize = size / 3;
-      for (let i = 0; i <= 3; i++) {
-        // Vertical lines
-        this.ctx.beginPath();
-        this.ctx.moveTo(x - size / 2 + i * gridSize, y - size / 2);
-        this.ctx.lineTo(x - size / 2 + i * gridSize, y + size / 2);
-        this.ctx.stroke();
-
-        // Horizontal lines
-        this.ctx.beginPath();
-        this.ctx.moveTo(x - size / 2, y - size / 2 + i * gridSize);
-        this.ctx.lineTo(x + size / 2, y - size / 2 + i * gridSize);
-        this.ctx.stroke();
-      }
     }
   }
 

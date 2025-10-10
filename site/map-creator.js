@@ -1666,6 +1666,8 @@ class MapCreator {
                   <option value="loot" ${item.marker.type === "loot" ? "selected" : ""}>Loot</option>
                   <option value="door" ${item.marker.type === "door" ? "selected" : ""}>Door</option>
                   <option value="window" ${item.marker.type === "window" ? "selected" : ""}>Window</option>
+                  <option value="airlock" ${item.marker.type === "airlock" ? "selected" : ""}>Airlock</option>
+                  <option value="elevator" ${item.marker.type === "elevator" ? "selected" : ""}>Elevator</option>
                 </select>
               </label>`;
       html += `<label>
@@ -1708,6 +1710,7 @@ class MapCreator {
                   <option value="none" ${!item.startMarker || item.startMarker.type === "none" ? "selected" : ""}>None</option>
                   <option value="door" ${item.startMarker && item.startMarker.type === "door" ? "selected" : ""}>Door</option>
                   <option value="grate" ${item.startMarker && item.startMarker.type === "grate" ? "selected" : ""}>Grate</option>
+                  <option value="airlock" ${item.startMarker && item.startMarker.type === "airlock" ? "selected" : ""}>Airlock</option>
                 </select>
               </label>`;
       html += `<div class="checkbox-container">
@@ -1722,6 +1725,7 @@ class MapCreator {
                   <option value="none" ${!item.endMarker || item.endMarker.type === "none" ? "selected" : ""}>None</option>
                   <option value="door" ${item.endMarker && item.endMarker.type === "door" ? "selected" : ""}>Door</option>
                   <option value="grate" ${item.endMarker && item.endMarker.type === "grate" ? "selected" : ""}>Grate</option>
+                  <option value="airlock" ${item.endMarker && item.endMarker.type === "airlock" ? "selected" : ""}>Airlock</option>
                 </select>
               </label>`;
       html += `<div class="checkbox-container">
@@ -2111,6 +2115,8 @@ class MapCreator {
     };
 
     this.updatePropertiesPanel();
+    this.updateMarkerSelectors();
+    this.updateItemDetailsPanel();
     this.render();
   }
 
