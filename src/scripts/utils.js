@@ -94,6 +94,14 @@ function fromCompactJSON(compact) {
       visible: w[5] !== 0,
       parentRoomId: null, // Standalone walls have no parent
     })),
+    standaloneMarkers: (compact.sm || []).map((m) => ({
+      id: m[0],
+      type: m[1],
+      x: m[2],
+      y: m[3],
+      visible: m[4] !== 0,
+      label: m[5] || "",
+    })),
   };
 
   return mapData;

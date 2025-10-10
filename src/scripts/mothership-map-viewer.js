@@ -446,6 +446,18 @@ class PlayerMapDisplay extends HandlebarsApplicationMixin(ApplicationV2) {
       this._drawRoomMarker(ctx, marker.x, marker.y, marker.type);
     });
 
+    // Draw standalone markers (not in rooms)
+    if (
+      this.mapData.standaloneMarkers &&
+      this.mapData.standaloneMarkers.length > 0
+    ) {
+      this.mapData.standaloneMarkers.forEach((marker) => {
+        if (marker.visible !== false) {
+          this._drawRoomMarker(ctx, marker.x, marker.y, marker.type);
+        }
+      });
+    }
+
     // Restore context
     ctx.restore();
   }
@@ -917,6 +929,15 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       });
     }
+
+    // Initialize standalone marker visibility flags
+    if (!this.mapData.standaloneMarkers) {
+      this.mapData.standaloneMarkers = [];
+    } else {
+      this.mapData.standaloneMarkers.forEach((marker) => {
+        if (marker.visible === undefined) marker.visible = true;
+      });
+    }
   }
 
   _setupVisibilityControls(document) {
@@ -1066,6 +1087,26 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
+    if (
+      this.mapData.standaloneMarkers &&
+      this.mapData.standaloneMarkers.length > 0
+    ) {
+      controlsHTML += `<h3 style="margin-top: 20px;">Standalone Markers</h3>`;
+      this.mapData.standaloneMarkers.forEach((marker, index) => {
+        const label = marker.label || `${marker.type} ${index + 1}`;
+        controlsHTML += `
+          <div class="visibility-item">
+            <label>
+              <input type="checkbox" class="standalone-marker-visibility" data-index="${index}" ${
+                marker.visible !== false ? "checked" : ""
+              }>
+              ${label}
+            </label>
+          </div>
+        `;
+      });
+    }
+
     controlsHTML += "</div>";
     controlsContainer.innerHTML = controlsHTML;
 
@@ -1151,6 +1192,17 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
         checkbox.addEventListener("change", (e) => {
           const index = parseInt(e.target.dataset.index);
           this.mapData.walls[index].visible = e.target.checked;
+          this._renderMap(document.getElementById("map-canvas"));
+          this._autoUpdatePlayers();
+        });
+      });
+
+    controlsContainer
+      .querySelectorAll(".standalone-marker-visibility")
+      .forEach((checkbox) => {
+        checkbox.addEventListener("change", (e) => {
+          const index = parseInt(e.target.dataset.index);
+          this.mapData.standaloneMarkers[index].visible = e.target.checked;
           this._renderMap(document.getElementById("map-canvas"));
           this._autoUpdatePlayers();
         });
@@ -1492,6 +1544,18 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
     roomMarkersToRender.forEach((marker) => {
       this._drawRoomMarker(ctx, marker.x, marker.y, marker.type);
     });
+
+    // Draw standalone markers (not in rooms)
+    if (
+      this.mapData.standaloneMarkers &&
+      this.mapData.standaloneMarkers.length > 0
+    ) {
+      this.mapData.standaloneMarkers.forEach((marker) => {
+        if (marker.visible !== false) {
+          this._drawRoomMarker(ctx, marker.x, marker.y, marker.type);
+        }
+      });
+    }
 
     // Restore context
     ctx.restore();

@@ -126,6 +126,22 @@ class MapRenderer {
       }
     });
 
+    // Draw standalone markers (not in rooms)
+    if (mapData.standaloneMarkers && mapData.standaloneMarkers.length > 0) {
+      mapData.standaloneMarkers.forEach((marker) => {
+        const isMarkerSelected =
+          selectedItem?.type === "standaloneMarker" &&
+          selectedItem?.marker.id === marker.id;
+        this.drawRoomMarker(
+          this.ctx,
+          marker.x,
+          marker.y,
+          marker.type,
+          isMarkerSelected
+        );
+      });
+    }
+
     // Restore transformation
     this.ctx.restore();
   }

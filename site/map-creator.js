@@ -65,6 +65,9 @@ class MapCreator {
     document
       .getElementById("floatingAddWallBtn")
       .addEventListener("click", () => this.setTool("wall"));
+    document
+      .getElementById("floatingAddStandaloneMarkerBtn")
+      .addEventListener("click", () => this.setTool("standaloneMarker"));
 
     // Context toolbar buttons
     document
@@ -487,7 +490,35 @@ class MapCreator {
 
     // Select tool - for selecting existing items and dragging rooms/markers
     if (this.currentTool === "select") {
-      // Check for markers first (highest priority)
+      // Check for standalone markers first (highest priority)
+      const standaloneMarkerResult = this.getStandaloneMarkerAtPosition(
+        mouseX,
+        mouseY
+      );
+      if (standaloneMarkerResult) {
+        // Select and prepare to drag standalone marker
+        this.selectedItem = {
+          type: "standaloneMarker",
+          marker: standaloneMarkerResult,
+        };
+        this.updatePropertiesPanel();
+        this.updateMarkerSelectors();
+        this.updateItemDetailsPanel();
+        this.render();
+
+        // Prepare to drag standalone marker
+        this.dragState = {
+          type: "standaloneMarker",
+          marker: standaloneMarkerResult,
+          startX: mouseX,
+          startY: mouseY,
+          markerStartX: standaloneMarkerResult.x,
+          markerStartY: standaloneMarkerResult.y,
+        };
+        return;
+      }
+
+      // Check for room markers (second priority)
       const markerResult = this.getMarkerAtPosition(mouseX, mouseY);
       if (markerResult) {
         // Select and prepare to drag marker
@@ -625,6 +656,38 @@ class MapCreator {
       return;
     }
 
+    // For standalone marker tool, place marker at click location
+    if (this.currentTool === "standaloneMarker") {
+      // Check if click is inside a room - standalone markers cannot be placed in rooms
+      const clickedRoom = this.getRoomAtPosition(mouseX, mouseY);
+      if (clickedRoom) {
+        // Clicked inside a room - don't allow standalone marker here
+        return;
+      }
+
+      // Create standalone marker with default "terminal" type
+      const marker = new StandaloneMarker(
+        `standalone-marker-${this.nextId++}`,
+        "terminal",
+        x,
+        y
+      );
+      this.mapData.addStandaloneMarker(marker);
+
+      // Switch back to select mode
+      this.setTool("select");
+
+      // Auto-select the new marker
+      this.selectedItem = {
+        type: "standaloneMarker",
+        marker: marker,
+      };
+      this.updatePropertiesPanel();
+      this.updateItemDetailsPanel();
+      this.render();
+      return;
+    }
+
     // For room wall tool, handle two-point creation (room walls only)
     if (this.currentTool === "roomWall") {
       const selectedRoom =
@@ -735,7 +798,11 @@ class MapCreator {
       const deltaX = mouseX - this.dragState.startX;
       const deltaY = mouseY - this.dragState.startY;
 
-      if (this.dragState.type === "marker") {
+      if (this.dragState.type === "standaloneMarker") {
+        // Update standalone marker position (absolute on map)
+        this.dragState.marker.x = this.dragState.markerStartX + deltaX;
+        this.dragState.marker.y = this.dragState.markerStartY + deltaY;
+      } else if (this.dragState.type === "marker") {
         // Update marker position (relative to room)
         this.dragState.marker.x = this.dragState.markerStartX + deltaX;
         this.dragState.marker.y = this.dragState.markerStartY + deltaY;
@@ -861,7 +928,19 @@ class MapCreator {
     if (this.dragState) {
       const { x, y } = this.getMouseCoordinates(e);
 
-      if (this.dragState.type === "marker") {
+      if (this.dragState.type === "standaloneMarker") {
+        // Finalize standalone marker position with grid snapping (absolute)
+        const deltaX = x - this.dragState.startX;
+        const deltaY = y - this.dragState.startY;
+
+        // Snap marker position
+        this.dragState.marker.x = this.renderer.snapToGrid(
+          this.dragState.markerStartX + deltaX
+        );
+        this.dragState.marker.y = this.renderer.snapToGrid(
+          this.dragState.markerStartY + deltaY
+        );
+      } else if (this.dragState.type === "marker") {
         // Finalize marker position with grid snapping (relative to room)
         const deltaX = x - this.dragState.startX;
         const deltaY = y - this.dragState.startY;
@@ -1822,6 +1901,46 @@ class MapCreator {
   }
 
   /**
+   * Get a standalone marker at a given position (if any)
+   *
+   * @param {number} x
+   * @param {number} y
+   * @return {import("./types").StandaloneMarker|null}
+   * @memberof MapCreator
+   */
+  getStandaloneMarkerAtPosition(x, y) {
+    const markerSize = 16; // Match the size from drawRoomMarker
+    const hitRadius = markerSize * 1.5; // Increase hit area for easier clicking
+
+    // If a standalone marker is currently selected, check it first for priority
+    if (this.selectedItem && this.selectedItem.type === "standaloneMarker") {
+      const marker = this.selectedItem.marker;
+      const distance = Math.sqrt(
+        Math.pow(x - marker.x, 2) + Math.pow(y - marker.y, 2)
+      );
+
+      if (distance <= hitRadius) {
+        return marker;
+      }
+    }
+
+    // Check all standalone markers
+    if (this.mapData.standaloneMarkers) {
+      for (let marker of this.mapData.standaloneMarkers) {
+        const distance = Math.sqrt(
+          Math.pow(x - marker.x, 2) + Math.pow(y - marker.y, 2)
+        );
+
+        if (distance <= hitRadius) {
+          return marker;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Get a marker at a given position within a room (if any)
    *
    * @param {number} x
@@ -2162,6 +2281,30 @@ class MapCreator {
                 <input type="checkbox" id="detailsMarkerVisible" ${item.marker.visible !== false ? "checked" : ""}>
                 <label for="detailsMarkerVisible" style="margin: 0;">Visible by Default</label>
               </div>`;
+    } else if (item.type === "standaloneMarker") {
+      // Standalone marker details
+      html += `<label>
+                Marker Type:
+                <select id="detailsStandaloneMarkerType" class="toolbar-select">
+                  <option value="terminal" ${item.marker.type === "terminal" ? "selected" : ""}>Terminal</option>
+                  <option value="hazard" ${item.marker.type === "hazard" ? "selected" : ""}>Hazard</option>
+                  <option value="objective" ${item.marker.type === "objective" ? "selected" : ""}>Objective</option>
+                  <option value="npc" ${item.marker.type === "npc" ? "selected" : ""}>NPC</option>
+                  <option value="loot" ${item.marker.type === "loot" ? "selected" : ""}>Loot</option>
+                  <option value="door" ${item.marker.type === "door" ? "selected" : ""}>Door</option>
+                  <option value="window" ${item.marker.type === "window" ? "selected" : ""}>Window</option>
+                  <option value="airlock" ${item.marker.type === "airlock" ? "selected" : ""}>Airlock</option>
+                  <option value="elevator" ${item.marker.type === "elevator" ? "selected" : ""}>Elevator</option>
+                </select>
+              </label>`;
+      html += `<label>
+                Marker Label:
+                <input type="text" id="detailsStandaloneMarkerLabel" value="${item.marker.label || ""}" placeholder="Optional">
+              </label>`;
+      html += `<div class="checkbox-container">
+                <input type="checkbox" id="detailsStandaloneMarkerVisible" ${item.marker.visible !== false ? "checked" : ""}>
+                <label for="detailsStandaloneMarkerVisible" style="margin: 0;">Visible by Default</label>
+              </div>`;
     } else if (item.type === "room") {
       // Room details
       html += `<label>
@@ -2254,6 +2397,29 @@ class MapCreator {
 
       document
         .getElementById("detailsMarkerVisible")
+        ?.addEventListener("change", (e) => {
+          item.marker.visible = e.target.checked;
+          this.updatePropertiesPanel();
+          this.render();
+        });
+    } else if (item.type === "standaloneMarker") {
+      document
+        .getElementById("detailsStandaloneMarkerType")
+        ?.addEventListener("change", (e) => {
+          item.marker.type = e.target.value;
+          this.updatePropertiesPanel();
+          this.render();
+        });
+
+      document
+        .getElementById("detailsStandaloneMarkerLabel")
+        ?.addEventListener("input", (e) => {
+          item.marker.label = e.target.value;
+          this.updatePropertiesPanel();
+        });
+
+      document
+        .getElementById("detailsStandaloneMarkerVisible")
         ?.addEventListener("change", (e) => {
           item.marker.visible = e.target.checked;
           this.updatePropertiesPanel();
@@ -2651,6 +2817,9 @@ class MapCreator {
     if (this.selectedItem.type === "marker") {
       // Delete marker from room
       this.selectedItem.room.markers.splice(this.selectedItem.markerIndex, 1);
+    } else if (this.selectedItem.type === "standaloneMarker") {
+      // Delete standalone marker
+      this.mapData.removeItem("standaloneMarker", this.selectedItem.marker.id);
     } else if (
       this.selectedItem.type === "wall" &&
       this.selectedItem.parentRoomId
