@@ -2268,6 +2268,7 @@ class MapCreator {
                   <option value="npc" ${item.marker.type === "npc" ? "selected" : ""}>NPC</option>
                   <option value="loot" ${item.marker.type === "loot" ? "selected" : ""}>Loot</option>
                   <option value="door" ${item.marker.type === "door" ? "selected" : ""}>Door</option>
+                  <option value="ladder" ${item.marker.type === "ladder" ? "selected" : ""}>Ladder</option>
                   <option value="window" ${item.marker.type === "window" ? "selected" : ""}>Window</option>
                   <option value="airlock" ${item.marker.type === "airlock" ? "selected" : ""}>Airlock</option>
                   <option value="elevator" ${item.marker.type === "elevator" ? "selected" : ""}>Elevator</option>
@@ -2292,6 +2293,7 @@ class MapCreator {
                   <option value="npc" ${item.marker.type === "npc" ? "selected" : ""}>NPC</option>
                   <option value="loot" ${item.marker.type === "loot" ? "selected" : ""}>Loot</option>
                   <option value="door" ${item.marker.type === "door" ? "selected" : ""}>Door</option>
+                  <option value="ladder" ${item.marker.type === "ladder" ? "selected" : ""}>Ladder</option>
                   <option value="window" ${item.marker.type === "window" ? "selected" : ""}>Window</option>
                   <option value="airlock" ${item.marker.type === "airlock" ? "selected" : ""}>Airlock</option>
                   <option value="elevator" ${item.marker.type === "elevator" ? "selected" : ""}>Elevator</option>
