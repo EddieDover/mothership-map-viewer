@@ -445,6 +445,7 @@ class MapCreator {
           markerIndex: markerResult.index,
         };
         this.updatePropertiesPanel();
+        this.updateMarkerSelectors();
         this.updateItemDetailsPanel();
         this.render();
 
@@ -471,6 +472,7 @@ class MapCreator {
       if (clickedItem) {
         this.selectedItem = clickedItem;
         this.updatePropertiesPanel();
+        this.updateMarkerSelectors();
         this.updateItemDetailsPanel();
         this.render();
 
@@ -491,6 +493,7 @@ class MapCreator {
         // Clicked on empty space - deselect
         this.selectedItem = null;
         this.updatePropertiesPanel();
+        this.updateMarkerSelectors();
         this.updateItemDetailsPanel();
         this.render();
       }
@@ -561,6 +564,7 @@ class MapCreator {
       // Select the room if it's not already selected
       this.selectedItem = room;
       this.updatePropertiesPanel();
+      this.updateMarkerSelectors();
 
       // Focus the label input field after a brief delay to ensure the properties panel is updated
       setTimeout(() => {
