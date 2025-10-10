@@ -7,11 +7,11 @@ A Foundry VTT module for displaying and managing maps created with the Mothershi
 - **Import Maps**: Load maps via JSON file or share string
 - **GM Visibility Controls**: Toggle visibility of:
   - Individual rooms
-  - Room markers (terminals, hazards, loot, NPCs, custom)
+  - Room markers (terminals, hazards, objectives, loot, NPCs, doors, windows, airlocks, ladders, elevators)
   - Hallways (both regular and secret passages)
-  - Hallway endpoint markers (doors and grates)
+  - Hallway endpoint markers (doors, grates, and airlocks)
+  - Standalone walls (normal and dotted), markers, and labels.
 - **Accurate Rendering**: Maps render exactly as they appear in the creator tool
-- **Canvas-based Display**: High-quality rendering on HTML canvas
 
 ## Requirements
 
