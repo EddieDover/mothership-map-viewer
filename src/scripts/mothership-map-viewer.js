@@ -5,8 +5,8 @@
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
+import { drawHallwayMarker, drawRoomMarker } from "./map-icons.js";
 import { decodeShareString } from "./utils.js";
-import { drawRoomMarker, drawHallwayMarker } from "./map-icons.js";
 
 // Socket handler for syncing map data to players
 class MothershipMapSocketHandler {
@@ -358,18 +358,35 @@ class PlayerMapDisplay extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
-    // Draw only visible hallways
+    // Draw hallways and markers
     if (this.mapData.hallways) {
       this.mapData.hallways.forEach((hallway) => {
-        if (!hallway.visible) return;
+        // Draw hallway body only if visible
+        if (hallway.visible) {
+          if (hallway.isSecret) {
+            this._drawSecretHallway(ctx, hallway);
+          } else {
+            this._drawRegularHallway(ctx, hallway);
+          }
 
-        if (hallway.isSecret) {
-          this._drawSecretHallway(ctx, hallway);
-        } else {
-          this._drawRegularHallway(ctx, hallway);
+          // // Label (only when hallway is visible)
+          // if (hallway.label && hallway.segments.length > 0) {
+          //   const midSegment =
+          //     hallway.segments[Math.floor(hallway.segments.length / 2)];
+          //   const midX = (midSegment.x1 + midSegment.x2) / 2;
+          //   const midY = (midSegment.y1 + midSegment.y2) / 2;
+          //   ctx.fillStyle = "#000000";
+          //   ctx.strokeStyle = "#ffffff";
+          //   ctx.lineWidth = 3;
+          //   ctx.font = "bold 12px sans-serif";
+          //   ctx.textAlign = "center";
+          //   ctx.textBaseline = "middle";
+          //   ctx.strokeText(hallway.label, midX, midY);
+          //   ctx.fillText(hallway.label, midX, midY);
+          // }
         }
 
-        // Draw endpoint markers (only if visible)
+        // Draw endpoint markers independently of hallway visibility
         if (hallway.nodes && hallway.nodes.length >= 2) {
           const firstNode = hallway.nodes[0];
           const lastNode = hallway.nodes[hallway.nodes.length - 1];
@@ -400,22 +417,6 @@ class PlayerMapDisplay extends HandlebarsApplicationMixin(ApplicationV2) {
               hallway.width
             );
           }
-        }
-
-        // Label
-        if (hallway.label && hallway.segments.length > 0) {
-          const midSegment =
-            hallway.segments[Math.floor(hallway.segments.length / 2)];
-          const midX = (midSegment.x1 + midSegment.x2) / 2;
-          const midY = (midSegment.y1 + midSegment.y2) / 2;
-          ctx.fillStyle = "#000000";
-          ctx.strokeStyle = "#ffffff";
-          ctx.lineWidth = 3;
-          ctx.font = "bold 12px sans-serif";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.strokeText(hallway.label, midX, midY);
-          ctx.fillText(hallway.label, midX, midY);
         }
       });
     }
@@ -1326,18 +1327,35 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
-    // Draw hallways on top
+    // Draw hallways and markers
     if (this.mapData.hallways) {
       this.mapData.hallways.forEach((hallway) => {
-        if (!hallway.visible) return;
+        // Draw hallway body only if visible
+        if (hallway.visible) {
+          if (hallway.isSecret) {
+            this._drawSecretHallway(ctx, hallway);
+          } else {
+            this._drawRegularHallway(ctx, hallway);
+          }
 
-        if (hallway.isSecret) {
-          this._drawSecretHallway(ctx, hallway);
-        } else {
-          this._drawRegularHallway(ctx, hallway);
+          // Label (commented out in GM view)
+          // if (hallway.label && hallway.segments.length > 0) {
+          //   const midSegment =
+          //     hallway.segments[Math.floor(hallway.segments.length / 2)];
+          //   const midX = (midSegment.x1 + midSegment.x2) / 2;
+          //   const midY = (midSegment.y1 + midSegment.y2) / 2;
+          //   ctx.fillStyle = "#000000";
+          //   ctx.strokeStyle = "#ffffff";
+          //   ctx.lineWidth = 3;
+          //   ctx.font = "bold 12px sans-serif";
+          //   ctx.textAlign = "center";
+          //   ctx.textBaseline = "middle";
+          //   ctx.strokeText(hallway.label, midX, midY);
+          //   ctx.fillText(hallway.label, midX, midY);
+          // }
         }
 
-        // Draw endpoint markers (only if visible)
+        // Draw endpoint markers independently of hallway visibility
         if (hallway.nodes && hallway.nodes.length >= 2) {
           const firstNode = hallway.nodes[0];
           const lastNode = hallway.nodes[hallway.nodes.length - 1];
@@ -1369,22 +1387,6 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
             );
           }
         }
-
-        // // Label
-        // if (hallway.label && hallway.segments.length > 0) {
-        //   const midSegment =
-        //     hallway.segments[Math.floor(hallway.segments.length / 2)];
-        //   const midX = (midSegment.x1 + midSegment.x2) / 2;
-        //   const midY = (midSegment.y1 + midSegment.y2) / 2;
-        //   ctx.fillStyle = "#000000";
-        //   ctx.strokeStyle = "#ffffff";
-        //   ctx.lineWidth = 3;
-        //   ctx.font = "bold 12px sans-serif";
-        //   ctx.textAlign = "center";
-        //   ctx.textBaseline = "middle";
-        //   ctx.strokeText(hallway.label, midX, midY);
-        //   ctx.fillText(hallway.label, midX, midY);
-        // }
       });
     }
 
