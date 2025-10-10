@@ -12,6 +12,7 @@ class MapCreator {
     this.selectedItem = null;
     this.drawingState = null;
     this.hallwayCreationState = null;
+    this.wallCreationState = null; // For wall creation (similar to hallway)
     this.nextId = 1;
     this.panState = null;
     this.dragState = null;
@@ -61,11 +62,17 @@ class MapCreator {
     document
       .getElementById("floatingAddHallwayBtn")
       .addEventListener("click", () => this.setTool("hallway"));
+    document
+      .getElementById("floatingAddWallBtn")
+      .addEventListener("click", () => this.setTool("wall"));
 
     // Context toolbar buttons
     document
       .getElementById("floatingAddMarkerBtn")
       .addEventListener("click", () => this.addMarkerToSelectedRoom());
+    document
+      .getElementById("floatingAddRoomWallBtn")
+      .addEventListener("click", () => this.setTool("roomWall"));
     document
       .getElementById("floatingDeleteBtn")
       .addEventListener("click", () => this.deleteSelectedItem());
@@ -90,6 +97,13 @@ class MapCreator {
     document
       .getElementById("resetViewBtn")
       .addEventListener("click", () => this.resetView());
+
+    // Snap to Grid toggle
+    document
+      .getElementById("snapToGridToggle")
+      .addEventListener("change", (e) => {
+        this.renderer.snapToGridEnabled = e.target.checked;
+      });
 
     // Export/Import buttons
     document
@@ -132,6 +146,18 @@ class MapCreator {
     this.currentTool = tool;
     this.drawingState = null;
     this.hallwayCreationState = null;
+    this.wallCreationState = null;
+
+    // Deselect current item when switching to a creation tool
+    // (keep selection only for select mode and roomWall mode which requires a room to be selected)
+    if (tool !== "select" && tool !== "roomWall" && this.selectedItem) {
+      this.selectedItem = null;
+      this.updatePropertiesPanel();
+      this.updateMarkerSelectors();
+      this.updateItemDetailsPanel();
+      this.updateContextToolbar();
+      this.render(); // Re-render to update visual selection
+    }
 
     // Update button states for both toolbars
     document
@@ -178,10 +204,14 @@ class MapCreator {
         activeElement.tagName === "TEXTAREA" ||
         activeElement.isContentEditable);
 
-    // Escape key cancels hallway creation or marker placement
+    // Escape key cancels hallway/wall creation or marker placement
     if (e.key === "Escape") {
       if (this.hallwayCreationState) {
         this.hallwayCreationState = null;
+        this.render();
+      }
+      if (this.wallCreationState) {
+        this.wallCreationState = null;
         this.render();
       }
       if (this.markerPlacementMode) {
@@ -210,15 +240,35 @@ class MapCreator {
       !isTyping
     ) {
       e.preventDefault(); // Prevent backspace from navigating back in browser
+      let parentRoom = null;
+
       if (this.selectedItem.type === "marker") {
         // Delete marker from room
         this.selectedItem.room.markers.splice(this.selectedItem.markerIndex, 1);
+      } else if (
+        this.selectedItem.type === "wall" &&
+        this.selectedItem.parentRoomId
+      ) {
+        // Delete wall inside a room - remember the parent room
+        parentRoom = this.mapData.getItem(
+          "room",
+          this.selectedItem.parentRoomId
+        );
+        this.mapData.removeItem(this.selectedItem.type, this.selectedItem.id);
       } else {
-        // Delete room or hallway
+        // Delete room, hallway, or standalone wall
         this.mapData.removeItem(this.selectedItem.type, this.selectedItem.id);
       }
-      this.selectedItem = null;
+
+      // If we deleted a wall from a room, reselect the parent room
+      if (parentRoom) {
+        this.selectedItem = parentRoom;
+      } else {
+        this.selectedItem = null;
+      }
+
       this.updatePropertiesPanel();
+      this.updateItemDetailsPanel();
       this.render();
     }
   }
@@ -479,6 +529,17 @@ class MapCreator {
         // If clicked on a room, prepare to drag it - use unsnapped coordinates
         // BUT: Don't allow room dragging if a marker was previously selected
         if (clickedItem.type === "room" && !previouslySelectedMarker) {
+          // Store original wall positions for this room
+          const wallStartPositions = {};
+          if (clickedItem.walls && clickedItem.walls.length > 0) {
+            clickedItem.walls.forEach((wall) => {
+              wallStartPositions[wall.id] = {
+                segments: wall.segments.map((s) => ({ ...s })),
+                nodes: wall.nodes ? wall.nodes.map((n) => ({ ...n })) : [],
+              };
+            });
+          }
+
           this.dragState = {
             type: "room",
             room: clickedItem,
@@ -486,6 +547,7 @@ class MapCreator {
             startY: mouseY,
             roomStartX: clickedItem.x,
             roomStartY: clickedItem.y,
+            wallStartPositions: wallStartPositions,
           };
           e.target.style.cursor = "move";
         }
@@ -530,6 +592,67 @@ class MapCreator {
           this.render();
           return;
         }
+      }
+      return;
+    }
+
+    // For wall tool, handle two-point creation (standalone walls only)
+    if (this.currentTool === "wall") {
+      if (!this.wallCreationState) {
+        const clickedRoom = this.getRoomAtPosition(mouseX, mouseY);
+        const clickedEdge = this.getRoomEdgeAtPosition(mouseX, mouseY);
+
+        // Creating standalone wall - cannot start inside a room (but can start on edge)
+        if (clickedRoom && !clickedEdge) {
+          // Clicked inside a room (not on edge) - don't allow
+          return;
+        }
+        // First click outside any room or on room edge
+        this.wallCreationState = {
+          startX: x,
+          startY: y,
+          parentRoomId: null,
+        };
+        return;
+      } else if (this.wallCreationState) {
+        // Second click - finish wall with straight line
+        this.finishWall(x, y);
+        return;
+      }
+      return;
+    }
+
+    // For room wall tool, handle two-point creation (room walls only)
+    if (this.currentTool === "roomWall") {
+      const selectedRoom =
+        this.selectedItem?.type === "room" ? this.selectedItem : null;
+
+      if (!selectedRoom) {
+        // No room selected - shouldn't happen, but cancel
+        this.setTool("select");
+        return;
+      }
+
+      if (!this.wallCreationState) {
+        const clickedRoom = this.getRoomAtPosition(mouseX, mouseY);
+
+        // Must click inside the selected room
+        if (clickedRoom && clickedRoom.id === selectedRoom.id) {
+          // First click inside selected room
+          this.wallCreationState = {
+            startX: x,
+            startY: y,
+            parentRoomId: selectedRoom.id,
+          };
+          return;
+        } else {
+          // Clicked outside selected room - don't start wall
+          return;
+        }
+      } else if (this.wallCreationState) {
+        // Second click - finish wall with straight line
+        this.finishWall(x, y);
+        return;
       }
       return;
     }
@@ -629,6 +752,31 @@ class MapCreator {
         this.dragState.room.x = this.dragState.roomStartX + deltaX;
         this.dragState.room.y = this.dragState.roomStartY + deltaY;
 
+        // Move all walls inside this room
+        if (this.dragState.room.walls && this.dragState.room.walls.length > 0) {
+          this.dragState.room.walls.forEach((wall) => {
+            const origWall = this.dragState.wallStartPositions[wall.id];
+            if (origWall) {
+              // Update wall segments
+              wall.segments.forEach((segment, i) => {
+                const origSegment = origWall.segments[i];
+                segment.x1 = origSegment.x1 + deltaX;
+                segment.y1 = origSegment.y1 + deltaY;
+                segment.x2 = origSegment.x2 + deltaX;
+                segment.y2 = origSegment.y2 + deltaY;
+              });
+              // Update wall nodes if present
+              if (wall.nodes && origWall.nodes) {
+                wall.nodes.forEach((node, i) => {
+                  const origNode = origWall.nodes[i];
+                  node.x = origNode.x + deltaX;
+                  node.y = origNode.y + deltaY;
+                });
+              }
+            }
+          });
+        }
+
         // Find and update all attached hallways
         const attachments = this.findHallwaysAttachedToRoom(
           this.dragState.room.id
@@ -671,6 +819,22 @@ class MapCreator {
       this.hallwayCreationState.ghostY = y;
       this.render();
       this.drawHallwayGhost();
+    }
+
+    // Handle wall ghost preview (standalone walls)
+    if (this.wallCreationState && this.currentTool === "wall") {
+      this.wallCreationState.ghostX = x;
+      this.wallCreationState.ghostY = y;
+      this.render();
+      this.drawWallGhost();
+    }
+
+    // Handle room wall ghost preview
+    if (this.wallCreationState && this.currentTool === "roomWall") {
+      this.wallCreationState.ghostX = x;
+      this.wallCreationState.ghostY = y;
+      this.render();
+      this.drawWallGhost();
     }
   }
 
@@ -721,12 +885,43 @@ class MapCreator {
         const deltaY = y - this.dragState.startY;
 
         // Snap room to grid
-        this.dragState.room.x = this.renderer.snapToGrid(
+        const snappedX = this.renderer.snapToGrid(
           this.dragState.roomStartX + deltaX
         );
-        this.dragState.room.y = this.renderer.snapToGrid(
+        const snappedY = this.renderer.snapToGrid(
           this.dragState.roomStartY + deltaY
         );
+        this.dragState.room.x = snappedX;
+        this.dragState.room.y = snappedY;
+
+        // Calculate the actual delta after snapping
+        const actualDeltaX = snappedX - this.dragState.roomStartX;
+        const actualDeltaY = snappedY - this.dragState.roomStartY;
+
+        // Update walls inside the room with the snapped position
+        if (this.dragState.room.walls && this.dragState.room.walls.length > 0) {
+          this.dragState.room.walls.forEach((wall) => {
+            const origWall = this.dragState.wallStartPositions[wall.id];
+            if (origWall) {
+              // Update wall segments with actual snapped delta
+              wall.segments.forEach((segment, i) => {
+                const origSegment = origWall.segments[i];
+                segment.x1 = origSegment.x1 + actualDeltaX;
+                segment.y1 = origSegment.y1 + actualDeltaY;
+                segment.x2 = origSegment.x2 + actualDeltaX;
+                segment.y2 = origSegment.y2 + actualDeltaY;
+              });
+              // Update wall nodes if present
+              if (wall.nodes && origWall.nodes) {
+                wall.nodes.forEach((node, i) => {
+                  const origNode = origWall.nodes[i];
+                  node.x = origNode.x + actualDeltaX;
+                  node.y = origNode.y + actualDeltaY;
+                });
+              }
+            }
+          });
+        }
 
         // Update all attached hallways one final time with snapped position
         const attachments = this.findHallwaysAttachedToRoom(
@@ -812,11 +1007,18 @@ class MapCreator {
         const circleCenterY = y + radius;
 
         // Find closest point on rectangle to circle center
-        const closestX = Math.max(existingRoom.x, Math.min(circleCenterX, existingRoom.x + existingRoom.width));
-        const closestY = Math.max(existingRoom.y, Math.min(circleCenterY, existingRoom.y + existingRoom.height));
+        const closestX = Math.max(
+          existingRoom.x,
+          Math.min(circleCenterX, existingRoom.x + existingRoom.width)
+        );
+        const closestY = Math.max(
+          existingRoom.y,
+          Math.min(circleCenterY, existingRoom.y + existingRoom.height)
+        );
 
         const distance = Math.sqrt(
-          Math.pow(closestX - circleCenterX, 2) + Math.pow(closestY - circleCenterY, 2)
+          Math.pow(closestX - circleCenterX, 2) +
+            Math.pow(closestY - circleCenterY, 2)
         );
 
         if (distance < radius) {
@@ -833,7 +1035,8 @@ class MapCreator {
         const closestY = Math.max(y, Math.min(circleCenterY, y + height));
 
         const distance = Math.sqrt(
-          Math.pow(closestX - circleCenterX, 2) + Math.pow(closestY - circleCenterY, 2)
+          Math.pow(closestX - circleCenterX, 2) +
+            Math.pow(closestY - circleCenterY, 2)
         );
 
         if (distance < radius) {
@@ -980,6 +1183,102 @@ class MapCreator {
     this.setTool("select");
     this.selectedItem = hallway;
     this.hallwayCreationState = null;
+    this.updatePropertiesPanel();
+    this.updateMarkerSelectors();
+    this.updateItemDetailsPanel();
+    this.render();
+  }
+
+  /**
+   * Finalize and add the wall being created
+   *
+   * @param {number} endX - End X coordinate
+   * @param {number} endY - End Y coordinate
+   * @return {void}
+   * @memberof MapCreator
+   */
+  finishWall(endX, endY) {
+    if (!this.wallCreationState) return;
+
+    const startX = this.wallCreationState.startX;
+    const startY = this.wallCreationState.startY;
+    const parentRoomId = this.wallCreationState.parentRoomId;
+
+    let finalEndX = endX;
+    let finalEndY = endY;
+
+    if (parentRoomId) {
+      // Creating wall inside a room - validate and clamp to room boundaries
+      const room = this.mapData.getItem("room", parentRoomId);
+      if (!room) {
+        this.wallCreationState = null;
+        return;
+      }
+
+      // Check if end point is still inside the same room (with small tolerance for edges)
+      const tolerance = 2; // Allow a few pixels outside for easier edge placement
+      const isInsideRoom =
+        endX >= room.x - tolerance &&
+        endX <= room.x + room.width + tolerance &&
+        endY >= room.y - tolerance &&
+        endY <= room.y + room.height + tolerance;
+
+      if (!isInsideRoom) {
+        // End point outside room - cancel wall creation
+        this.wallCreationState = null;
+        this.render();
+        return;
+      }
+
+      // Clamp wall endpoints to room boundaries (with small margin for wall width)
+      const margin = CORRIDOR_WIDTH / 2;
+      finalEndX = Math.max(
+        room.x + margin,
+        Math.min(room.x + room.width - margin, endX)
+      );
+      finalEndY = Math.max(
+        room.y + margin,
+        Math.min(room.y + room.height - margin, endY)
+      );
+    } else {
+      // Creating standalone wall - cannot end inside a room (but can end on edge)
+      const endRoom = this.getRoomAtPosition(endX, endY);
+      const endEdge = this.getRoomEdgeAtPosition(endX, endY);
+
+      if (endRoom && !endEdge) {
+        // End point inside a room (not on edge) - cancel wall creation
+        this.wallCreationState = null;
+        this.render();
+        return;
+      }
+    }
+
+    // Create a single straight segment
+    const segment = { x1: startX, y1: startY, x2: finalEndX, y2: finalEndY };
+    const segments = [segment];
+
+    const id = this.nextId++;
+    const wall = new Wall(id, segments, CORRIDOR_WIDTH, parentRoomId);
+
+    // Store nodes for reference (start and end only)
+    wall.nodes = [
+      { x: startX, y: startY },
+      { x: finalEndX, y: finalEndY },
+    ];
+
+    this.mapData.addWall(wall);
+
+    // Enable selection mode and select the parent room (if wall is in a room)
+    this.setTool("select");
+    if (parentRoomId) {
+      // Wall was created inside a room - reselect the parent room
+      const parentRoom = this.mapData.getItem("room", parentRoomId);
+      this.selectedItem = parentRoom;
+    } else {
+      // Standalone wall - select the wall itself
+      this.selectedItem = wall;
+    }
+    this.wallCreationState = null;
     this.updatePropertiesPanel();
     this.updateMarkerSelectors();
     this.updateItemDetailsPanel();
@@ -1388,6 +1687,47 @@ class MapCreator {
   }
 
   /**
+   * Draw the wall ghost (the preview of the wall being created)
+   *
+   * @return {void}
+   * @memberof MapCreator
+   */
+  drawWallGhost() {
+    if (!this.wallCreationState || !this.wallCreationState.ghostX) return;
+
+    const ctx = this.renderer.ctx;
+    const startX = this.wallCreationState.startX;
+    const startY = this.wallCreationState.startY;
+    const ghostX = this.wallCreationState.ghostX;
+    const ghostY = this.wallCreationState.ghostY;
+
+    // Apply offset transformation for ghost preview
+    ctx.save();
+    ctx.translate(this.renderer.offsetX, this.renderer.offsetY);
+
+    // Draw straight line from start to cursor
+    ctx.strokeStyle = "#888888";
+    ctx.lineWidth = CORRIDOR_WIDTH;
+    ctx.globalAlpha = 0.5;
+    ctx.lineCap = "butt";
+
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(ghostX, ghostY);
+    ctx.stroke();
+
+    ctx.globalAlpha = 1.0;
+
+    // Draw start point as a circle
+    ctx.fillStyle = "#888888";
+    ctx.beginPath();
+    ctx.arc(startX, startY, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  /**
    * Serialize to compact JSON format
    *
    * @param {number} x
@@ -1404,7 +1744,52 @@ class MapCreator {
         y >= room.y &&
         y <= room.y + room.height
       ) {
+        // If a room is selected, check for walls inside it
+        if (
+          this.selectedItem?.type === "room" &&
+          this.selectedItem.id === room.id
+        ) {
+          // Check walls inside this room
+          if (room.walls && room.walls.length > 0) {
+            for (let wall of room.walls) {
+              for (let segment of wall.segments) {
+                if (
+                  this.isPointNearLine(
+                    x,
+                    y,
+                    segment.x1,
+                    segment.y1,
+                    segment.x2,
+                    segment.y2,
+                    wall.width / 2
+                  )
+                ) {
+                  return wall;
+                }
+              }
+            }
+          }
+        }
         return room;
+      }
+    }
+
+    // Check standalone walls
+    for (let wall of this.mapData.walls) {
+      for (let segment of wall.segments) {
+        if (
+          this.isPointNearLine(
+            x,
+            y,
+            segment.x1,
+            segment.y1,
+            segment.x2,
+            segment.y2,
+            wall.width / 2
+          )
+        ) {
+          return wall;
+        }
       }
     }
 
@@ -1694,6 +2079,7 @@ class MapCreator {
   updateContextToolbar() {
     const contextToolbar = document.getElementById("contextToolbar");
     const addMarkerBtn = document.getElementById("floatingAddMarkerBtn");
+    const addRoomWallBtn = document.getElementById("floatingAddRoomWallBtn");
     const deleteBtn = document.getElementById("floatingDeleteBtn");
 
     if (!this.selectedItem) {
@@ -1705,11 +2091,13 @@ class MapCreator {
     // Show context toolbar
     contextToolbar.style.display = "flex";
 
-    // Show/hide add marker button based on item type
+    // Show/hide add marker and room wall buttons based on item type
     if (this.selectedItem.type === "room") {
       addMarkerBtn.style.display = "flex";
+      addRoomWallBtn.style.display = "flex";
     } else {
       addMarkerBtn.style.display = "none";
+      addRoomWallBtn.style.display = "none";
     }
 
     // Always show delete button when something is selected
@@ -1823,6 +2211,20 @@ class MapCreator {
                 <input type="checkbox" id="detailsEndMarkerVisible" ${!item.endMarker || item.endMarker.visible !== false ? "checked" : ""} ${!item.endMarker || item.endMarker.type === "none" ? "disabled" : ""}>
                 <label for="detailsEndMarkerVisible" style="margin: 0;">Visible by Default</label>
               </div>`;
+    } else if (item.type === "wall") {
+      // Wall details - only show for standalone walls (not room walls)
+      if (!item.parentRoomId) {
+        // Standalone wall - show label and visibility
+        html += `<label>
+                  Wall Label:
+                  <input type="text" id="detailsWallLabel" value="${item.label || ""}" placeholder="Optional">
+                </label>`;
+        html += `<div class="checkbox-container">
+                  <input type="checkbox" id="detailsWallVisible" ${item.visible !== false ? "checked" : ""}>
+                  <label for="detailsWallVisible" style="margin: 0;">Visible by Default</label>
+                </div>`;
+      }
+      // Room walls don't show these fields (inherit from parent room)
     }
 
     panel.innerHTML = html;
@@ -1952,6 +2354,26 @@ class MapCreator {
             this.render();
           }
         });
+    } else if (item.type === "wall") {
+      // Event listeners only for standalone walls
+      if (!item.parentRoomId) {
+        document
+          .getElementById("detailsWallLabel")
+          ?.addEventListener("input", (e) => {
+            item.label = e.target.value;
+            this.updatePropertiesPanel();
+            this.render();
+          });
+
+        document
+          .getElementById("detailsWallVisible")
+          ?.addEventListener("change", (e) => {
+            item.visible = e.target.checked;
+            this.updatePropertiesPanel();
+            this.render();
+          });
+      }
+      // Room walls have no UI controls, so no event listeners needed
     }
   }
 
@@ -2219,17 +2641,33 @@ class MapCreator {
   deleteSelectedItem() {
     if (!this.selectedItem) return;
 
+    let parentRoom = null;
+
     if (this.selectedItem.type === "marker") {
       // Delete marker from room
       this.selectedItem.room.markers.splice(this.selectedItem.markerIndex, 1);
+    } else if (
+      this.selectedItem.type === "wall" &&
+      this.selectedItem.parentRoomId
+    ) {
+      // Delete wall inside a room - remember the parent room
+      parentRoom = this.mapData.getItem("room", this.selectedItem.parentRoomId);
+      this.mapData.removeItem(this.selectedItem.type, this.selectedItem.id);
     } else {
-      // Delete room or hallway
+      // Delete room, hallway, or standalone wall
       this.mapData.removeItem(this.selectedItem.type, this.selectedItem.id);
     }
 
-    this.selectedItem = null;
+    // If we deleted a wall from a room, reselect the parent room
+    if (parentRoom) {
+      this.selectedItem = parentRoom;
+    } else {
+      this.selectedItem = null;
+    }
+
     this.updatePropertiesPanel();
     this.updateMarkerSelectors();
+    this.updateItemDetailsPanel();
     this.render();
   }
 
@@ -2273,12 +2711,27 @@ class MapCreator {
       if (room.id > maxId) {
         maxId = room.id;
       }
+      // Check walls inside rooms
+      if (room.walls && room.walls.length > 0) {
+        room.walls.forEach((wall) => {
+          if (wall.id > maxId) {
+            maxId = wall.id;
+          }
+        });
+      }
     });
 
     // Check all hallway IDs
     this.mapData.hallways.forEach((hallway) => {
       if (hallway.id > maxId) {
         maxId = hallway.id;
+      }
+    });
+
+    // Check all standalone wall IDs
+    this.mapData.walls.forEach((wall) => {
+      if (wall.id > maxId) {
+        maxId = wall.id;
       }
     });
 

@@ -27,7 +27,8 @@
         "UpdatePlayers": "Update Players",
         "ClosePlayerView": "Close Player View",
         "NoMapLoaded": "No map loaded. Import a map to begin.",
-        "HallwayVisibility": "Hallway Visibility"
+        "HallwayVisibility": "Hallway Visibility",
+        "StandaloneWalls": "Standalone Walls"
       }
     }
   }

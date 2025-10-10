@@ -27,7 +27,8 @@
         "UpdatePlayers": "Actualizar Jugadores",
         "ClosePlayerView": "Cerrar Vista de Jugador",
         "NoMapLoaded": "No hay mapa cargado. Importa un mapa para comenzar.",
-        "HallwayVisibility": "Visibilidad de Pasillos"
+        "HallwayVisibility": "Visibilidad de Pasillos",
+        "StandaloneWalls": "Paredes Independientes"
       }
     }
   }

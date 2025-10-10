@@ -11,6 +11,7 @@ class MapData {
     this.mapName = "Untitled Map";
     this.rooms = [];
     this.hallways = [];
+    this.walls = []; // Standalone walls not attached to rooms
   }
 
   /**
@@ -34,7 +35,28 @@ class MapData {
   }
 
   /**
-   * Remove an item (room or hallway) from the map by ID
+   * Add a wall to the map (or to a room if parentRoomId is provided)
+   *
+   * @param {import("./types").Wall} wall
+   * @memberof MapData
+   */
+  addWall(wall) {
+    if (wall.parentRoomId) {
+      const room = this.rooms.find((r) => r.id === wall.parentRoomId);
+      if (room) {
+        // Ensure walls array exists
+        if (!room.walls) {
+          room.walls = [];
+        }
+        room.walls.push(wall);
+      }
+    } else {
+      this.walls.push(wall);
+    }
+  }
+
+  /**
+   * Remove an item (room, hallway, or wall) from the map by ID
    *
    * @param {string} type
    * @param {string} id
@@ -48,15 +70,23 @@ class MapData {
       case "hallway":
         this.hallways = this.hallways.filter((h) => h.id !== id);
         break;
+      case "wall":
+        // Remove from standalone walls
+        this.walls = this.walls.filter((w) => w.id !== id);
+        // Also check if it's in a room
+        this.rooms.forEach((room) => {
+          room.walls = room.walls.filter((w) => w.id !== id);
+        });
+        break;
     }
   }
 
   /**
-   * Get an item (room or hallway) by ID
+   * Get an item (room, hallway, or wall) by ID
    *
    * @param {string} type
    * @param {string} id
-   * @return {import("./types").Room|import("./types").Hallway|null}
+   * @return {import("./types").Room|import("./types").Hallway|import("./types").Wall|null}
    * @memberof MapData
    */
   getItem(type, id) {
@@ -65,6 +95,16 @@ class MapData {
         return this.rooms.find((r) => r.id === id);
       case "hallway":
         return this.hallways.find((h) => h.id === id);
+      case "wall":
+        // Check standalone walls first
+        const standaloneWall = this.walls.find((w) => w.id === id);
+        if (standaloneWall) return standaloneWall;
+        // Check room walls
+        for (let room of this.rooms) {
+          const roomWall = room.walls.find((w) => w.id === id);
+          if (roomWall) return roomWall;
+        }
+        break;
     }
     return null;
   }
@@ -81,6 +121,7 @@ class MapData {
       mapName: this.mapName,
       rooms: this.rooms,
       hallways: this.hallways,
+      walls: this.walls,
     };
   }
 
@@ -106,6 +147,7 @@ class MapData {
       );
       room.label = r.label || "";
       room.markers = r.markers || [];
+      room.walls = r.walls || [];
       return room;
     });
 
@@ -131,6 +173,9 @@ class MapData {
     } else {
       this.hallways = json.hallways || [];
     }
+
+    // Load standalone walls
+    this.walls = json.walls || [];
   }
 
   /**
@@ -160,7 +205,16 @@ class MapData {
               marker.label || "",
             ])
           : [],
-        room.shape || "rectangle", // Add shape property
+        room.shape || "rectangle",
+        room.walls && room.walls.length > 0
+          ? room.walls.map((wall) => [
+              wall.id,
+              wall.segments.map((s) => [s.x1, s.y1, s.x2, s.y2]),
+              wall.width,
+              wall.label || "",
+              wall.nodes || [],
+            ])
+          : [],
       ]),
       h: this.hallways.map((hallway) => [
         hallway.id,
@@ -183,6 +237,14 @@ class MapData {
             ]
           : null,
       ]),
+      w: this.walls.map((wall) => [
+        wall.id,
+        wall.segments.map((s) => [s.x1, s.y1, s.x2, s.y2]),
+        wall.width,
+        wall.label || "",
+        wall.nodes || [],
+        wall.visible !== false ? 1 : 0,
+      ]),
     };
   }
 
@@ -197,8 +259,9 @@ class MapData {
     this.mapName = compact.n || "Untitled Map";
 
     this.rooms = (compact.r || []).map((r) => {
-      const shape = r[8] || "rectangle"; // Get shape from index 9
+      const shape = r[8] || "rectangle";
       const markers = r[7] || [];
+      const wallsData = r[9] || [];
       const room = {
         id: r[0],
         type: "room",
@@ -215,6 +278,15 @@ class MapData {
           y: i[2],
           visible: i[3] !== 0,
           label: i[4] || "",
+        })),
+        walls: wallsData.map((w) => ({
+          id: w[0],
+          type: "wall",
+          segments: w[1].map((s) => ({ x1: s[0], y1: s[1], x2: s[2], y2: s[3] })),
+          width: w[2],
+          label: w[3] || "",
+          nodes: w[4] || [],
+          parentRoomId: r[0], // Set parent room ID
         })),
       };
       // Calculate radius for circle rooms
@@ -235,6 +307,17 @@ class MapData {
       nodes: h[6] || [],
       startMarker: h[7] ? { type: h[7][0], visible: h[7][1] !== 0 } : null,
       endMarker: h[8] ? { type: h[8][0], visible: h[8][1] !== 0 } : null,
+    }));
+
+    this.walls = (compact.w || []).map((w) => ({
+      id: w[0],
+      type: "wall",
+      segments: w[1].map((s) => ({ x1: s[0], y1: s[1], x2: s[2], y2: s[3] })),
+      width: w[2],
+      label: w[3] || "",
+      nodes: w[4] || [],
+      visible: w[5] !== 0,
+      parentRoomId: null, // Standalone walls have no parent
     }));
   }
 
@@ -293,6 +376,7 @@ class Room {
     this.radius = shape === "circle" ? Math.min(width, height) / 2 : null;
     this.label = "";
     this.markers = []; // Array of {type, x, y, visible} for room markers
+    this.walls = []; // Array of Wall objects for walls inside this room
   }
 }
 
@@ -326,5 +410,18 @@ class HallwayMarker {
   constructor(type) {
     this.type = type;
     this.visible = true; // Toggle for GM control in Foundry
+  }
+}
+
+/** @type {import("./types").Wall} */
+class Wall {
+  constructor(id, segments, width, parentRoomId = null) {
+    this.id = id;
+    this.type = "wall";
+    this.segments = segments; // Array of {x1, y1, x2, y2} for each segment
+    this.width = width || CORRIDOR_WIDTH;
+    this.label = "";
+    this.nodes = []; // Array of {x, y} for intermediate points
+    this.parentRoomId = parentRoomId; // ID of room this wall belongs to, null if standalone
   }
 }
