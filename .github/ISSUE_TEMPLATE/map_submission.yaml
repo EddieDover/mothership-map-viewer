@@ -1,0 +1,41 @@
+name: Submit a Map Share String
+description: Submit a new Map Share String
+title: "[MAP]: "
+labels: ["map"]
+projects: []
+assignees:
+  - EddieDover
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to submit a new map!
+  - type: input
+    id: description
+    attributes:
+      label: Map Description
+      description: Please describe the map.
+      placeholder: Another Bug Hunt - Greta Base
+    validations:
+      required: true
+  - type: input
+    id: author
+    attributes:
+      label: Author Details
+      description: How should we credit you? Also how can we get in touch with you if we need more info?
+      placeholder: ex. JohnDoe, johndoe@theinternet.com or johndoe on discord
+    validations:
+      required: true
+  - type: textarea
+    id: mapcode
+    attributes:
+      label: Share Code
+      description: Please paste your map share code.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: "### Screenshot"
+  - type: markdown
+    attributes: 
+      value: "Please include a screenshot of your map from the editor, warden, or player view."
