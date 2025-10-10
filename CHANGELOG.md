@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2.0](https://github.com/EddieDover/mothership-map-viewer/compare/v1.1.0...v1.2.0) (2025-10-10)
+
+### Features
+
+- added dotted walls ([37a5250](https://github.com/EddieDover/mothership-map-viewer/commit/37a525084f0c65003e29e8388dd88084f24d7d3b))
+- added ladder markers ([2a577e0](https://github.com/EddieDover/mothership-map-viewer/commit/2a577e06f6fb81e902cadfcb6366dd7d55660fa2))
+- added standalone labels ([277c0ba](https://github.com/EddieDover/mothership-map-viewer/commit/277c0baf1953c691031c883fb42a0ef5daa01019))
+- added standalone map markers ([91aa152](https://github.com/EddieDover/mothership-map-viewer/commit/91aa15270617be40d3458c4702f880fa606c2777))
+
+### Bug Fixes
+
+- adjusted margin to allow placing room markers on walls ([b264325](https://github.com/EddieDover/mothership-map-viewer/commit/b2643256aecc5ddedf1f9a7421c2994048f4dca7))
+- optimize canvas zoom event handling for improved performance ([e6ed609](https://github.com/EddieDover/mothership-map-viewer/commit/e6ed6099772b31c865c4c8d086f32e8edc569bcc))
+
 ## [1.1.0](https://github.com/EddieDover/mothership-map-viewer/compare/v1.0.0...v1.1.0) (2025-10-10)
 
 ### Features
