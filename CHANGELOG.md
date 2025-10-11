@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.0](https://github.com/EddieDover/mothership-map-viewer/compare/v1.2.0...v1.3.0) (2025-10-11)
+
+### Features
+
+- player list shows character names and character sheets if clicked ([e023b4c](https://github.com/EddieDover/mothership-map-viewer/commit/e023b4cc83c8b127e383f4fa2d2e4761da93a61a))
+- **site:** added wiki link to sidebar ([80f99a8](https://github.com/EddieDover/mothership-map-viewer/commit/80f99a87c4f73d9c13d2530af470e505786d54dd))
+
+### Bug Fixes
+
+- adding changelog and readme to build for people using module managers ([5d8eee8](https://github.com/EddieDover/mothership-map-viewer/commit/5d8eee802ae105217f76323fcda928b517ef199e))
+
 ## [1.2.0](https://github.com/EddieDover/mothership-map-viewer/compare/v1.1.0...v1.2.0) (2025-10-10)
 
 ### Features
