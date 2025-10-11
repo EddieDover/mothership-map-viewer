@@ -20,7 +20,7 @@
     "flags": {}
   },
   "type": "module",
-  "main": "scripts/crew-relationships.js",
+  "main": "src/scripts/mothership-map-viewer.js",
   "scripts": {
     "build": "node build.js",
     "package": "node build.js --package",
