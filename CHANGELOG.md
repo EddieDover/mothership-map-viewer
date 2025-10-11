@@ -1,4 +1,12 @@
-# Changelog
+
+## [1.3.2](https://github.com/EddieDover/mothership-map-viewer/compare/v1.3.1...v1.3.2) (2025-10-11)
+
+
+### Features
+
+* added more button links ([1983f4a](https://github.com/EddieDover/mothership-map-viewer/commit/1983f4a131af378cc05031ee06f132ec5e4a1408))
+* **site:** add 'New Map' button and localStorage functionality for map management ([a19579e](https://github.com/EddieDover/mothership-map-viewer/commit/a19579e57e1f7d10a2c4f09c569b61ab6010496c))
+* **site:** add tool info panel with context-sensitive instructions ([4ebf3f2](https://github.com/EddieDover/mothership-map-viewer/commit/4ebf3f2e2c06ad732a326d1b123d999beab1ff71))
 
 ## [1.3.1](https://github.com/EddieDover/mothership-map-viewer/compare/v1.3.0...v1.3.1) (2025-10-11)
 
