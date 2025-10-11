@@ -21,6 +21,10 @@ class MapCreator {
     this.lastMouseY = 0;
 
     this.initializeEventListeners();
+
+    // Load saved map from localStorage if it exists (after initializing listeners)
+    this.loadFromLocalStorage();
+
     this.updateMarkerSelectors();
     this.render();
   }
@@ -97,6 +101,7 @@ class MapCreator {
     // Map name
     document.getElementById("mapName").addEventListener("input", (e) => {
       this.mapData.mapName = e.target.value;
+      this.saveToLocalStorage();
     });
 
     // Reset View button
@@ -119,6 +124,9 @@ class MapCreator {
           "https://github.com/EddieDover/mothership-map-viewer/wiki/Map-Share-Strings";
         window.open(wikiURL, "_blank");
       });
+    document
+      .getElementById("newMapBtn")
+      .addEventListener("click", () => this.newMap());
     document
       .getElementById("exportBtn")
       .addEventListener("click", () => this.exportJSON());
@@ -2400,6 +2408,88 @@ class MapCreator {
 
   render() {
     this.renderer.render(this.mapData, this.selectedItem);
+    this.saveToLocalStorage();
+  }
+
+  /**
+   * Save the current map to localStorage
+   *
+   * @memberof MapCreator
+   */
+  saveToLocalStorage() {
+    try {
+      const mapJSON = this.mapData.toJSON();
+      const jsonString = JSON.stringify(mapJSON);
+      localStorage.setItem("mothership-map-autosave", jsonString);
+    } catch (error) {
+      console.error("Failed to save to localStorage:", error);
+    }
+  }
+
+  /**
+   * Load map from localStorage if it exists
+   *
+   * @memberof MapCreator
+   */
+  loadFromLocalStorage() {
+    try {
+      const savedMap = localStorage.getItem("mothership-map-autosave");
+      if (savedMap) {
+        const parsedData = JSON.parse(savedMap);
+        this.mapData.fromJSON(parsedData);
+
+        // Recalculate nextId to avoid ID conflicts
+        this.recalculateNextId();
+
+        // Update the map name input
+        const mapNameInput = document.getElementById("mapName");
+        if (mapNameInput) {
+          mapNameInput.value = this.mapData.mapName || "";
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load from localStorage:", error);
+      // Clear corrupted data
+      localStorage.removeItem("mothership-map-autosave");
+    }
+  }
+
+  /**
+   * Create a new map (clear current map and localStorage)
+   *
+   * @memberof MapCreator
+   */
+  newMap() {
+    if (
+      confirm(
+        "Are you sure you want to create a new map? This will clear your current map. Make sure to export your current map if you want to save it!"
+      )
+    ) {
+      // Clear localStorage
+      localStorage.removeItem("mothership-map-autosave");
+
+      // Reset map data
+      this.mapData = new MapData();
+      this.selectedItem = null;
+      this.drawingState = null;
+      this.hallwayCreationState = null;
+      this.wallCreationState = null;
+      this.markerPlacementMode = null;
+
+      // Reset map name input
+      const mapNameInput = document.getElementById("mapName");
+      if (mapNameInput) {
+        mapNameInput.value = "";
+      }
+
+      // Update UI
+      this.updateMarkerSelectors();
+      this.updateContextToolbar();
+      this.updateItemDetailsPanel();
+      this.updateToolInfoPanel("select");
+      this.setTool("select");
+      this.render();
+    }
   }
 
   /**
@@ -3209,9 +3299,7 @@ class MapCreator {
 
 // Initialize the application when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
-  window.mapCreator = new MapCreator();
   var canvas = document.querySelector("canvas");
-  fitToContainer(canvas);
 
   function fitToContainer(canvas) {
     // Make it visually fill the positioned parent
@@ -3221,6 +3309,12 @@ document.addEventListener("DOMContentLoaded", () => {
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
   }
+
+  // Fit canvas to container BEFORE creating MapCreator
+  fitToContainer(canvas);
+
+  // Now initialize the application
+  window.mapCreator = new MapCreator();
 
   // Handle window resize to keep canvas resolution in sync with display size
   let resizeTimeout;
