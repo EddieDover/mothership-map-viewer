@@ -45,6 +45,15 @@ header p {
   overflow: hidden;
   width: 100%;
   height: 100%;
+  min-height: 0;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .toolbar {
@@ -143,10 +152,10 @@ header p {
   justify-content: center;
   align-items: center;
   background-color: #000000;
-  overflow: auto;
+  overflow: hidden;
   padding: 1rem;
   width: 100%;
-  height: 100%;
+  min-height: 0;
   position: relative;
 }
 
@@ -334,6 +343,8 @@ button.delete-btn:hover {
   color: #cccccc;
   font-size: 0.85rem;
   line-height: 1.5;
+  flex-shrink: 0;
+  padding: 0.5rem 1rem;
 }
 
 .instructions p {
@@ -379,4 +390,61 @@ button.delete-btn:hover {
 .legend-blue {
   background-color: #000000;
   border-color: #0051ffff;
+}
+
+/* Tool Info Panel */
+.tool-info-panel {
+  bottom: 10px;
+  left: 10px;
+  top: auto;
+  right: auto;
+  min-width: 280px;
+  max-width: 350px;
+  background-color: rgba(0, 0, 0, 0.95);
+  border: 2px solid #4a9eff;
+  box-shadow: 0 4px 12px rgba(74, 158, 255, 0.3);
+}
+
+.info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.info-title {
+  color: #4a9eff;
+  font-size: 1rem;
+  font-weight: bold;
+  margin: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #4a9eff;
+}
+
+.info-description {
+  color: #ffffff;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.info-tips {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(74, 158, 255, 0.3);
+}
+
+.info-tips ul {
+  margin: 0.5rem 0 0 0;
+  padding-left: 1.2rem;
+  color: #cccccc;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.info-tips li {
+  margin-bottom: 0.3rem;
+}
+
+.info-tips strong {
+  color: #4a9eff;
 }
