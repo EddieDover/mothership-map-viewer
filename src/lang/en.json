@@ -28,7 +28,9 @@
         "ClosePlayerView": "Close Player View",
         "NoMapLoaded": "No map loaded. Import a map to begin.",
         "HallwayVisibility": "Hallway Visibility",
-        "StandaloneWalls": "Standalone Walls"
+        "StandaloneWalls": "Standalone Walls",
+        "CommunityMaps": "Community Maps",
+        "GoToMapCreator": "Map Creator"
       }
     }
   }
