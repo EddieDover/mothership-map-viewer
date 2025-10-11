@@ -13,3 +13,7 @@ const SECRET_PASSAGE_WIDTH = 8;
 const GRID_SIZE = 20;
 /** @type {number} */
 const EDGE_CLICK_THRESHOLD = 15;
+/** @type {number} */
+const DASH_LENGTH = 8;
+/** @type {number} */
+const DASH_GAP_LENGTH = 12;

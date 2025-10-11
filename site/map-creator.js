@@ -165,11 +165,7 @@ class MapCreator {
     // (keep selection only for select mode and roomWall mode which requires a room to be selected)
     if (tool !== "select" && tool !== "roomWall" && this.selectedItem) {
       this.selectedItem = null;
-      this.updatePropertiesPanel();
-      this.updateMarkerSelectors();
-      this.updateItemDetailsPanel();
-      this.updateContextToolbar();
-      this.render(); // Re-render to update visual selection
+      this.refreshUI();
     }
 
     // Update button states for both toolbars
@@ -199,6 +195,21 @@ class MapCreator {
     const floatingButton = document.getElementById(floatingButtonId);
     if (floatingButton) {
       floatingButton.classList.add("active");
+    }
+  }
+
+  /**
+   * Update all UI elements after a change
+   * @param {boolean} render - Whether to re-render the canvas (default: true)
+   * @memberof MapCreator
+   */
+  refreshUI(render = true) {
+    this.updatePropertiesPanel();
+    this.updateMarkerSelectors();
+    this.updateItemDetailsPanel();
+    this.updateContextToolbar();
+    if (render) {
+      this.render();
     }
   }
 
@@ -511,10 +522,7 @@ class MapCreator {
           type: "standaloneMarker",
           marker: standaloneMarkerResult,
         };
-        this.updatePropertiesPanel();
-        this.updateMarkerSelectors();
-        this.updateItemDetailsPanel();
-        this.render();
+        this.refreshUI();
 
         // Prepare to drag standalone marker
         this.dragState = {
@@ -539,10 +547,7 @@ class MapCreator {
           type: "standaloneLabel",
           label: standaloneLabelResult,
         };
-        this.updatePropertiesPanel();
-        this.updateMarkerSelectors();
-        this.updateItemDetailsPanel();
-        this.render();
+        this.refreshUI();
 
         // Prepare to drag standalone label
         this.dragState = {
@@ -566,10 +571,7 @@ class MapCreator {
           marker: markerResult.marker,
           markerIndex: markerResult.index,
         };
-        this.updatePropertiesPanel();
-        this.updateMarkerSelectors();
-        this.updateItemDetailsPanel();
-        this.render();
+        this.refreshUI();
 
         // Prepare to drag marker
         this.dragState = {
@@ -593,10 +595,7 @@ class MapCreator {
       const clickedItem = this.getItemAtPosition(mouseX, mouseY);
       if (clickedItem) {
         this.selectedItem = clickedItem;
-        this.updatePropertiesPanel();
-        this.updateMarkerSelectors();
-        this.updateItemDetailsPanel();
-        this.render();
+        this.refreshUI();
 
         // If clicked on a room, prepare to drag it - use unsnapped coordinates
         // BUT: Don't allow room dragging if a marker was previously selected
@@ -626,10 +625,7 @@ class MapCreator {
       } else {
         // Clicked on empty space - deselect
         this.selectedItem = null;
-        this.updatePropertiesPanel();
-        this.updateMarkerSelectors();
-        this.updateItemDetailsPanel();
-        this.render();
+        this.refreshUI();
       }
       return;
     }

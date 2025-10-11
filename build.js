@@ -68,7 +68,7 @@ async function build() {
 }
 
 async function createZip() {
-  const packageName = "mothership-crew-relationships.zip";
+  const packageName = "mothership-map-viewer.zip";
 
   try {
     console.log("Creating zip package...");
