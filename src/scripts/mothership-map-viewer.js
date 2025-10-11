@@ -200,6 +200,8 @@ class MothershipMapViewer extends BaseMapRenderer {
       onBugReport: MothershipMapViewer.onBugReport,
       onFeedback: MothershipMapViewer.onFeedback,
       onDiscord: MothershipMapViewer.onDiscord,
+      onGoToMapCreator: MothershipMapViewer.onGoToMapCreator,
+      onGoToCommunityMaps: MothershipMapViewer.onGoToCommunityMaps,
     },
   };
 
@@ -219,6 +221,17 @@ class MothershipMapViewer extends BaseMapRenderer {
 
   static onDiscord() {
     window.open("https://discord.gg/hshfZA73fG", "_blank");
+  }
+
+  static onGoToMapCreator() {
+    window.open("https://eddiedover.github.io/mothership-map-viewer", "_blank");
+  }
+
+  static onGoToCommunityMaps() {
+    window.open(
+      "https://github.com/EddieDover/mothership-map-viewer/wiki/Map-Share-Strings",
+      "_blank"
+    );
   }
 
   static PARTS = {

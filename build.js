@@ -2,6 +2,7 @@
 /* eslint-disable no-undef */
 
 import archiver from "archiver";
+import { execSync } from "child_process";
 import fsSync from "fs";
 import fs from "fs/promises";
 import path from "path";
@@ -10,10 +11,30 @@ const SRC_DIR = "src";
 const DIST_DIR = "dist";
 
 // Files and directories to exclude from the build
-const EXCLUDE_PATTERNS = ["__tests__", ".test.js", ".spec.js"];
+const EXCLUDE_PATTERNS = [
+  "__tests__",
+  ".test.js",
+  ".spec.js",
+  ".scss",
+  ".css.map",
+];
 
 async function shouldExclude(filePath) {
   return EXCLUDE_PATTERNS.some((pattern) => filePath.includes(pattern));
+}
+
+async function compileSCSS() {
+  console.log("Compiling SCSS to CSS...");
+
+  const scssFile = path.join(SRC_DIR, "styles", "mothership-map-viewer.scss");
+  const cssFile = path.join(SRC_DIR, "styles", "mothership-map-viewer.css");
+
+  await fs.access(scssFile);
+
+  execSync(`npx sass ${scssFile} ${cssFile} --no-source-map`, {
+    stdio: "inherit",
+  });
+  console.log(`Compiled: ${scssFile} -> ${cssFile}`);
 }
 
 async function copyDir(src, dest) {
@@ -46,8 +67,10 @@ async function build() {
     console.log("Cleaning dist directory...");
     await fs.rm(DIST_DIR, { recursive: true, force: true });
 
-    // Copy files
+    // Compile SCSS to CSS
+    await compileSCSS();
 
+    // Copy files
     console.log("Copying files...");
     await copyDir(SRC_DIR, DIST_DIR);
 
