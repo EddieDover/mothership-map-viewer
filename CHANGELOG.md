@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.1](https://github.com/EddieDover/mothership-map-viewer/compare/v1.3.0...v1.3.1) (2025-10-11)
+
+### Misc
+
+- Consolidated duplicated code in both the site and foundry module. Reduces the final code output by about 10K and helps me keep things less complex for development purposes.
+
 ## [1.3.0](https://github.com/EddieDover/mothership-map-viewer/compare/v1.2.0...v1.3.0) (2025-10-11)
 
 ### Features
