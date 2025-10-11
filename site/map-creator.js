@@ -196,6 +196,130 @@ class MapCreator {
     if (floatingButton) {
       floatingButton.classList.add("active");
     }
+
+    // Update the tool info panel
+    this.updateToolInfoPanel(tool);
+  }
+
+  /**
+   * Update the tool info panel with context-sensitive instructions
+   *
+   * @param {import("./types").ToolType} tool
+   * @memberof MapCreator
+   */
+  updateToolInfoPanel(tool) {
+    const panel = document.getElementById("toolInfoPanel");
+    if (!panel) return;
+
+    const toolInfo = {
+      select: {
+        title: "Select Object",
+        description:
+          "Click to select rooms, hallways, markers, or labels. Drag rooms to move them around the canvas.",
+        tips: [
+          "<strong>Copy/Paste:</strong> Use Ctrl+C to copy and Ctrl+V to paste selected items",
+          "<strong>Delete:</strong> Press Delete or Backspace to remove selected items",
+          "<strong>Move:</strong> Drag selected rooms to reposition them",
+        ],
+      },
+      room: {
+        title: "Add Room (Rectangle)",
+        description:
+          "Click and drag on the canvas to create a rectangular room. Release the mouse to finalize the room.",
+        tips: [
+          "<strong>Snap to Grid:</strong> Enable in the View section for aligned placement",
+          "<strong>Add Details:</strong> Select the room to add markers, labels, or walls inside it",
+        ],
+      },
+      circle: {
+        title: "Add Circle Room",
+        description:
+          "Click and drag on the canvas to create a circular room. The distance you drag determines the radius.",
+        tips: [
+          "<strong>Perfect Circles:</strong> Drag evenly in any direction from the center",
+          "<strong>Add Details:</strong> Select the room to add markers, labels, or walls inside it",
+        ],
+      },
+      hallway: {
+        title: "Add Hallway",
+        description:
+          "Click on room edges to create connected hallway paths. Hallways must start and end on a room.",
+        tips: [
+          "<strong>Connect Rooms:</strong> Click on the edges of rooms to snap hallways to them",
+          "<strong>Add Turns:</strong> Click multiple points to create L-shaped or complex paths",
+          "<strong>Must Connect:</strong> Hallways must start and end on a room. For paths that don't connect rooms, use standalone walls instead",
+        ],
+      },
+      wall: {
+        title: "Add Standalone Wall",
+        description:
+          "Click and drag to draw walls in open areas between rooms. These walls can only be placed outside of rooms.",
+        tips: [
+          "<strong>Outside Only:</strong> Standalone walls cannot be placed inside rooms",
+          "<strong>Inside Rooms:</strong> To add walls inside a room, select the room first and use the 'Add Wall to Room' button from the context toolbar",
+          "<strong>Straight Lines:</strong> Walls are always drawn as straight lines",
+        ],
+      },
+      roomWall: {
+        title: "Add Wall to Room",
+        description:
+          "Click and drag inside the selected room to draw internal walls. These walls are contained within the room boundaries.",
+        tips: [
+          "<strong>Room Required:</strong> You must have a room selected to use this tool",
+          "<strong>Inside Only:</strong> These walls can only be drawn within the selected room",
+          "<strong>Switch Back:</strong> Click 'Select Object' to exit wall drawing mode",
+        ],
+      },
+      standaloneMarker: {
+        title: "Add Standalone Marker",
+        description:
+          "Click anywhere on the canvas to place a marker (Terminal, Hazard, Loot, NPC, Door, etc.) outside of rooms.",
+        tips: [
+          "<strong>Marker Types:</strong> Terminal, Hazard, Loot, NPC, Door, Ladder, Window, Airlock, Elevator",
+          "<strong>Edit After:</strong> Select the marker to change its type or add a label",
+          "<strong>Room Markers:</strong> To add markers inside rooms, select the room and use 'Add Marker to Room'",
+        ],
+      },
+      standaloneLabel: {
+        title: "Add Standalone Label",
+        description:
+          "Click anywhere on the canvas to place a text label outside of rooms. Use labels to annotate your map.",
+        tips: [
+          "<strong>Edit Text:</strong> Select the label after placing it to change the text",
+          "<strong>Room Labels:</strong> Rooms can also have their own labels set in the details panel",
+        ],
+      },
+      roomMarker: {
+        title: "Place Marker in Room",
+        description:
+          "Click inside the selected room to place a marker. Press Escape to cancel marker placement.",
+        tips: [
+          "<strong>Click to Place:</strong> Click anywhere inside the room to place the marker",
+          "<strong>Cancel:</strong> Press Escape to exit marker placement mode",
+          "<strong>Edit After:</strong> The marker will be automatically selected after placement for editing",
+        ],
+      },
+    };
+
+    const info = toolInfo[tool] || toolInfo.select;
+
+    const tipsHTML = info.tips
+      ? `
+      <div class="info-tips">
+        <ul>
+          ${info.tips.map((tip) => `<li>${tip}</li>`).join("")}
+        </ul>
+      </div>
+    `
+      : "";
+
+    panel.innerHTML = `
+      <div class="info-content">
+        <h4 class="info-title">${info.title}</h4>
+        <p class="info-description">${info.description}</p>
+        ${tipsHTML}
+      </div>
+    `;
   }
 
   /**
@@ -240,6 +364,9 @@ class MapCreator {
       }
       if (this.markerPlacementMode) {
         this.markerPlacementMode = null;
+        // Update info panel back to select mode when canceling marker placement
+        this.updateToolInfoPanel("select");
+        this.render();
       }
       this.updatePropertiesPanel();
     }
@@ -497,13 +624,28 @@ class MapCreator {
         );
         if (!room.markers) room.markers = [];
         room.markers.push(marker);
+
+        // Select the newly placed marker
+        this.selectedItem = {
+          type: "marker",
+          room: room,
+          marker: marker,
+          markerIndex: room.markers.length - 1,
+        };
+
         this.markerPlacementMode = null;
         this.updatePropertiesPanel();
         this.updateMarkerSelectors();
+        this.updateItemDetailsPanel();
+
+        // Update info panel back to select mode
+        this.updateToolInfoPanel("select");
         this.render();
       } else {
         // Clicked outside - cancel
         this.markerPlacementMode = null;
+        // Update info panel back to select mode
+        this.updateToolInfoPanel("select");
         this.updatePropertiesPanel();
       }
       return;
@@ -2258,55 +2400,6 @@ class MapCreator {
 
   render() {
     this.renderer.render(this.mapData, this.selectedItem);
-
-    // Draw marker placement indicator if in placement mode
-    if (this.markerPlacementMode) {
-      this.drawMarkerPlacementIndicator();
-    }
-  }
-
-  /**
-   * Draw an indicator when in marker placement mode
-   *
-   * @memberof MapCreator
-   */
-  drawMarkerPlacementIndicator() {
-    const canvas = document.getElementById("mapCanvas");
-    const ctx = this.renderer.ctx;
-
-    ctx.save();
-
-    // Draw indicator in top-right corner (no transformation needed, absolute positioning)
-    const padding = 15;
-    const text = "PLACING MARKER - Click in room or press ESC to cancel";
-
-    // Set font to measure text
-    ctx.font = "bold 14px sans-serif";
-    const metrics = ctx.measureText(text);
-    const textWidth = metrics.width;
-    const textHeight = 20;
-
-    // Background rectangle
-    const rectX = canvas.width - textWidth - padding * 2;
-    const rectY = padding;
-    const rectWidth = textWidth + padding * 2;
-    const rectHeight = textHeight + padding;
-
-    ctx.fillStyle = "rgba(0, 81, 255, 0.9)";
-    ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
-
-    // White border
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(rectX, rectY, rectWidth, rectHeight);
-
-    // Text
-    ctx.fillStyle = "#ffffff";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(text, rectX + rectWidth / 2, rectY + rectHeight / 2);
-
-    ctx.restore();
   }
 
   /**
@@ -2927,32 +3020,14 @@ class MapCreator {
       return;
     }
 
-    const room = this.selectedItem;
-    const newMarker = {
-      type: "terminal",
-      x: room.width / 2,
-      y: room.height / 2,
-      label: "",
-      visible: true,
+    // Enter marker placement mode
+    this.markerPlacementMode = {
+      room: this.selectedItem,
+      markerType: "terminal",
     };
 
-    if (!room.markers) {
-      room.markers = [];
-    }
-
-    room.markers.push(newMarker);
-
-    // Select the newly added marker
-    this.selectedItem = {
-      type: "marker",
-      room: room,
-      marker: newMarker,
-      markerIndex: room.markers.length - 1,
-    };
-
-    this.updatePropertiesPanel();
-    this.updateMarkerSelectors();
-    this.updateItemDetailsPanel();
+    // Update the info panel to show marker placement instructions
+    this.updateToolInfoPanel("roomMarker");
     this.render();
   }
 
