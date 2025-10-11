@@ -1395,10 +1395,20 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
       const buttonText = isActive ? "Refresh" : "Open";
       const buttonIcon = isActive ? "fa-sync" : "fa-eye";
 
+      const character = user.character;
+      const playerName = character ? character.name : null;
+      const characterName = character ? character.id : null;
+
       html += `
         <div class="viewer-item ${!isOnline ? "offline" : ""}">
           <span class="viewer-status ${statusClass}"></span>
-          <span class="viewer-name">${user.name}</span>
+          <span class="viewer-name">
+            ${user.name}${
+              playerName
+                ? ` (<span class="character-link" data-character-id="${characterName}" style="cursor: pointer; text-decoration: underline;">${playerName}</span>)`
+                : ""
+            }
+          </span>
           ${
             isOnline
               ? `<div class="viewer-actions">
@@ -1434,6 +1444,17 @@ class MothershipMapViewer extends HandlebarsApplicationMixin(ApplicationV2) {
       btn.addEventListener("click", (e) => {
         const userId = e.currentTarget.dataset.userId;
         this._closeMapForPlayer(userId);
+      });
+    });
+
+    // Attach event listeners to character links
+    container.querySelectorAll(".character-link").forEach((link) => {
+      link.addEventListener("click", (e) => {
+        const characterId = e.currentTarget.dataset.characterId;
+        const actor = game.actors.get(characterId);
+        if (actor) {
+          actor.sheet.render(true);
+        }
       });
     });
   }

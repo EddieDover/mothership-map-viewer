@@ -51,6 +51,14 @@ async function build() {
     console.log("Copying files...");
     await copyDir(SRC_DIR, DIST_DIR);
 
+    // Copy README and CHANGELOG from root to dist
+    console.log("Copying README and CHANGELOG...");
+    await fs.copyFile("README.md", path.join(DIST_DIR, "README.md"));
+    console.log("Copied: README.md -> dist/README.md");
+
+    await fs.copyFile("CHANGELOG.md", path.join(DIST_DIR, "CHANGELOG.md"));
+    console.log("Copied: CHANGELOG.md -> dist/CHANGELOG.md");
+
     console.log("Build completed successfully!");
   } catch (error) {
     console.error("Build failed:", error);
