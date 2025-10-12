@@ -11,7 +11,16 @@
  * @param {string} type - Marker type (terminal, hazard, loot, npc, door, ladder, window, airlock, custom)
  * @param {number} size - Size of the marker (default 16)
  */
-export function drawRoomMarker(ctx, x, y, type, size = 16) {
+export function drawRoomMarker(ctx, x, y, type, size = 16, rotation = 0) {
+  ctx.save(); // Save the current state
+
+  // Apply rotation if specified
+  if (rotation !== 0) {
+    ctx.translate(x, y);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.translate(-x, -y);
+  }
+
   ctx.strokeStyle = "#ffffff";
   ctx.fillStyle = "#ffffff";
   ctx.lineWidth = 2;
@@ -127,6 +136,8 @@ export function drawRoomMarker(ctx, x, y, type, size = 16) {
       ctx.stroke();
       break;
   }
+
+  ctx.restore(); // Restore the context state after rotation
 }
 
 /**
