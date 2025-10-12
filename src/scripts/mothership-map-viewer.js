@@ -895,20 +895,33 @@ class MothershipMapViewer extends BaseMapRenderer {
     const targetMapId = mapId || this.currentMapId;
     const map = this.maps.find((m) => m.id === targetMapId);
 
-    if (map) {
-      if (status === "opened") {
+    if (status === "opened") {
+      // Remove user from all other maps first (they can only view one map at a time)
+      this.maps.forEach((m) => {
+        if (m.id !== targetMapId) {
+          m.activeViewers.delete(userId);
+        }
+      });
+
+      // Add user to the target map
+      if (map) {
         map.activeViewers.add(userId);
-        // Update legacy property if this is the current map
-        if (targetMapId === this.currentMapId) {
-          this.activeViewers.add(userId);
-        }
-      } else if (status === "closed") {
-        map.activeViewers.delete(userId);
-        // Update legacy property if this is the current map
-        if (targetMapId === this.currentMapId) {
-          this.activeViewers.delete(userId);
-        }
       }
+
+      // Update legacy property if viewing current map
+      if (targetMapId === this.currentMapId) {
+        this.activeViewers.add(userId);
+      } else {
+        this.activeViewers.delete(userId);
+      }
+    } else if (status === "closed") {
+      // Remove user from all maps
+      this.maps.forEach((m) => {
+        m.activeViewers.delete(userId);
+      });
+
+      // Update legacy property
+      this.activeViewers.delete(userId);
     }
 
     this._updateActiveViewersDisplay();
