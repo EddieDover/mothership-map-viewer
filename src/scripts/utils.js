@@ -27,6 +27,7 @@ function fromCompactJSON(compact) {
       const shape = r[8] || "rectangle";
       const markers = r[7] || [];
       const wallsData = r[9] || [];
+      const labelsData = r[10] || [];
       const room = {
         id: r[0],
         type: "room",
@@ -44,6 +45,12 @@ function fromCompactJSON(compact) {
           visible: i[3] !== 0,
           label: i[4] || "",
           rotation: i[5] || 0,
+        })),
+        labels: labelsData.map((l) => ({
+          text: l[0],
+          x: l[1],
+          y: l[2],
+          visible: l[3] !== undefined ? l[3] !== 0 : true,
         })),
         walls: wallsData.map((w) => ({
           id: w[0],
