@@ -137,7 +137,9 @@ class MapRenderer {
           marker.x,
           marker.y,
           marker.type,
-          isMarkerSelected
+          isMarkerSelected,
+          16,
+          marker.rotation || 0
         );
       });
     }
@@ -199,7 +201,9 @@ class MapRenderer {
             room.x + marker.x,
             room.y + marker.y,
             marker.type,
-            isMarkerSelected
+            isMarkerSelected,
+            16,
+            marker.rotation || 0
           );
         });
       }
@@ -232,7 +236,9 @@ class MapRenderer {
             room.x + marker.x,
             room.y + marker.y,
             marker.type,
-            isMarkerSelected
+            isMarkerSelected,
+            16,
+            marker.rotation || 0
           );
         });
       }
@@ -261,7 +267,16 @@ class MapRenderer {
    * @param {boolean} isSelected - Whether the marker is selected (for highlighting)
    * @param {number} size - Size of the marker (default 16)
    */
-  drawRoomMarker(ctx, x, y, type, isSelected = false, size = 16) {
+  drawRoomMarker(ctx, x, y, type, isSelected = false, size = 16, rotation = 0) {
+    ctx.save(); // Save the current state
+
+    // Apply rotation if specified
+    if (rotation !== 0) {
+      ctx.translate(x, y);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.translate(-x, -y);
+    }
+
     ctx.strokeStyle = isSelected ? "#0051ffff" : "#ffffff";
     ctx.fillStyle = "#ffffff";
     ctx.lineWidth = 2;
@@ -377,6 +392,8 @@ class MapRenderer {
         ctx.stroke();
         break;
     }
+
+    ctx.restore(); // Restore the context state after rotation
   }
 
   /**
