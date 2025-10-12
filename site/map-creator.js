@@ -102,6 +102,10 @@ class MapCreator {
     document.getElementById("mapName").addEventListener("input", (e) => {
       this.mapData.mapName = e.target.value;
       this.saveToLocalStorage();
+      // Hide error message when user starts typing
+      if (e.target.value.trim()) {
+        document.getElementById("mapNameError").style.display = "none";
+      }
     });
 
     // Reset View button
@@ -139,6 +143,9 @@ class MapCreator {
     document
       .getElementById("loadShareBtn")
       .addEventListener("click", () => this.loadShareString());
+    document
+      .getElementById("screenshotBtn")
+      .addEventListener("click", () => this.exportScreenshot());
 
     // File input for import
     document.getElementById("fileInput").addEventListener("change", (e) => {
@@ -2488,7 +2495,9 @@ class MapCreator {
       this.updateItemDetailsPanel();
       this.updateToolInfoPanel("select");
       this.setTool("select");
-      this.render();
+
+      // Render without saving to localStorage since we just cleared it
+      this.renderer.render(this.mapData, this.selectedItem);
     }
   }
 
@@ -3176,13 +3185,33 @@ class MapCreator {
     this.render();
   }
 
+  /**
+   * Validate that map has a name before export
+   * @returns {boolean}
+   */
+  validateMapName() {
+    const mapName = this.mapData.mapName.trim();
+    const errorElement = document.getElementById("mapNameError");
+
+    if (!mapName) {
+      errorElement.style.display = "block";
+      document.getElementById("mapName").focus();
+      return false;
+    }
+
+    errorElement.style.display = "none";
+    return true;
+  }
+
   exportJSON() {
+    if (!this.validateMapName()) return;
+
     const json = JSON.stringify(this.mapData.toJSON(), null, 2);
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${this.mapData.mapName || "map"}.json`;
+    a.download = `${this.mapData.mapName}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -3281,6 +3310,8 @@ class MapCreator {
   }
 
   generateShareString() {
+    if (!this.validateMapName()) return;
+
     const shareString = this.mapData.toShareString();
     const message = `Share this string to share your map:\n\n${shareString}`;
 
@@ -3310,6 +3341,137 @@ class MapCreator {
     } else {
       alert("Invalid share string!");
     }
+  }
+
+  /**
+   * Calculate the bounding box of all map elements
+   * @returns {{minX: number, minY: number, maxX: number, maxY: number}}
+   */
+  calculateMapBounds() {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    const padding = 50; // Extra padding around the map
+
+    // Check rooms
+    this.mapData.rooms.forEach((room) => {
+      if (room.shape === "circle") {
+        const radius = room.width / 2;
+        minX = Math.min(minX, room.x - radius);
+        minY = Math.min(minY, room.y - radius);
+        maxX = Math.max(maxX, room.x + radius);
+        maxY = Math.max(maxY, room.y + radius);
+      } else {
+        minX = Math.min(minX, room.x);
+        minY = Math.min(minY, room.y);
+        maxX = Math.max(maxX, room.x + room.width);
+        maxY = Math.max(maxY, room.y + room.height);
+      }
+    });
+
+    // Check hallways
+    this.mapData.hallways.forEach((hallway) => {
+      hallway.segments.forEach((segment) => {
+        minX = Math.min(minX, segment.x1, segment.x2);
+        minY = Math.min(minY, segment.y1, segment.y2);
+        maxX = Math.max(maxX, segment.x1, segment.x2);
+        maxY = Math.max(maxY, segment.y1, segment.y2);
+      });
+    });
+
+    // Check standalone walls
+    this.mapData.walls.forEach((wall) => {
+      wall.segments.forEach((segment) => {
+        minX = Math.min(minX, segment.x1, segment.x2);
+        minY = Math.min(minY, segment.y1, segment.y2);
+        maxX = Math.max(maxX, segment.x1, segment.x2);
+        maxY = Math.max(maxY, segment.y1, segment.y2);
+      });
+    });
+
+    // Check standalone markers
+    this.mapData.standaloneMarkers.forEach((marker) => {
+      minX = Math.min(minX, marker.x);
+      minY = Math.min(minY, marker.y);
+      maxX = Math.max(maxX, marker.x);
+      maxY = Math.max(maxY, marker.y);
+    });
+
+    // Check standalone labels
+    this.mapData.standaloneLabels.forEach((label) => {
+      minX = Math.min(minX, label.x);
+      minY = Math.min(minY, label.y);
+      maxX = Math.max(maxX, label.x);
+      maxY = Math.max(maxY, label.y);
+    });
+
+    // If no elements found, use default bounds
+    if (!isFinite(minX)) {
+      return { minX: 0, minY: 0, maxX: 800, maxY: 600 };
+    }
+
+    return {
+      minX: minX - padding,
+      minY: minY - padding,
+      maxX: maxX + padding,
+      maxY: maxY + padding,
+    };
+  }
+
+  /**
+   * Export a screenshot of the map
+   */
+  exportScreenshot() {
+    if (!this.validateMapName()) return;
+
+    // Calculate the bounds of all map elements
+    const bounds = this.calculateMapBounds();
+    const width = bounds.maxX - bounds.minX;
+    const height = bounds.maxY - bounds.minY;
+
+    // Create a temporary canvas
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = width;
+    tempCanvas.height = height;
+    const tempCtx = tempCanvas.getContext("2d");
+
+    // Fill with black background (before creating renderer)
+    tempCtx.fillStyle = "#000000";
+    tempCtx.fillRect(0, 0, width, height);
+
+    // Create a temporary renderer with the temp canvas
+    const tempRenderer = new MapRenderer(tempCanvas);
+    tempRenderer.showGrid = false; // Don't show grid in screenshot
+    tempRenderer.offsetX = -bounds.minX; // Offset to crop to bounds
+    tempRenderer.offsetY = -bounds.minY;
+
+    // Render the map on the temporary canvas (this will call clear, so we need to prevent it)
+    // Save the clear method temporarily
+    const originalClear = tempRenderer.clear.bind(tempRenderer);
+    tempRenderer.clear = function () {
+      // Re-fill with black instead of clearing to transparent
+      tempCtx.fillStyle = "#000000";
+      tempCtx.fillRect(0, 0, width, height);
+    };
+
+    // Render the map
+    tempRenderer.render(this.mapData, null);
+
+    // Restore original clear method
+    tempRenderer.clear = originalClear;
+
+    // Convert canvas to blob and download
+    tempCanvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const fileName = `${this.mapData.mapName.replace(/[^a-z0-9]/gi, "_")}.png`;
+      link.download = fileName;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
   }
 }
 

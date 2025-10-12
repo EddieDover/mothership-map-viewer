@@ -8,7 +8,7 @@
 class MapData {
   constructor() {
     this.version = "1.0.0";
-    this.mapName = "Untitled Map";
+    this.mapName = "";
     this.rooms = [];
     this.hallways = [];
     this.walls = []; // Standalone walls not attached to rooms
@@ -169,7 +169,7 @@ class MapData {
    */
   fromJSON(json) {
     this.version = json.version || "1.0.0";
-    this.mapName = json.mapName || "Untitled Map";
+    this.mapName = json.mapName !== undefined ? json.mapName : "Untitled Map";
 
     // Properly reconstruct Room objects with shape support
     this.rooms = (json.rooms || []).map((r) => {

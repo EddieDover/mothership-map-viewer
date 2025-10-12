@@ -50,8 +50,24 @@
             <h3>Map Properties</h3>
             <label>
               Map Name:
-              <input type="text" id="mapName" placeholder="Untitled Map" />
+              <input
+                type="text"
+                id="mapName"
+                placeholder="Untitled Map"
+                required
+              />
             </label>
+            <div
+              id="mapNameError"
+              style="
+                color: #ff4444;
+                font-size: 12px;
+                margin-top: 4px;
+                display: none;
+              "
+            >
+              Map name is required for export
+            </div>
           </div>
 
           <div class="tool-section">
@@ -86,6 +102,9 @@
             </button>
             <button id="loadShareBtn" class="action-btn">
               Load from Share String
+            </button>
+            <button id="screenshotBtn" class="action-btn">
+              Export Screenshot
             </button>
           </div>
         </aside>
