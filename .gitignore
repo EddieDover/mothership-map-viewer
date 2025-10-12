@@ -3,4 +3,4 @@ node_modules/
 coverage/
 mothership-map-viewer.zip
 .sass-cache/
-styles/mothership-map-viewer.css
+mothership-map-viewer.css
