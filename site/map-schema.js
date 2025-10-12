@@ -245,6 +245,7 @@ class MapData {
               marker.y,
               marker.visible !== false ? 1 : 0,
               marker.label || "",
+              marker.rotation || 0,
             ])
           : [],
         room.shape || "rectangle",
@@ -271,12 +272,14 @@ class MapData {
           ? [
               hallway.startMarker.type,
               hallway.startMarker.visible !== false ? 1 : 0,
+              hallway.startMarker.rotation || 0,
             ]
           : null,
         hallway.endMarker
           ? [
               hallway.endMarker.type,
               hallway.endMarker.visible !== false ? 1 : 0,
+              hallway.endMarker.rotation || 0,
             ]
           : null,
       ]),
@@ -296,6 +299,7 @@ class MapData {
         marker.y,
         marker.visible !== false ? 1 : 0,
         marker.label || "",
+        marker.rotation || 0,
       ]),
       sl: this.standaloneLabels.map((label) => [
         label.id,
@@ -370,8 +374,12 @@ class MapData {
       isSecret: h[4] !== 0,
       visible: h[5] !== 0,
       nodes: h[6] || [],
-      startMarker: h[7] ? { type: h[7][0], visible: h[7][1] !== 0 } : null,
-      endMarker: h[8] ? { type: h[8][0], visible: h[8][1] !== 0 } : null,
+      startMarker: h[7]
+        ? { type: h[7][0], visible: h[7][1] !== 0, rotation: h[7][2] || 0 }
+        : null,
+      endMarker: h[8]
+        ? { type: h[8][0], visible: h[8][1] !== 0, rotation: h[8][2] || 0 }
+        : null,
     }));
 
     this.walls = (compact.w || []).map((w) => ({
@@ -495,6 +503,7 @@ class HallwayMarker {
   constructor(type) {
     this.type = type;
     this.visible = true; // Toggle for GM control in Foundry
+    this.rotation = 0; // Rotation in degrees (0, 90, 180, 270)
   }
 }
 

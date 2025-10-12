@@ -398,9 +398,18 @@ class MapRenderer {
    * @param {string} type - Marker type (door, grate, airlock)
    * @param {number} hallwayWidth - Width of the hallway (affects marker size)
    * @param {boolean} isSelected - Whether the marker is selected (for highlighting)
+   * @param {number} rotation - Rotation angle in degrees (default 0)
    */
 
-  drawHallwayMarker(ctx, x, y, type, hallwayWidth, isSelected = false) {
+  drawHallwayMarker(
+    ctx,
+    x,
+    y,
+    type,
+    hallwayWidth,
+    isSelected = false,
+    rotation = 0
+  ) {
     const markerDef = HALLWAY_MARKER_PATHS[type];
     if (!markerDef) return;
 
@@ -412,6 +421,13 @@ class MapRenderer {
 
     // Save context state
     ctx.save();
+
+    // Apply rotation if specified (before other transforms)
+    if (rotation !== 0) {
+      ctx.translate(x, y);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.translate(-x, -y);
+    }
 
     // Translate to marker position
     // Paths go from 8-24, so center is at 16 in the original coordinate space
@@ -486,7 +502,8 @@ class MapRenderer {
           firstNode.y,
           hallway.startMarker.type,
           hallway.width,
-          isSelected
+          isSelected,
+          hallway.startMarker.rotation || 0
         );
       }
       if (hallway.endMarker && hallway.endMarker.type !== "none") {
@@ -496,7 +513,8 @@ class MapRenderer {
           lastNode.y,
           hallway.endMarker.type,
           hallway.width,
-          isSelected
+          isSelected,
+          hallway.endMarker.rotation || 0
         );
       }
     }
