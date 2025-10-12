@@ -157,6 +157,7 @@ class MapData {
       hallways: this.hallways,
       walls: this.walls,
       standaloneMarkers: this.standaloneMarkers,
+      standaloneLabels: this.standaloneLabels,
     };
   }
 
@@ -214,6 +215,9 @@ class MapData {
 
     // Load standalone markers
     this.standaloneMarkers = json.standaloneMarkers || [];
+
+    // Load standalone labels
+    this.standaloneLabels = json.standaloneLabels || [];
   }
 
   /**
