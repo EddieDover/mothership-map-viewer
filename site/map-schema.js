@@ -463,7 +463,7 @@ class Room {
 /** @type {import("./types").RoomMarker} */
 class RoomMarker {
   constructor(type, x, y) {
-    this.type = type; // e.g., "terminal", "hazard", "loot", "npc", "custom"
+    this.type = type;
     this.x = x; // Position relative to room
     this.y = y;
     this.visible = true; // Toggle for GM control
