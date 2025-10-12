@@ -3229,6 +3229,22 @@ class MapCreator {
       }
     });
 
+    // Check all standalone marker IDs
+    this.mapData.standaloneMarkers.forEach((marker) => {
+      const numericId = parseInt(marker.id.replace(/\D/g, ""), 10);
+      if (!isNaN(numericId) && numericId > maxId) {
+        maxId = numericId;
+      }
+    });
+
+    // Check all standalone label IDs
+    this.mapData.standaloneLabels.forEach((label) => {
+      const numericId = parseInt(label.id.replace(/\D/g, ""), 10);
+      if (!isNaN(numericId) && numericId > maxId) {
+        maxId = numericId;
+      }
+    });
+
     // Set nextId to one more than the highest ID found
     this.nextId = maxId + 1;
   }
