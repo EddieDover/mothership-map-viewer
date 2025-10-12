@@ -50,8 +50,24 @@
             <h3>Map Properties</h3>
             <label>
               Map Name:
-              <input type="text" id="mapName" placeholder="Untitled Map" />
+              <input
+                type="text"
+                id="mapName"
+                placeholder="Untitled Map"
+                required
+              />
             </label>
+            <div
+              id="mapNameError"
+              style="
+                color: #ff4444;
+                font-size: 12px;
+                margin-top: 4px;
+                display: none;
+              "
+            >
+              Map name is required for export
+            </div>
           </div>
 
           <div class="tool-section">
@@ -83,6 +99,9 @@
             </button>
             <button id="loadShareBtn" class="action-btn">
               Load from Share String
+            </button>
+            <button id="screenshotBtn" class="action-btn">
+              Export Screenshot
             </button>
           </div>
         </aside>
@@ -372,6 +391,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
     <script src="constants.js"></script>
     <script src="map-schema.js"></script>
+    <script src="marker-paths.js"></script>
     <script src="map-renderer.js"></script>
     <script src="map-creator.js"></script>
   </body>

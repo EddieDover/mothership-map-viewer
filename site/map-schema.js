@@ -8,7 +8,7 @@
 class MapData {
   constructor() {
     this.version = "1.0.0";
-    this.mapName = "Untitled Map";
+    this.mapName = "";
     this.rooms = [];
     this.hallways = [];
     this.walls = []; // Standalone walls not attached to rooms
@@ -157,6 +157,7 @@ class MapData {
       hallways: this.hallways,
       walls: this.walls,
       standaloneMarkers: this.standaloneMarkers,
+      standaloneLabels: this.standaloneLabels,
     };
   }
 
@@ -168,7 +169,7 @@ class MapData {
    */
   fromJSON(json) {
     this.version = json.version || "1.0.0";
-    this.mapName = json.mapName || "Untitled Map";
+    this.mapName = json.mapName !== undefined ? json.mapName : "Untitled Map";
 
     // Properly reconstruct Room objects with shape support
     this.rooms = (json.rooms || []).map((r) => {
@@ -214,6 +215,9 @@ class MapData {
 
     // Load standalone markers
     this.standaloneMarkers = json.standaloneMarkers || [];
+
+    // Load standalone labels
+    this.standaloneLabels = json.standaloneLabels || [];
   }
 
   /**
@@ -463,7 +467,7 @@ class Room {
 /** @type {import("./types").RoomMarker} */
 class RoomMarker {
   constructor(type, x, y) {
-    this.type = type; // e.g., "terminal", "hazard", "loot", "npc", "custom"
+    this.type = type;
     this.x = x; // Position relative to room
     this.y = y;
     this.visible = true; // Toggle for GM control
