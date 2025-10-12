@@ -160,3 +160,10 @@ A Foundry VTT module for displaying and managing maps created with the Mothershi
 
 4. **View the Map**:
    - Right-click and move to scroll the canvas as needed.
+
+
+### Module Screenshots
+
+| GM View | Player View |
+| --- | --- |
+| <img width="1363" height="1055" alt="image" src="https://github.com/user-attachments/assets/dcab0f95-3152-401c-a201-e2205c2b1a5a" /> | <img width="1013" height="908" alt="image" src="https://github.com/user-attachments/assets/22c047cd-fc66-4974-b9ae-3e7c31494ba9" /> |
