@@ -1,7 +1,7 @@
 {
   "name": "mothership-map-viewer",
   "private": true,
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Adds a map viewer for Mothership RPG maps to Foundry VTT.",
   "homepage": "https://github.com/EddieDover/mothership-map-viewer#readme",
   "url": "https://github.com/EddieDover/mothership-map-viewer",
