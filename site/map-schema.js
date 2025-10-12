@@ -127,7 +127,7 @@ class MapData {
         return this.rooms.find((r) => r.id === id);
       case "hallway":
         return this.hallways.find((h) => h.id === id);
-      case "wall":
+      case "wall": {
         // Check standalone walls first
         const standaloneWall = this.walls.find((w) => w.id === id);
         if (standaloneWall) return standaloneWall;
@@ -137,6 +137,7 @@ class MapData {
           if (roomWall) return roomWall;
         }
         break;
+      }
       case "standaloneMarker":
         return this.standaloneMarkers.find((m) => m.id === id);
     }
@@ -146,18 +147,69 @@ class MapData {
   /**
    * Serialize to standard JSON format
    *
-   * @return {import("./types").MapData}
+   * @return {*}
    * @memberof MapData
    */
   toJSON() {
     return {
       version: this.version,
       mapName: this.mapName,
-      rooms: this.rooms,
-      hallways: this.hallways,
-      walls: this.walls,
-      standaloneMarkers: this.standaloneMarkers,
-      standaloneLabels: this.standaloneLabels,
+      rooms: this.rooms.map((room) => ({
+        id: room.id,
+        type: room.type,
+        shape: room.shape,
+        x: room.x,
+        y: room.y,
+        width: room.width,
+        height: room.height,
+        radius: room.radius,
+        label: room.label,
+        visible: room.visible,
+        markers: room.markers || [],
+        labels: room.labels || [],
+        walls: room.walls || [],
+      })),
+      hallways: this.hallways.map((hallway) => ({
+        id: hallway.id,
+        type: hallway.type,
+        segments: hallway.segments,
+        width: hallway.width,
+        label: hallway.label,
+        isSecret: hallway.isSecret,
+        visible: hallway.visible,
+        nodes: hallway.nodes,
+        startMarker: hallway.startMarker,
+        endMarker: hallway.endMarker,
+        markers: hallway.markers || [],
+      })),
+      walls: this.walls.map((wall) => ({
+        id: wall.id,
+        type: wall.type,
+        segments: wall.segments,
+        width: wall.width,
+        label: wall.label,
+        nodes: wall.nodes,
+        visible: wall.visible,
+        isDotted: wall.isDotted,
+        parentRoomId: wall.parentRoomId,
+      })),
+      standaloneMarkers: this.standaloneMarkers.map((marker) => ({
+        id: marker.id,
+        type: marker.type,
+        x: marker.x,
+        y: marker.y,
+        visible: marker.visible,
+        label: marker.label,
+        rotation: marker.rotation,
+      })),
+      standaloneLabels: this.standaloneLabels.map((label) => ({
+        id: label.id,
+        type: label.type,
+        text: label.text,
+        x: label.x,
+        y: label.y,
+        visible: label.visible,
+      })),
     };
   }
 
