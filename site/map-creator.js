@@ -412,6 +412,15 @@ class MapCreator {
       if (this.selectedItem.type === "marker") {
         // Delete marker from room
         this.selectedItem.room.markers.splice(this.selectedItem.markerIndex, 1);
+      } else if (this.selectedItem.type === "standaloneMarker") {
+        // Delete standalone marker
+        this.mapData.removeItem(
+          "standaloneMarker",
+          this.selectedItem.marker.id
+        );
+      } else if (this.selectedItem.type === "standaloneLabel") {
+        // Delete standalone label
+        this.mapData.removeItem("standaloneLabel", this.selectedItem.label.id);
       } else if (
         this.selectedItem.type === "wall" &&
         this.selectedItem.parentRoomId
@@ -435,6 +444,7 @@ class MapCreator {
       }
 
       this.updatePropertiesPanel();
+      this.updateMarkerSelectors();
       this.updateItemDetailsPanel();
       this.render();
     }
