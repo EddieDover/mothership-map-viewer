@@ -1,12 +1,27 @@
-
-## [1.3.2](https://github.com/EddieDover/mothership-map-viewer/compare/v1.3.1...v1.3.2) (2025-10-11)
-
+## [1.4.0](https://github.com/EddieDover/mothership-map-viewer/compare/v1.3.2...v1.4.0) (2025-10-12)
 
 ### Features
 
-* added more button links ([1983f4a](https://github.com/EddieDover/mothership-map-viewer/commit/1983f4a131af378cc05031ee06f132ec5e4a1408))
-* **site:** add 'New Map' button and localStorage functionality for map management ([a19579e](https://github.com/EddieDover/mothership-map-viewer/commit/a19579e57e1f7d10a2c4f09c569b61ab6010496c))
-* **site:** add tool info panel with context-sensitive instructions ([4ebf3f2](https://github.com/EddieDover/mothership-map-viewer/commit/4ebf3f2e2c06ad732a326d1b123d999beab1ff71))
+- add multi-map support with selector and delete functionality ([8bee990](https://github.com/EddieDover/mothership-map-viewer/commit/8bee990be9acc87f975e044b6655119dc7dbb735))
+- add rotation functionality for markers ([2bf1fb5](https://github.com/EddieDover/mothership-map-viewer/commit/2bf1fb580b42f8c00695bd064a9c94a45b2aef1f))
+- **docs:** add new SVG marker and tool icons for enhanced visual representation ([f6e2274](https://github.com/EddieDover/mothership-map-viewer/commit/f6e2274a685afce3a520297752756c2e1a160060))
+- implement SVG path definitions for room and hallway markers ([0651526](https://github.com/EddieDover/mothership-map-viewer/commit/06515263f8b9472f481f206042c94f8e32addb8b))
+- **map:** implement rotation functionality for markers and update UI interactions ([f08862e](https://github.com/EddieDover/mothership-map-viewer/commit/f08862e0e3b563ff483df49e7888d7d4f5bc415f))
+- **site:** add SVG path definitions for room and hallway markers ([0443a0b](https://github.com/EddieDover/mothership-map-viewer/commit/0443a0bcada1d52ae59d72561b724e964b3f11bf))
+- **site:** add validation for map name ([e348da3](https://github.com/EddieDover/mothership-map-viewer/commit/e348da31e14cb5fd20411a16202c2b46f5eaab67))
+
+### Bug Fixes
+
+- fixed logic to determine next available ID for standalone markers and labels ([79a99c7](https://github.com/EddieDover/mothership-map-viewer/commit/79a99c73b0800149e73bb9d3cf6620fcdd31c8b2))
+- standalone labels now save into localStorage properly ([90b94c5](https://github.com/EddieDover/mothership-map-viewer/commit/90b94c58dff6dd82d16767c1501e288f305d33a6))
+
+## [1.3.2](https://github.com/EddieDover/mothership-map-viewer/compare/v1.3.1...v1.3.2) (2025-10-11)
+
+### Features
+
+- added more button links ([1983f4a](https://github.com/EddieDover/mothership-map-viewer/commit/1983f4a131af378cc05031ee06f132ec5e4a1408))
+- **site:** add 'New Map' button and localStorage functionality for map management ([a19579e](https://github.com/EddieDover/mothership-map-viewer/commit/a19579e57e1f7d10a2c4f09c569b61ab6010496c))
+- **site:** add tool info panel with context-sensitive instructions ([4ebf3f2](https://github.com/EddieDover/mothership-map-viewer/commit/4ebf3f2e2c06ad732a326d1b123d999beab1ff71))
 
 ## [1.3.1](https://github.com/EddieDover/mothership-map-viewer/compare/v1.3.0...v1.3.1) (2025-10-11)
 
