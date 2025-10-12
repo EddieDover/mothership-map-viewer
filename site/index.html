@@ -387,12 +387,25 @@
     <!-- Hidden file input for import -->
     <input type="file" id="fileInput" accept=".json" style="display: none" />
 
+    <!-- Version info footer -->
+    <footer style="position: fixed; bottom: 10px; right: 10px; background: rgba(0, 0, 0, 0.7); color: #888; padding: 5px 10px; border-radius: 4px; font-size: 11px; font-family: monospace; z-index: 1000;">
+      <span id="versionInfo">Loading version...</span>
+    </footer>
+
     <!-- Pako for gzip compression -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script src="version.js"></script>
     <script src="constants.js"></script>
     <script src="map-schema.js"></script>
     <script src="marker-paths.js"></script>
     <script src="map-renderer.js"></script>
     <script src="map-creator.js"></script>
+    <script>
+      // Display version information
+      if (typeof VERSION_INFO !== 'undefined') {
+        document.getElementById('versionInfo').textContent =
+          `v${VERSION_INFO.version} (${VERSION_INFO.commit})`;
+      }
+    </script>
   </body>
 </html>
