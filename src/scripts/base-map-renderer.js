@@ -294,7 +294,8 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
               firstNode.x,
               firstNode.y,
               hallway.startMarker.type,
-              hallway.width
+              hallway.width,
+              hallway.startMarker.rotation
             );
           }
           if (
@@ -307,7 +308,8 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
               lastNode.x,
               lastNode.y,
               hallway.endMarker.type,
-              hallway.width
+              hallway.width,
+              hallway.endMarker.rotation
             );
           }
         }
@@ -523,8 +525,8 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Draw a hallway marker
    */
-  _drawHallwayMarker(ctx, x, y, type, hallwayWidth) {
-    drawHallwayMarker(ctx, x, y, type, hallwayWidth);
+  _drawHallwayMarker(ctx, x, y, type, hallwayWidth, rotation) {
+    drawHallwayMarker(ctx, x, y, type, hallwayWidth, rotation);
   }
 
   /**

@@ -2671,6 +2671,10 @@ class MapCreator {
                 <input type="checkbox" id="detailsStartMarkerVisible" ${!item.startMarker || item.startMarker.visible !== false ? "checked" : ""} ${!item.startMarker || item.startMarker.type === "none" ? "disabled" : ""}>
                 <label for="detailsStartMarkerVisible" style="margin: 0;">Visible by Default</label>
               </div>`;
+      html += `<label style="display: ${!item.startMarker || item.startMarker.type === "none" ? "none" : "block"};" id="detailsStartMarkerRotationContainer">
+                Rotation: ${(item.startMarker && item.startMarker.rotation) || 0}°
+                <button id="detailsStartMarkerRotate" class="action-btn" style="margin-top: 4px;">Rotate 90°</button>
+              </label>`;
       html += `<hr style="border: 0; border-top: 1px solid #444; margin: 8px 0;">`;
       html += `<label style="font-weight: bold; margin-bottom: 4px;">End Marker</label>`;
       html += `<label>
@@ -2686,6 +2690,10 @@ class MapCreator {
                 <input type="checkbox" id="detailsEndMarkerVisible" ${!item.endMarker || item.endMarker.visible !== false ? "checked" : ""} ${!item.endMarker || item.endMarker.type === "none" ? "disabled" : ""}>
                 <label for="detailsEndMarkerVisible" style="margin: 0;">Visible by Default</label>
               </div>`;
+      html += `<label style="display: ${!item.endMarker || item.endMarker.type === "none" ? "none" : "block"};" id="detailsEndMarkerRotationContainer">
+                Rotation: ${(item.endMarker && item.endMarker.rotation) || 0}°
+                <button id="detailsEndMarkerRotate" class="action-btn" style="margin-top: 4px;">Rotate 90°</button>
+              </label>`;
     } else if (item.type === "wall") {
       // Wall details - only show for standalone walls (not room walls)
       if (!item.parentRoomId) {
@@ -2885,6 +2893,28 @@ class MapCreator {
         ?.addEventListener("change", (e) => {
           if (item.endMarker) {
             item.endMarker.visible = e.target.checked;
+            this.render();
+          }
+        });
+
+      document
+        .getElementById("detailsStartMarkerRotate")
+        ?.addEventListener("click", () => {
+          if (item.startMarker) {
+            if (!item.startMarker.rotation) item.startMarker.rotation = 0;
+            item.startMarker.rotation = (item.startMarker.rotation + 90) % 360;
+            this.updateItemDetailsPanel();
+            this.render();
+          }
+        });
+
+      document
+        .getElementById("detailsEndMarkerRotate")
+        ?.addEventListener("click", () => {
+          if (item.endMarker) {
+            if (!item.endMarker.rotation) item.endMarker.rotation = 0;
+            item.endMarker.rotation = (item.endMarker.rotation + 90) % 360;
+            this.updateItemDetailsPanel();
             this.render();
           }
         });

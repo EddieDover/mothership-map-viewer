@@ -17,22 +17,26 @@ import { HALLWAY_MARKER_PATHS, ROOM_MARKER_PATHS } from "./marker-paths.js";
 export function drawRoomMarker(ctx, x, y, type, size = 16, rotation = 0) {
   const markerDef = ROOM_MARKER_PATHS[type] || ROOM_MARKER_PATHS.terminal;
 
-  // Calculate scale factor (paths are defined for 32x32, centered at 16,16)
+  // Calculate scale factor
+  // Paths use coordinates around 8-24 range, centered at 16,16
   const scale = size / 16;
 
-    // Apply rotation if specified
+  // Save context state
+  ctx.save();
+
+  // Apply rotation if specified (before other transforms)
   if (rotation !== 0) {
     ctx.translate(x, y);
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.translate(-x, -y);
   }
-  
-  // Save context state
-  ctx.save();
 
-  // Translate to marker position and scale
-  ctx.translate(x - size / 2, y - size / 2);
+  // Translate to marker position
+  // Paths are centered at 16,16 in path coordinate space
+  // We translate so that point 16,16 aligns with x,y in canvas space
+  ctx.translate(x, y);
   ctx.scale(scale, scale);
+  ctx.translate(-16, -16);
 
   // Set drawing styles
   ctx.strokeStyle = "#ffffff";
@@ -68,22 +72,34 @@ export function drawRoomMarker(ctx, x, y, type, size = 16, rotation = 0) {
  * @param {number} y - Y coordinate
  * @param {string} type - Marker type (door, grate, airlock)
  * @param {number} hallwayWidth - Width of the hallway (affects marker size)
+ * @param {number} rotation - Rotation angle in degrees (default 0)
  */
-export function drawHallwayMarker(ctx, x, y, type, hallwayWidth) {
+export function drawHallwayMarker(ctx, x, y, type, hallwayWidth, rotation = 0) {
   const markerDef = HALLWAY_MARKER_PATHS[type];
   if (!markerDef) return;
 
   const size = hallwayWidth * 1.5;
 
-  // Calculate scale factor (paths are defined for 32x32, centered at 16,16)
+  // Calculate scale factor
+  // Paths are 16x16 (from 8 to 24), so we scale based on 16
   const scale = size / 16;
 
   // Save context state
   ctx.save();
 
-  // Translate to marker position and scale
-  ctx.translate(x - size / 2, y - size / 2);
+  // Apply rotation if specified (before other transforms)
+  if (rotation !== 0) {
+    ctx.translate(x, y);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.translate(-x, -y);
+  }
+
+  // Translate to marker position
+  // Paths go from 8-24, so center is at 16 in the original coordinate space
+  // We translate so that point 16,16 in path space aligns with x,y in canvas space
+  ctx.translate(x, y);
   ctx.scale(scale, scale);
+  ctx.translate(-16, -16);
 
   // Draw black background if defined
   if (markerDef.hasBackground && markerDef.background) {

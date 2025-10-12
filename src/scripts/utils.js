@@ -43,6 +43,7 @@ function fromCompactJSON(compact) {
           y: i[2],
           visible: i[3] !== 0,
           label: i[4] || "",
+          rotation: i[5] || 0,
         })),
         walls: wallsData.map((w) => ({
           id: w[0],
@@ -75,14 +76,19 @@ function fromCompactJSON(compact) {
       isSecret: h[4] !== 0,
       visible: h[5] !== 0,
       nodes: h[6] || [],
-      startMarker: h[7] ? { type: h[7][0], visible: h[7][1] !== 0 } : null,
-      endMarker: h[8] ? { type: h[8][0], visible: h[8][1] !== 0 } : null,
+      startMarker: h[7]
+        ? { type: h[7][0], visible: h[7][1] !== 0, rotation: h[7][2] || 0 }
+        : null,
+      endMarker: h[8]
+        ? { type: h[8][0], visible: h[8][1] !== 0, rotation: h[8][2] || 0 }
+        : null,
       markers: (h[9] || []).map((i) => ({
         type: i[0],
         x: i[1],
         y: i[2],
         visible: i[3] !== 0,
         label: i[4] || "",
+        rotation: i[5] || 0,
       })),
     })),
     walls: (compact.w || []).map((w) => ({
@@ -103,6 +109,7 @@ function fromCompactJSON(compact) {
       y: m[3],
       visible: m[4] !== 0,
       label: m[5] || "",
+      rotation: m[6] || 0,
     })),
     standaloneLabels: (compact.sl || []).map((l) => ({
       id: l[0],
