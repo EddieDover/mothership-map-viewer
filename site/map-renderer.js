@@ -137,7 +137,9 @@ class MapRenderer {
           marker.x,
           marker.y,
           marker.type,
-          isMarkerSelected
+          isMarkerSelected,
+          16,
+          marker.rotation || 0
         );
       });
     }
@@ -199,7 +201,9 @@ class MapRenderer {
             room.x + marker.x,
             room.y + marker.y,
             marker.type,
-            isMarkerSelected
+            isMarkerSelected,
+            16,
+            marker.rotation || 0
           );
         });
       }
@@ -232,7 +236,9 @@ class MapRenderer {
             room.x + marker.x,
             room.y + marker.y,
             marker.type,
-            isMarkerSelected
+            isMarkerSelected,
+            16,
+            marker.rotation || 0
           );
         });
       }
@@ -261,12 +267,20 @@ class MapRenderer {
    * @param {boolean} isSelected - Whether the marker is selected (for highlighting)
    * @param {number} size - Size of the marker (default 16)
    */
-  drawRoomMarker(ctx, x, y, type, isSelected = false, size = 16) {
+
+  drawRoomMarker(ctx, x, y, type, isSelected = false, size = 16, rotation = 0) {
     const markerDef = ROOM_MARKER_PATHS[type] || ROOM_MARKER_PATHS.terminal;
 
     // Calculate scale factor (paths are defined for 32x32, centered at 16,16)
     const scale = size / 16;
 
+      // Apply rotation if specified
+    if (rotation !== 0) {
+      ctx.translate(x, y);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.translate(-x, -y);
+    }
+  
     // Save context state
     ctx.save();
 
@@ -298,8 +312,7 @@ class MapRenderer {
       ctx.fillText(markerDef.text.content, markerDef.text.x, markerDef.text.y);
     }
 
-    // Restore context state
-    ctx.restore();
+    ctx.restore(); // Restore the context state after rotation
   }
 
   /**

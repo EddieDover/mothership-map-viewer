@@ -39,22 +39,29 @@ class MothershipMapSocketHandler {
     return game.socket.emit(this.identifier, { type, payload });
   }
 
-  #onDisplayMap(mapData) {
+  #onDisplayMap(payload) {
     if (game.user.isGM) return;
-    const instance = PlayerMapDisplay.getInstance({ mapData });
+    // payload can be either { mapId, mapData } or just mapData (legacy)
+    const mapData = payload.mapData || payload;
+    const mapId = payload.mapId || null;
+    const instance = PlayerMapDisplay.getInstance({ mapData, mapId });
     instance.render(true);
   }
 
-  #onUpdateMap(mapData) {
+  #onUpdateMap(payload) {
     if (game.user.isGM) return;
+    // payload can be either { mapId, mapData } or just mapData (legacy)
+    const mapData = payload.mapData || payload;
+    const mapId = payload.mapId || null;
     const app = PlayerMapDisplay.getInstance();
     if (app) {
       app.mapData = mapData;
+      app.mapId = mapId;
       app.render();
     }
   }
 
-  #onCloseMap() {
+  #onCloseMap(payload) {
     if (game.user.isGM) return;
     const app = PlayerMapDisplay.getInstance();
     if (app) app.close();
@@ -64,7 +71,11 @@ class MothershipMapSocketHandler {
     if (!game.user.isGM) return;
     const gmViewer = MothershipMapViewer._instance;
     if (gmViewer) {
-      gmViewer.updatePlayerViewStatus(payload.userId, payload.status);
+      gmViewer.updatePlayerViewStatus(
+        payload.userId,
+        payload.status,
+        payload.mapId
+      );
     }
   }
 }
@@ -75,12 +86,14 @@ class PlayerMapDisplay extends BaseMapRenderer {
   constructor(
     options = {
       mapData: null,
+      mapId: null,
     }
   ) {
     super(options);
     if (options.mapData) {
       this.mapData = options.mapData;
     }
+    this.mapId = options.mapId || null;
 
     PlayerMapDisplay._instance = this;
   }
@@ -145,6 +158,7 @@ class PlayerMapDisplay extends BaseMapRenderer {
       .socketHandler.emit("playerViewStatus", {
         userId: game.user.id,
         status: status,
+        mapId: this.mapId,
       });
   }
 
@@ -161,9 +175,14 @@ class MothershipMapViewer extends BaseMapRenderer {
   static _instance = null;
   constructor(options = {}) {
     super(options);
-    this.mapData = null;
 
-    // Track which players are viewing the map
+    // Multi-map support
+    this.maps = []; // Array of { id, name, mapData, activeViewers: Set() }
+    this.currentMapId = null;
+    this.nextMapId = 1;
+
+    // Legacy support - will be removed once migration is complete
+    this.mapData = null;
     this.activeViewers = new Set();
     this.mapShownToPlayers = false;
 
@@ -185,6 +204,69 @@ class MothershipMapViewer extends BaseMapRenderer {
 
   getCanvasId() {
     return "map-canvas";
+  }
+
+  // Helper methods for multi-map management
+  _generateMapId() {
+    return `map-${this.nextMapId++}`;
+  }
+
+  _addMap(mapData, mapName = null) {
+    const id = this._generateMapId();
+    const name = mapName || mapData.mapName || `Map ${this.maps.length + 1}`;
+    const map = {
+      id,
+      name,
+      mapData,
+      activeViewers: new Set(),
+    };
+    this.maps.push(map);
+    return id;
+  }
+
+  _getCurrentMap() {
+    if (!this.currentMapId) return null;
+    return this.maps.find((m) => m.id === this.currentMapId);
+  }
+
+  _setCurrentMap(mapId) {
+    const map = this.maps.find((m) => m.id === mapId);
+    if (map) {
+      this.currentMapId = mapId;
+      // Update legacy properties for backward compatibility
+      this.mapData = map.mapData;
+      this.activeViewers = map.activeViewers;
+      return true;
+    }
+    return false;
+  }
+
+  _deleteMap(mapId) {
+    const index = this.maps.findIndex((m) => m.id === mapId);
+    if (index !== -1) {
+      // Close player views for this map
+      const map = this.maps[index];
+      if (map.activeViewers.size > 0) {
+        game.modules
+          .get("mothership-map-viewer")
+          .socketHandler.emit("closeMap", { mapId });
+      }
+
+      this.maps.splice(index, 1);
+
+      // If we deleted the current map, switch to another or clear
+      if (this.currentMapId === mapId) {
+        if (this.maps.length > 0) {
+          this._setCurrentMap(this.maps[0].id);
+        } else {
+          this.currentMapId = null;
+          this.mapData = null;
+          this.activeViewers = new Set();
+        }
+      }
+      return true;
+    }
+    return false;
   }
 
   static DEFAULT_OPTIONS = {
@@ -241,9 +323,14 @@ class MothershipMapViewer extends BaseMapRenderer {
   };
 
   _prepareContext() {
+    const currentMap = this._getCurrentMap();
     return {
       mapData: this.mapData,
       hasMap: this.mapData !== null,
+      maps: this.maps,
+      currentMapId: this.currentMapId,
+      hasMultipleMaps: this.maps.length > 0,
+      currentMapName: currentMap ? currentMap.name : null,
     };
   }
 
@@ -256,6 +343,20 @@ class MothershipMapViewer extends BaseMapRenderer {
     document
       .getElementById("import-share-btn")
       .addEventListener("click", () => this._onImportShareString());
+
+    // Map selector
+    const mapSelector = document.getElementById("map-selector-dropdown");
+    if (mapSelector) {
+      mapSelector.addEventListener("change", (e) => {
+        this._onMapChange(e.target.value);
+      });
+    }
+
+    // Delete map button
+    const deleteMapBtn = document.getElementById("delete-map-btn");
+    if (deleteMapBtn) {
+      deleteMapBtn.addEventListener("click", () => this._onDeleteMap());
+    }
 
     // Player view buttons
     const showAllBtn = document.getElementById("show-all-players-btn");
@@ -299,6 +400,32 @@ class MothershipMapViewer extends BaseMapRenderer {
     });
   }
 
+  _onMapChange(mapId) {
+    if (this._setCurrentMap(mapId)) {
+      this.render();
+    }
+  }
+
+  async _onDeleteMap() {
+    const currentMap = this._getCurrentMap();
+    if (!currentMap) return;
+
+    const confirmed = await foundry.applications.api.DialogV2.confirm({
+      window: {
+        title: "Delete Map",
+      },
+      content: `<p>Are you sure you want to delete the map "<strong>${currentMap.name}</strong>"?</p><p>This cannot be undone.</p>`,
+      rejectClose: false,
+      modal: true,
+    });
+
+    if (confirmed) {
+      this._deleteMap(currentMap.id);
+      ui.notifications.info(`Map "${currentMap.name}" deleted`);
+      this.render();
+    }
+  }
+
   async _onImportJSON() {
     const input = document.createElement("input");
     input.type = "file";
@@ -308,8 +435,13 @@ class MothershipMapViewer extends BaseMapRenderer {
       if (file) {
         const text = await file.text();
         try {
-          this.mapData = JSON.parse(text);
-          this._initializeVisibilityFlags();
+          const mapData = JSON.parse(text);
+          this._initializeVisibilityFlags(mapData);
+
+          // Add map to collection instead of replacing
+          const mapId = this._addMap(mapData);
+          this._setCurrentMap(mapId);
+
           ui.notifications.info(
             game.i18n.localize(
               "MOTHERSHIP_MAP_VIEWER.notifications.ImportSuccess"
@@ -352,8 +484,13 @@ class MothershipMapViewer extends BaseMapRenderer {
 
     if (shareString) {
       try {
-        this.mapData = await decodeShareString(shareString);
-        this._initializeVisibilityFlags();
+        const mapData = await decodeShareString(shareString);
+        this._initializeVisibilityFlags(mapData);
+
+        // Add map to collection instead of replacing
+        const mapId = this._addMap(mapData);
+        this._setCurrentMap(mapId);
+
         ui.notifications.info(
           game.i18n.localize(
             "MOTHERSHIP_MAP_VIEWER.notifications.ImportSuccess"
@@ -369,12 +506,13 @@ class MothershipMapViewer extends BaseMapRenderer {
     }
   }
 
-  _initializeVisibilityFlags() {
-    if (!this.mapData) return;
+  _initializeVisibilityFlags(mapData = null) {
+    const targetMapData = mapData || this.mapData;
+    if (!targetMapData) return;
 
     // Initialize room visibility flags
-    if (this.mapData.rooms) {
-      this.mapData.rooms.forEach((room) => {
+    if (targetMapData.rooms) {
+      targetMapData.rooms.forEach((room) => {
         if (room.visible === undefined) room.visible = true;
         if (room.markers) {
           room.markers.forEach((marker) => {
@@ -385,8 +523,8 @@ class MothershipMapViewer extends BaseMapRenderer {
     }
 
     // Initialize hallway visibility flags
-    if (this.mapData.hallways) {
-      this.mapData.hallways.forEach((hallway) => {
+    if (targetMapData.hallways) {
+      targetMapData.hallways.forEach((hallway) => {
         if (hallway.visible === undefined) hallway.visible = true;
         if (hallway.startMarker && hallway.startMarker.visible === undefined) {
           hallway.startMarker.visible = true;
@@ -398,10 +536,10 @@ class MothershipMapViewer extends BaseMapRenderer {
     }
 
     // Initialize standalone marker visibility flags
-    if (!this.mapData.standaloneMarkers) {
-      this.mapData.standaloneMarkers = [];
+    if (!targetMapData.standaloneMarkers) {
+      targetMapData.standaloneMarkers = [];
     } else {
-      this.mapData.standaloneMarkers.forEach((marker) => {
+      targetMapData.standaloneMarkers.forEach((marker) => {
         if (marker.visible === undefined) marker.visible = true;
       });
     }
@@ -717,7 +855,10 @@ class MothershipMapViewer extends BaseMapRenderer {
 
     game.modules
       .get("mothership-map-viewer")
-      .socketHandler.emit("displayMap", this.mapData);
+      .socketHandler.emit("displayMap", {
+        mapId: this.currentMapId,
+        mapData: this.mapData,
+      });
     ui.notifications.info(
       game.i18n.localize("MOTHERSHIP_MAP_VIEWER.notifications.MapShown")
     );
@@ -742,16 +883,47 @@ class MothershipMapViewer extends BaseMapRenderer {
     if (this.mapShownToPlayers) {
       game.modules
         .get("mothership-map-viewer")
-        .socketHandler.emit("updateMap", this.mapData);
+        .socketHandler.emit("updateMap", {
+          mapId: this.currentMapId,
+          mapData: this.mapData,
+        });
     }
   }
 
-  updatePlayerViewStatus(userId, status) {
+  updatePlayerViewStatus(userId, status, mapId = null) {
+    // Find the map by mapId (or use current map if not specified)
+    const targetMapId = mapId || this.currentMapId;
+    const map = this.maps.find((m) => m.id === targetMapId);
+
     if (status === "opened") {
-      this.activeViewers.add(userId);
+      // Remove user from all other maps first (they can only view one map at a time)
+      this.maps.forEach((m) => {
+        if (m.id !== targetMapId) {
+          m.activeViewers.delete(userId);
+        }
+      });
+
+      // Add user to the target map
+      if (map) {
+        map.activeViewers.add(userId);
+      }
+
+      // Update legacy property if viewing current map
+      if (targetMapId === this.currentMapId) {
+        this.activeViewers.add(userId);
+      } else {
+        this.activeViewers.delete(userId);
+      }
     } else if (status === "closed") {
+      // Remove user from all maps
+      this.maps.forEach((m) => {
+        m.activeViewers.delete(userId);
+      });
+
+      // Update legacy property
       this.activeViewers.delete(userId);
     }
+
     this._updateActiveViewersDisplay();
     this._updateButtonVisibility();
   }
@@ -850,7 +1022,10 @@ class MothershipMapViewer extends BaseMapRenderer {
     // Emit to specific user
     game.socket.emit(
       "module.mothership-map-viewer",
-      { type: "displayMap", payload: this.mapData },
+      {
+        type: "displayMap",
+        payload: { mapId: this.currentMapId, mapData: this.mapData },
+      },
       [userId]
     );
 

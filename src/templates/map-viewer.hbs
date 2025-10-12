@@ -67,6 +67,26 @@
     </button>
   </div>
 
+  {{#if hasMultipleMaps}}
+    <div class="map-selector-bar">
+      <label for="map-selector-dropdown">
+        <i class="fas fa-map"></i>
+        Current Map:
+      </label>
+      <select id="map-selector-dropdown" class="map-selector-dropdown">
+        {{#each maps}}
+          <option value="{{this.id}}" {{#if (eq this.id ../currentMapId)}}selected{{/if}}>
+            {{this.name}}
+          </option>
+        {{/each}}
+      </select>
+      <button id="delete-map-btn" class="delete-map-btn" title="Delete current map">
+        <i class="fas fa-trash"></i>
+        Delete Map
+      </button>
+    </div>
+  {{/if}}
+
   {{#if hasMap}}
     <div class="map-view-section">
       <div class="map-content">

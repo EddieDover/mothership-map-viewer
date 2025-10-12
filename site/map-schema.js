@@ -472,6 +472,7 @@ class RoomMarker {
     this.y = y;
     this.visible = true; // Toggle for GM control
     this.label = ""; // Optional label for the marker
+    this.rotation = 0; // Rotation in degrees (0, 90, 180, 270)
   }
 }
 /** @type {import("./types").Hallway} */
@@ -520,6 +521,7 @@ class StandaloneMarker {
     this.y = y;
     this.visible = true;
     this.label = "";
+    this.rotation = 0; // Rotation in degrees (0, 90, 180, 270)
   }
 }
 

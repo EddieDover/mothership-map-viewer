@@ -113,12 +113,13 @@ class MapCreator {
       .getElementById("resetViewBtn")
       .addEventListener("click", () => this.resetView());
 
-    // Snap to Grid toggle
-    document
-      .getElementById("snapToGridToggle")
-      .addEventListener("change", (e) => {
-        this.renderer.snapToGridEnabled = e.target.checked;
-      });
+    // Snap to Grid toggle button
+    const snapToggleBtn = document.getElementById("snapToGridToggle");
+    const snapCheckbox = document.getElementById("snapToGridCheckbox");
+    snapToggleBtn.addEventListener("click", () => {
+      snapCheckbox.checked = !snapCheckbox.checked;
+      this.renderer.snapToGridEnabled = snapCheckbox.checked;
+    });
 
     // Export/Import buttons
     document
@@ -2584,6 +2585,10 @@ class MapCreator {
                 Marker Label:
                 <input type="text" id="detailsMarkerLabel" value="${item.marker.label || ""}" placeholder="Optional">
               </label>`;
+      html += `<label>
+                Rotation: ${item.marker.rotation || 0}°
+                <button id="detailsMarkerRotate" class="action-btn" style="margin-top: 4px;">Rotate 90°</button>
+              </label>`;
       html += `<div class="checkbox-container">
                 <input type="checkbox" id="detailsMarkerVisible" ${item.marker.visible !== false ? "checked" : ""}>
                 <label for="detailsMarkerVisible" style="margin: 0;">Visible by Default</label>
@@ -2608,6 +2613,10 @@ class MapCreator {
       html += `<label>
                 Marker Label:
                 <input type="text" id="detailsStandaloneMarkerLabel" value="${item.marker.label || ""}" placeholder="Optional">
+              </label>`;
+      html += `<label>
+                Rotation: ${item.marker.rotation || 0}°
+                <button id="detailsStandaloneMarkerRotate" class="action-btn" style="margin-top: 4px;">Rotate 90°</button>
               </label>`;
       html += `<div class="checkbox-container">
                 <input type="checkbox" id="detailsStandaloneMarkerVisible" ${item.marker.visible !== false ? "checked" : ""}>
@@ -2724,6 +2733,15 @@ class MapCreator {
           this.updatePropertiesPanel();
           this.render();
         });
+
+      document
+        .getElementById("detailsMarkerRotate")
+        ?.addEventListener("click", () => {
+          if (!item.marker.rotation) item.marker.rotation = 0;
+          item.marker.rotation = (item.marker.rotation + 90) % 360;
+          this.updateItemDetailsPanel();
+          this.render();
+        });
     } else if (item.type === "standaloneMarker") {
       document
         .getElementById("detailsStandaloneMarkerType")
@@ -2745,6 +2763,15 @@ class MapCreator {
         ?.addEventListener("change", (e) => {
           item.marker.visible = e.target.checked;
           this.updatePropertiesPanel();
+          this.render();
+        });
+
+      document
+        .getElementById("detailsStandaloneMarkerRotate")
+        ?.addEventListener("click", () => {
+          if (!item.marker.rotation) item.marker.rotation = 0;
+          item.marker.rotation = (item.marker.rotation + 90) % 360;
+          this.updateItemDetailsPanel();
           this.render();
         });
     } else if (item.type === "standaloneLabel") {

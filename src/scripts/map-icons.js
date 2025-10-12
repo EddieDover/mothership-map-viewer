@@ -13,12 +13,20 @@ import { HALLWAY_MARKER_PATHS, ROOM_MARKER_PATHS } from "./marker-paths.js";
  * @param {string} type - Marker type (terminal, hazard, loot, npc, door, ladder, window, airlock, elevator)
  * @param {number} size - Size of the marker (default 16)
  */
-export function drawRoomMarker(ctx, x, y, type, size = 16) {
+
+export function drawRoomMarker(ctx, x, y, type, size = 16, rotation = 0) {
   const markerDef = ROOM_MARKER_PATHS[type] || ROOM_MARKER_PATHS.terminal;
 
   // Calculate scale factor (paths are defined for 32x32, centered at 16,16)
   const scale = size / 16;
 
+    // Apply rotation if specified
+  if (rotation !== 0) {
+    ctx.translate(x, y);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.translate(-x, -y);
+  }
+  
   // Save context state
   ctx.save();
 
@@ -50,8 +58,7 @@ export function drawRoomMarker(ctx, x, y, type, size = 16) {
     ctx.fillText(markerDef.text.content, markerDef.text.x, markerDef.text.y);
   }
 
-  // Restore context state
-  ctx.restore();
+  ctx.restore(); // Restore the context state after rotation
 }
 
 /**
