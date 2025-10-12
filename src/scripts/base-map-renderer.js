@@ -203,6 +203,7 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
 
     // Collect room markers to draw them last (on top of hallways)
     const roomMarkersToRender = [];
+    const roomLabelsToRender = [];
 
     // Draw only visible rooms
     if (this.mapData.rooms) {
@@ -247,6 +248,19 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
                 x: room.x + marker.x,
                 y: room.y + marker.y,
                 type: marker.type,
+              });
+            }
+          });
+        }
+
+        // Collect visible labels for later rendering
+        if (room.labels) {
+          room.labels.forEach((label) => {
+            if (label.visible !== false) {
+              roomLabelsToRender.push({
+                x: room.x + label.x,
+                y: room.y + label.y,
+                text: label.text,
               });
             }
           });
@@ -339,6 +353,11 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
     // Draw room markers last (on top of hallways)
     roomMarkersToRender.forEach((marker) => {
       this._drawRoomMarker(ctx, marker.x, marker.y, marker.type);
+    });
+
+    // Draw room labels (on top of markers)
+    roomLabelsToRender.forEach((label) => {
+      this._drawRoomLabel(ctx, label.x, label.y, label.text);
     });
 
     // Draw standalone markers (not in rooms)
@@ -501,6 +520,25 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _drawRoomMarker(ctx, x, y, type) {
     drawRoomMarker(ctx, x, y, type);
+  }
+
+  /**
+   * Draw a room label (inside a room)
+   */
+  _drawRoomLabel(ctx, x, y, text) {
+    // Draw text with white fill and black outline (same as standalone labels)
+    ctx.font = "bold 14px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    // Draw black outline
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 3;
+    ctx.strokeText(text, x, y);
+
+    // Draw white fill
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(text, x, y);
   }
 
   /**

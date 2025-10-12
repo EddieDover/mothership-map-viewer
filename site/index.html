@@ -300,7 +300,33 @@
                   stroke="currentColor"
                   stroke-width="3"
                 >
-                  <path d="M3 6 L17 6 M3 10 L17 10 M3 14 L17 14" />
+                  <path d="M3 10 L17 10" />
+                </svg>
+              </button>
+              <!-- Add Room Label button (only for rooms) -->
+              <button
+                id="floatingAddRoomLabelBtn"
+                class="floating-tool-btn"
+                title="Add Label to Room"
+                style="display: none"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <text
+                    x="5"
+                    y="15"
+                    font-size="14"
+                    font-weight="bold"
+                    fill="currentColor"
+                  >
+                    T
+                  </text>
                 </svg>
               </button>
               <!-- Delete button -->
@@ -388,7 +414,20 @@
     <input type="file" id="fileInput" accept=".json" style="display: none" />
 
     <!-- Version info footer -->
-    <footer style="position: fixed; bottom: 10px; right: 10px; background: rgba(0, 0, 0, 0.7); color: #888; padding: 5px 10px; border-radius: 4px; font-size: 11px; font-family: monospace; z-index: 1000;">
+    <footer
+      style="
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.7);
+        color: #888;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-family: monospace;
+        z-index: 1000;
+      "
+    >
       <span id="versionInfo">Loading version...</span>
     </footer>
 
@@ -402,8 +441,8 @@
     <script src="map-creator.js"></script>
     <script>
       // Display version information
-      if (typeof VERSION_INFO !== 'undefined') {
-        document.getElementById('versionInfo').textContent =
+      if (typeof VERSION_INFO !== "undefined") {
+        document.getElementById("versionInfo").textContent =
           `v${VERSION_INFO.version} (${VERSION_INFO.commit})`;
       }
     </script>

@@ -61,7 +61,7 @@ class MothershipMapSocketHandler {
     }
   }
 
-  #onCloseMap(payload) {
+  #onCloseMap() {
     if (game.user.isGM) return;
     const app = PlayerMapDisplay.getInstance();
     if (app) app.close();
@@ -519,6 +519,11 @@ class MothershipMapViewer extends BaseMapRenderer {
             if (marker.visible === undefined) marker.visible = true;
           });
         }
+        if (room.labels) {
+          room.labels.forEach((label) => {
+            if (label.visible === undefined) label.visible = true;
+          });
+        }
       });
     }
 
@@ -582,6 +587,24 @@ class MothershipMapViewer extends BaseMapRenderer {
                   marker.visible ? "checked" : ""
                 }>
                 ${markerLabel}
+              </label>
+            `;
+          });
+          controlsHTML += "</div>";
+        }
+
+        // Room labels
+        if (room.labels && room.labels.length > 0) {
+          controlsHTML +=
+            '<div class="label-controls" style="margin-left: 20px;">';
+          room.labels.forEach((label, labelIndex) => {
+            const labelText = label.text || `Label ${labelIndex + 1}`;
+            controlsHTML += `
+              <label style="display: block; font-size: 0.9em;">
+                <input type="checkbox" class="room-label-visibility" data-room="${index}" data-label="${labelIndex}" ${
+                  label.visible !== false ? "checked" : ""
+                }>
+                ${labelText}
               </label>
             `;
           });
@@ -761,6 +784,19 @@ class MothershipMapViewer extends BaseMapRenderer {
       });
 
     controlsContainer
+      .querySelectorAll(".room-label-visibility")
+      .forEach((checkbox) => {
+        checkbox.addEventListener("change", (e) => {
+          const roomIndex = parseInt(e.target.dataset.room);
+          const labelIndex = parseInt(e.target.dataset.label);
+          this.mapData.rooms[roomIndex].labels[labelIndex].visible =
+            e.target.checked;
+          this._renderMap(document.getElementById(this.getCanvasId()));
+          this._autoUpdatePlayers();
+        });
+      });
+
+    controlsContainer
       .querySelectorAll(".hallway-visibility")
       .forEach((checkbox) => {
         checkbox.addEventListener("change", (e) => {
@@ -853,12 +889,10 @@ class MothershipMapViewer extends BaseMapRenderer {
       return;
     }
 
-    game.modules
-      .get("mothership-map-viewer")
-      .socketHandler.emit("displayMap", {
-        mapId: this.currentMapId,
-        mapData: this.mapData,
-      });
+    game.modules.get("mothership-map-viewer").socketHandler.emit("displayMap", {
+      mapId: this.currentMapId,
+      mapData: this.mapData,
+    });
     ui.notifications.info(
       game.i18n.localize("MOTHERSHIP_MAP_VIEWER.notifications.MapShown")
     );
