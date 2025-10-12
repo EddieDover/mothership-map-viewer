@@ -183,6 +183,7 @@ class MapData {
       );
       room.label = r.label || "";
       room.markers = r.markers || [];
+      room.labels = r.labels || [];
       room.walls = r.walls || [];
       return room;
     });
@@ -259,6 +260,9 @@ class MapData {
               wall.isDotted ? 1 : 0,
             ])
           : [],
+        room.labels && room.labels.length > 0
+          ? room.labels.map((label) => [label.text || "", label.x, label.y])
+          : [],
       ]),
       h: this.hallways.map((hallway) => [
         hallway.id,
@@ -325,6 +329,7 @@ class MapData {
       const shape = r[8] || "rectangle";
       const markers = r[7] || [];
       const wallsData = r[9] || [];
+      const labelsData = r[10] || [];
       const room = {
         id: r[0],
         type: "room",
@@ -341,6 +346,12 @@ class MapData {
           y: i[2],
           visible: i[3] !== 0,
           label: i[4] || "",
+          rotation: i[5] || 0,
+        })),
+        labels: labelsData.map((l) => ({
+          text: l[0] || "",
+          x: l[1],
+          y: l[2],
         })),
         walls: wallsData.map((w) => ({
           id: w[0],
@@ -468,6 +479,7 @@ class Room {
     this.radius = shape === "circle" ? Math.min(width, height) / 2 : null;
     this.label = "";
     this.markers = []; // Array of {type, x, y, visible} for room markers
+    this.labels = []; // Array of {text, x, y} for room labels
     this.walls = []; // Array of Wall objects for walls inside this room
   }
 }

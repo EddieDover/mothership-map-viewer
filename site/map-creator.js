@@ -84,6 +84,9 @@ class MapCreator {
       .getElementById("floatingAddRoomWallBtn")
       .addEventListener("click", () => this.setTool("roomWall"));
     document
+      .getElementById("floatingAddRoomLabelBtn")
+      .addEventListener("click", () => this.addLabelToSelectedRoom());
+    document
       .getElementById("floatingDeleteBtn")
       .addEventListener("click", () => this.deleteSelectedItem());
 
@@ -315,6 +318,16 @@ class MapCreator {
           "<strong>Edit After:</strong> The marker will be automatically selected after placement for editing",
         ],
       },
+      roomLabel: {
+        title: "Place Label in Room",
+        description:
+          "Click inside the selected room to place a text label. Press Escape to cancel label placement.",
+        tips: [
+          "<strong>Click to Place:</strong> Click anywhere inside the room to place the label",
+          "<strong>Cancel:</strong> Press Escape to exit label placement mode",
+          "<strong>Edit After:</strong> The label will be automatically selected after placement for editing",
+        ],
+      },
     };
 
     const info = toolInfo[tool] || toolInfo.select;
@@ -384,6 +397,12 @@ class MapCreator {
         this.updateToolInfoPanel("select");
         this.render();
       }
+      if (this.labelPlacementMode) {
+        this.labelPlacementMode = null;
+        // Update info panel back to select mode when canceling label placement
+        this.updateToolInfoPanel("select");
+        this.render();
+      }
       this.updatePropertiesPanel();
     }
 
@@ -412,6 +431,9 @@ class MapCreator {
       if (this.selectedItem.type === "marker") {
         // Delete marker from room
         this.selectedItem.room.markers.splice(this.selectedItem.markerIndex, 1);
+      } else if (this.selectedItem.type === "roomLabel") {
+        // Delete label from room
+        this.selectedItem.room.labels.splice(this.selectedItem.labelIndex, 1);
       } else if (this.selectedItem.type === "standaloneMarker") {
         // Delete standalone marker
         this.mapData.removeItem(
@@ -467,6 +489,15 @@ class MapCreator {
           type: this.selectedItem.marker.type,
           label: this.selectedItem.marker.label || "",
           visible: this.selectedItem.marker.visible !== false,
+        },
+        roomId: this.selectedItem.room.id, // Store which room it came from
+      };
+    } else if (this.selectedItem.type === "roomLabel") {
+      // Copy room label
+      this.clipboard = {
+        type: "roomLabel",
+        data: {
+          text: this.selectedItem.label.text || "",
         },
         roomId: this.selectedItem.room.id, // Store which room it came from
       };
@@ -543,6 +574,58 @@ class MapCreator {
           room: targetRoom,
           marker: newMarker,
           markerIndex: targetRoom.markers.length - 1,
+        };
+
+        this.updatePropertiesPanel();
+        this.render();
+      }
+    } else if (this.clipboard.type === "roomLabel") {
+      // Find which room the cursor is over, or use selected room
+      let targetRoom = null;
+
+      // Check if cursor is over a room
+      targetRoom = this.getRoomAtPosition(this.lastMouseX, this.lastMouseY);
+
+      // If no room at cursor, try selected room
+      if (!targetRoom && this.selectedItem?.type === "room") {
+        targetRoom = this.selectedItem;
+      }
+
+      // If still no room, try original room
+      if (!targetRoom) {
+        targetRoom = this.mapData.getItem("room", this.clipboard.roomId);
+      }
+
+      if (targetRoom) {
+        // Calculate position relative to room where cursor is
+        let relativeX = this.lastMouseX - targetRoom.x;
+        let relativeY = this.lastMouseY - targetRoom.y;
+
+        // Clamp to room bounds
+        const margin = 10;
+        relativeX = Math.max(
+          margin,
+          Math.min(targetRoom.width - margin, relativeX)
+        );
+        relativeY = Math.max(
+          margin,
+          Math.min(targetRoom.height - margin, relativeY)
+        );
+
+        const newLabel = {
+          text: this.clipboard.data.text,
+          x: relativeX,
+          y: relativeY,
+        };
+        if (!targetRoom.labels) targetRoom.labels = [];
+        targetRoom.labels.push(newLabel);
+
+        // Select the newly pasted label
+        this.selectedItem = {
+          type: "roomLabel",
+          room: targetRoom,
+          label: newLabel,
+          labelIndex: targetRoom.labels.length - 1,
         };
 
         this.updatePropertiesPanel();
@@ -677,6 +760,54 @@ class MapCreator {
       return;
     }
 
+    // Label placement mode
+    if (this.labelPlacementMode) {
+      const room = this.labelPlacementMode.room;
+
+      const wallMargin = WALL_THICKNESS;
+
+      // Check if click is inside the room or on its walls (use unsnapped coordinates)
+      if (
+        mouseX >= room.x - wallMargin &&
+        mouseX <= room.x + room.width + wallMargin &&
+        mouseY >= room.y - wallMargin &&
+        mouseY <= room.y + room.height + wallMargin
+      ) {
+        // Add label at this position (relative to room)
+        const label = {
+          text: this.labelPlacementMode.labelText,
+          x: mouseX - room.x,
+          y: mouseY - room.y,
+        };
+        if (!room.labels) room.labels = [];
+        room.labels.push(label);
+
+        // Select the newly placed label
+        this.selectedItem = {
+          type: "roomLabel",
+          room: room,
+          label: label,
+          labelIndex: room.labels.length - 1,
+        };
+
+        this.labelPlacementMode = null;
+        this.updatePropertiesPanel();
+        this.updateMarkerSelectors();
+        this.updateItemDetailsPanel();
+
+        // Update info panel back to select mode
+        this.updateToolInfoPanel("select");
+        this.render();
+      } else {
+        // Clicked outside - cancel
+        this.labelPlacementMode = null;
+        // Update info panel back to select mode
+        this.updateToolInfoPanel("select");
+        this.updatePropertiesPanel();
+      }
+      return;
+    }
+
     // Select tool - for selecting existing items and dragging rooms/markers
     if (this.currentTool === "select") {
       // Check for standalone markers first (highest priority)
@@ -750,6 +881,32 @@ class MapCreator {
           startY: mouseY,
           markerStartX: markerResult.marker.x,
           markerStartY: markerResult.marker.y,
+        };
+        e.target.style.cursor = "move";
+        return;
+      }
+
+      // Check for room labels (fourth priority)
+      const labelResult = this.getRoomLabelAtPosition(mouseX, mouseY);
+      if (labelResult) {
+        // Select and prepare to drag label
+        this.selectedItem = {
+          type: "roomLabel",
+          room: labelResult.room,
+          label: labelResult.label,
+          labelIndex: labelResult.index,
+        };
+        this.refreshUI();
+
+        // Prepare to drag label
+        this.dragState = {
+          type: "roomLabel",
+          label: labelResult.label,
+          room: labelResult.room,
+          startX: mouseX,
+          startY: mouseY,
+          labelStartX: labelResult.label.x,
+          labelStartY: labelResult.label.y,
         };
         e.target.style.cursor = "move";
         return;
@@ -1049,6 +1206,22 @@ class MapCreator {
           -wallMargin,
           Math.min(room.height + wallMargin, this.dragState.marker.y)
         );
+      } else if (this.dragState.type === "roomLabel") {
+        // Update label position (relative to room)
+        this.dragState.label.x = this.dragState.labelStartX + deltaX;
+        this.dragState.label.y = this.dragState.labelStartY + deltaY;
+
+        // Clamp label position to stay within room bounds
+        const room = this.dragState.room;
+        const margin = 10; // Small margin to keep label text visible
+        this.dragState.label.x = Math.max(
+          margin,
+          Math.min(room.width - margin, this.dragState.label.x)
+        );
+        this.dragState.label.y = Math.max(
+          margin,
+          Math.min(room.height - margin, this.dragState.label.y)
+        );
       } else if (this.dragState.type === "room") {
         // Update room position
         this.dragState.room.x = this.dragState.roomStartX + deltaX;
@@ -1205,6 +1378,29 @@ class MapCreator {
         this.dragState.marker.y = Math.max(
           -wallMargin,
           Math.min(this.dragState.room.height + wallMargin - 16, newY)
+        );
+      } else if (this.dragState.type === "roomLabel") {
+        // Finalize label position with grid snapping (relative to room)
+        const deltaX = x - this.dragState.startX;
+        const deltaY = y - this.dragState.startY;
+
+        // Snap label position relative to room
+        const newX = this.renderer.snapToGrid(
+          this.dragState.labelStartX + deltaX
+        );
+        const newY = this.renderer.snapToGrid(
+          this.dragState.labelStartY + deltaY
+        );
+
+        // Clamp to room bounds
+        const margin = 10;
+        this.dragState.label.x = Math.max(
+          margin,
+          Math.min(this.dragState.room.width - margin, newX)
+        );
+        this.dragState.label.y = Math.max(
+          margin,
+          Math.min(this.dragState.room.height - margin, newY)
         );
       } else if (this.dragState.type === "room") {
         // Room dragging
@@ -2275,6 +2471,55 @@ class MapCreator {
   }
 
   /**
+   * Get the room label at a given position (if any)
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @return {Object|null} - Object with room, label, and index, or null
+   */
+  getRoomLabelAtPosition(x, y) {
+    const hitRadius = 20; // Hit area for clicking on labels
+
+    // If a label is currently selected, check it first for priority
+    if (this.selectedItem && this.selectedItem.type === "roomLabel") {
+      const room = this.selectedItem.room;
+      const label = this.selectedItem.label;
+      const labelX = room.x + label.x;
+      const labelY = room.y + label.y;
+
+      const distance = Math.sqrt(
+        Math.pow(x - labelX, 2) + Math.pow(y - labelY, 2)
+      );
+
+      if (distance <= hitRadius) {
+        return { room, label, index: this.selectedItem.labelIndex };
+      }
+    }
+
+    // Check all labels
+    for (let room of this.mapData.rooms) {
+      if (!room.labels || room.labels.length === 0) continue;
+
+      // Check each label in the room
+      for (let i = 0; i < room.labels.length; i++) {
+        const label = room.labels[i];
+        const labelX = room.x + label.x;
+        const labelY = room.y + label.y;
+
+        // Check if click is within label bounds
+        const distance = Math.sqrt(
+          Math.pow(x - labelX, 2) + Math.pow(y - labelY, 2)
+        );
+
+        if (distance <= hitRadius) {
+          return { room, label, index: i };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Get the relative position (0-1) of a point along a room edge
    *
    * @param {Object} edgeInfo - Object containing room, edge, and point
@@ -2521,6 +2766,7 @@ class MapCreator {
     const contextToolbar = document.getElementById("contextToolbar");
     const addMarkerBtn = document.getElementById("floatingAddMarkerBtn");
     const addRoomWallBtn = document.getElementById("floatingAddRoomWallBtn");
+    const addRoomLabelBtn = document.getElementById("floatingAddRoomLabelBtn");
     const deleteBtn = document.getElementById("floatingDeleteBtn");
 
     if (!this.selectedItem) {
@@ -2532,13 +2778,15 @@ class MapCreator {
     // Show context toolbar
     contextToolbar.style.display = "flex";
 
-    // Show/hide add marker and room wall buttons based on item type
+    // Show/hide add marker, room wall, and room label buttons based on item type
     if (this.selectedItem.type === "room") {
       addMarkerBtn.style.display = "flex";
       addRoomWallBtn.style.display = "flex";
+      addRoomLabelBtn.style.display = "flex";
     } else {
       addMarkerBtn.style.display = "none";
       addRoomWallBtn.style.display = "none";
+      addRoomLabelBtn.style.display = "none";
     }
 
     // Always show delete button when something is selected
@@ -2642,6 +2890,12 @@ class MapCreator {
                 <input type="checkbox" id="detailsStandaloneLabelVisible" ${item.label.visible !== false ? "checked" : ""}>
                 <label for="detailsStandaloneLabelVisible" style="margin: 0;">Visible by Default</label>
               </div>`;
+    } else if (item.type === "roomLabel") {
+      // Room label details
+      html += `<label>
+                Label Text:
+                <input type="text" id="detailsRoomLabelText" value="${item.label.text || ""}" placeholder="Enter text">
+              </label>`;
     } else if (item.type === "room") {
       // Room details
       html += `<label>
@@ -2705,7 +2959,7 @@ class MapCreator {
                 <button id="detailsEndMarkerRotate" class="action-btn" style="margin-top: 4px;">Rotate 90°</button>
               </label>`;
     } else if (item.type === "wall") {
-      // Wall details - only show for standalone walls (not room walls)
+      // Wall details
       if (!item.parentRoomId) {
         // Standalone wall - show label and visibility
         html += `<label>
@@ -2716,12 +2970,12 @@ class MapCreator {
                   <input type="checkbox" id="detailsWallVisible" ${item.visible !== false ? "checked" : ""}>
                   <label for="detailsWallVisible" style="margin: 0;">Visible by Default</label>
                 </div>`;
-        html += `<div class="checkbox-container" style="margin-top: 8px;">
+      }
+      // Dotted line option available for both standalone and room walls
+      html += `<div class="checkbox-container" style="margin-top: 8px;">
                   <input type="checkbox" id="detailsWallDotted" ${item.isDotted ? "checked" : ""}>
                   <label for="detailsWallDotted" style="margin: 0;">Dotted Line</label>
                 </div>`;
-      }
-      // Room walls don't show these fields (inherit from parent room)
     }
 
     panel.innerHTML = html;
@@ -2804,6 +3058,13 @@ class MapCreator {
         .getElementById("detailsStandaloneLabelVisible")
         ?.addEventListener("change", (e) => {
           item.label.visible = e.target.checked;
+          this.render();
+        });
+    } else if (item.type === "roomLabel") {
+      document
+        .getElementById("detailsRoomLabelText")
+        ?.addEventListener("input", (e) => {
+          item.label.text = e.target.value;
           this.render();
         });
     } else if (item.type === "room") {
@@ -2929,7 +3190,7 @@ class MapCreator {
           }
         });
     } else if (item.type === "wall") {
-      // Event listeners only for standalone walls
+      // Event listeners only for standalone walls (label and visibility)
       if (!item.parentRoomId) {
         document
           .getElementById("detailsWallLabel")
@@ -2946,16 +3207,16 @@ class MapCreator {
             this.updatePropertiesPanel();
             this.render();
           });
-
-        document
-          .getElementById("detailsWallDotted")
-          ?.addEventListener("change", (e) => {
-            item.isDotted = e.target.checked;
-            this.updatePropertiesPanel();
-            this.render();
-          });
       }
-      // Room walls have no UI controls, so no event listeners needed
+
+      // Dotted line listener available for both standalone and room walls
+      document
+        .getElementById("detailsWallDotted")
+        ?.addEventListener("change", (e) => {
+          item.isDotted = e.target.checked;
+          this.updatePropertiesPanel();
+          this.render();
+        });
     }
   }
 
@@ -3198,6 +3459,27 @@ class MapCreator {
   }
 
   /**
+   * Add a label to the selected room
+   *
+   * @memberof MapCreator
+   */
+  addLabelToSelectedRoom() {
+    if (!this.selectedItem || this.selectedItem.type !== "room") {
+      return;
+    }
+
+    // Enter label placement mode
+    this.labelPlacementMode = {
+      room: this.selectedItem,
+      labelText: "Label",
+    };
+
+    // Update the info panel to show label placement instructions
+    this.updateToolInfoPanel("roomLabel");
+    this.render();
+  }
+
+  /**
    * Delete the currently selected item
    *
    * @memberof MapCreator
@@ -3210,6 +3492,9 @@ class MapCreator {
     if (this.selectedItem.type === "marker") {
       // Delete marker from room
       this.selectedItem.room.markers.splice(this.selectedItem.markerIndex, 1);
+    } else if (this.selectedItem.type === "roomLabel") {
+      // Delete label from room
+      this.selectedItem.room.labels.splice(this.selectedItem.labelIndex, 1);
     } else if (this.selectedItem.type === "standaloneMarker") {
       // Delete standalone marker
       this.mapData.removeItem("standaloneMarker", this.selectedItem.marker.id);

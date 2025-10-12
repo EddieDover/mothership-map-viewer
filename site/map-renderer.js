@@ -97,8 +97,18 @@ class MapRenderer {
         selectedItem?.type === "marker" && selectedItem?.room.id === room.id
           ? selectedItem.markerIndex
           : null;
+      // Pass selected label info if a label in this room is selected
+      const selectedLabelIndex =
+        selectedItem?.type === "roomLabel" && selectedItem?.room.id === room.id
+          ? selectedItem.labelIndex
+          : null;
 
-      this.drawRoom(room, isRoomSelected, selectedMarkerIndex);
+      this.drawRoom(
+        room,
+        isRoomSelected,
+        selectedMarkerIndex,
+        selectedLabelIndex
+      );
     });
 
     mapData.hallways.forEach((hallway) => {
@@ -170,9 +180,15 @@ class MapRenderer {
    * @param {import("./types").Room} room
    * @param {boolean} isSelected
    * @param {number|null} selectedMarkerIndex - Index of selected marker, or null
+   * @param {number|null} selectedLabelIndex - Index of selected label, or null
    * @memberof MapRenderer
    */
-  drawRoom(room, isSelected, selectedMarkerIndex = null) {
+  drawRoom(
+    room,
+    isSelected,
+    selectedMarkerIndex = null,
+    selectedLabelIndex = null
+  ) {
     if (room.shape === "circle") {
       // Circle room
       const centerX = room.x + room.radius;
@@ -208,6 +224,20 @@ class MapRenderer {
         });
       }
 
+      // Draw room labels
+      if (room.labels && room.labels.length > 0) {
+        room.labels.forEach((label, index) => {
+          const isLabelSelected = selectedLabelIndex === index;
+          this.drawRoomLabel(
+            this.ctx,
+            room.x + label.x,
+            room.y + label.y,
+            label.text,
+            isLabelSelected
+          );
+        });
+      }
+
       // Label - white (drawn last so it's on top)
       if (room.label) {
         this.ctx.fillStyle = "#ffffff";
@@ -239,6 +269,20 @@ class MapRenderer {
             isMarkerSelected,
             16,
             marker.rotation || 0
+          );
+        });
+      }
+
+      // Draw room labels
+      if (room.labels && room.labels.length > 0) {
+        room.labels.forEach((label, index) => {
+          const isLabelSelected = selectedLabelIndex === index;
+          this.drawRoomLabel(
+            this.ctx,
+            room.x + label.x,
+            room.y + label.y,
+            label.text,
+            isLabelSelected
           );
         });
       }
@@ -328,6 +372,27 @@ class MapRenderer {
    * @param {boolean} isSelected - Whether the label is selected (for highlighting)
    */
   drawStandaloneLabel(ctx, x, y, text, isSelected = false) {
+    ctx.fillStyle = isSelected ? "#0051ffff" : "#ffffff";
+    ctx.strokeStyle = "#000000";
+    ctx.font = "bold 14px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineWidth = 3;
+
+    // Draw text with outline
+    ctx.strokeText(text, x, y);
+    ctx.fillText(text, x, y);
+  }
+
+  /**
+   * Draw a label inside a room
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} x - Absolute X coordinate
+   * @param {number} y - Absolute Y coordinate
+   * @param {string} text - Label text
+   * @param {boolean} isSelected - Whether the label is selected
+   */
+  drawRoomLabel(ctx, x, y, text, isSelected = false) {
     ctx.fillStyle = isSelected ? "#0051ffff" : "#ffffff";
     ctx.strokeStyle = "#000000";
     ctx.font = "bold 14px sans-serif";
