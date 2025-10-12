@@ -21,6 +21,10 @@ class MapCreator {
     this.lastMouseY = 0;
 
     this.initializeEventListeners();
+
+    // Load saved map from localStorage if it exists (after initializing listeners)
+    this.loadFromLocalStorage();
+
     this.updateMarkerSelectors();
     this.render();
   }
@@ -65,6 +69,12 @@ class MapCreator {
     document
       .getElementById("floatingAddWallBtn")
       .addEventListener("click", () => this.setTool("wall"));
+    document
+      .getElementById("floatingAddStandaloneMarkerBtn")
+      .addEventListener("click", () => this.setTool("standaloneMarker"));
+    document
+      .getElementById("floatingAddStandaloneLabelBtn")
+      .addEventListener("click", () => this.setTool("standaloneLabel"));
 
     // Context toolbar buttons
     document
@@ -91,6 +101,11 @@ class MapCreator {
     // Map name
     document.getElementById("mapName").addEventListener("input", (e) => {
       this.mapData.mapName = e.target.value;
+      this.saveToLocalStorage();
+      // Hide error message when user starts typing
+      if (e.target.value.trim()) {
+        document.getElementById("mapNameError").style.display = "none";
+      }
     });
 
     // Reset View button
@@ -98,14 +113,25 @@ class MapCreator {
       .getElementById("resetViewBtn")
       .addEventListener("click", () => this.resetView());
 
-    // Snap to Grid toggle
-    document
-      .getElementById("snapToGridToggle")
-      .addEventListener("change", (e) => {
-        this.renderer.snapToGridEnabled = e.target.checked;
-      });
+    // Snap to Grid toggle button
+    const snapToggleBtn = document.getElementById("snapToGridToggle");
+    const snapCheckbox = document.getElementById("snapToGridCheckbox");
+    snapToggleBtn.addEventListener("click", () => {
+      snapCheckbox.checked = !snapCheckbox.checked;
+      this.renderer.snapToGridEnabled = snapCheckbox.checked;
+    });
 
     // Export/Import buttons
+    document
+      .getElementById("seeCommunityMaps")
+      .addEventListener("click", () => {
+        const wikiURL =
+          "https://github.com/EddieDover/mothership-map-viewer/wiki/Map-Share-Strings";
+        window.open(wikiURL, "_blank");
+      });
+    document
+      .getElementById("newMapBtn")
+      .addEventListener("click", () => this.newMap());
     document
       .getElementById("exportBtn")
       .addEventListener("click", () => this.exportJSON());
@@ -118,6 +144,9 @@ class MapCreator {
     document
       .getElementById("loadShareBtn")
       .addEventListener("click", () => this.loadShareString());
+    document
+      .getElementById("screenshotBtn")
+      .addEventListener("click", () => this.exportScreenshot());
 
     // File input for import
     document.getElementById("fileInput").addEventListener("change", (e) => {
@@ -152,11 +181,7 @@ class MapCreator {
     // (keep selection only for select mode and roomWall mode which requires a room to be selected)
     if (tool !== "select" && tool !== "roomWall" && this.selectedItem) {
       this.selectedItem = null;
-      this.updatePropertiesPanel();
-      this.updateMarkerSelectors();
-      this.updateItemDetailsPanel();
-      this.updateContextToolbar();
-      this.render(); // Re-render to update visual selection
+      this.refreshUI();
     }
 
     // Update button states for both toolbars
@@ -187,6 +212,145 @@ class MapCreator {
     if (floatingButton) {
       floatingButton.classList.add("active");
     }
+
+    // Update the tool info panel
+    this.updateToolInfoPanel(tool);
+  }
+
+  /**
+   * Update the tool info panel with context-sensitive instructions
+   *
+   * @param {import("./types").ToolType} tool
+   * @memberof MapCreator
+   */
+  updateToolInfoPanel(tool) {
+    const panel = document.getElementById("toolInfoPanel");
+    if (!panel) return;
+
+    const toolInfo = {
+      select: {
+        title: "Select Object",
+        description:
+          "Click to select rooms, hallways, markers, or labels. Drag rooms to move them around the canvas.",
+        tips: [
+          "<strong>Copy/Paste:</strong> Use Ctrl+C to copy and Ctrl+V to paste selected items",
+          "<strong>Delete:</strong> Press Delete or Backspace to remove selected items",
+          "<strong>Move:</strong> Drag selected rooms to reposition them",
+        ],
+      },
+      room: {
+        title: "Add Room (Rectangle)",
+        description:
+          "Click and drag on the canvas to create a rectangular room. Release the mouse to finalize the room.",
+        tips: [
+          "<strong>Snap to Grid:</strong> Enable in the View section for aligned placement",
+          "<strong>Add Details:</strong> Select the room to add markers, labels, or walls inside it",
+        ],
+      },
+      circle: {
+        title: "Add Circle Room",
+        description:
+          "Click and drag on the canvas to create a circular room. The distance you drag determines the radius.",
+        tips: [
+          "<strong>Perfect Circles:</strong> Drag evenly in any direction from the center",
+          "<strong>Add Details:</strong> Select the room to add markers, labels, or walls inside it",
+        ],
+      },
+      hallway: {
+        title: "Add Hallway",
+        description:
+          "Click on room edges to create connected hallway paths. Hallways must start and end on a room.",
+        tips: [
+          "<strong>Connect Rooms:</strong> Click on the edges of rooms to snap hallways to them",
+          "<strong>Add Turns:</strong> Click multiple points to create L-shaped or complex paths",
+          "<strong>Must Connect:</strong> Hallways must start and end on a room. For paths that don't connect rooms, use standalone walls instead",
+        ],
+      },
+      wall: {
+        title: "Add Standalone Wall",
+        description:
+          "Click and drag to draw walls in open areas between rooms. These walls can only be placed outside of rooms.",
+        tips: [
+          "<strong>Outside Only:</strong> Standalone walls cannot be placed inside rooms",
+          "<strong>Inside Rooms:</strong> To add walls inside a room, select the room first and use the 'Add Wall to Room' button from the context toolbar",
+          "<strong>Straight Lines:</strong> Walls are always drawn as straight lines",
+        ],
+      },
+      roomWall: {
+        title: "Add Wall to Room",
+        description:
+          "Click and drag inside the selected room to draw internal walls. These walls are contained within the room boundaries.",
+        tips: [
+          "<strong>Room Required:</strong> You must have a room selected to use this tool",
+          "<strong>Inside Only:</strong> These walls can only be drawn within the selected room",
+          "<strong>Switch Back:</strong> Click 'Select Object' to exit wall drawing mode",
+        ],
+      },
+      standaloneMarker: {
+        title: "Add Standalone Marker",
+        description:
+          "Click anywhere on the canvas to place a marker (Terminal, Hazard, Loot, NPC, Door, etc.) outside of rooms.",
+        tips: [
+          "<strong>Marker Types:</strong> Terminal, Hazard, Loot, NPC, Door, Ladder, Window, Airlock, Elevator",
+          "<strong>Edit After:</strong> Select the marker to change its type or add a label",
+          "<strong>Room Markers:</strong> To add markers inside rooms, select the room and use 'Add Marker to Room'",
+        ],
+      },
+      standaloneLabel: {
+        title: "Add Standalone Label",
+        description:
+          "Click anywhere on the canvas to place a text label outside of rooms. Use labels to annotate your map.",
+        tips: [
+          "<strong>Edit Text:</strong> Select the label after placing it to change the text",
+          "<strong>Room Labels:</strong> Rooms can also have their own labels set in the details panel",
+        ],
+      },
+      roomMarker: {
+        title: "Place Marker in Room",
+        description:
+          "Click inside the selected room to place a marker. Press Escape to cancel marker placement.",
+        tips: [
+          "<strong>Click to Place:</strong> Click anywhere inside the room to place the marker",
+          "<strong>Cancel:</strong> Press Escape to exit marker placement mode",
+          "<strong>Edit After:</strong> The marker will be automatically selected after placement for editing",
+        ],
+      },
+    };
+
+    const info = toolInfo[tool] || toolInfo.select;
+
+    const tipsHTML = info.tips
+      ? `
+      <div class="info-tips">
+        <ul>
+          ${info.tips.map((tip) => `<li>${tip}</li>`).join("")}
+        </ul>
+      </div>
+    `
+      : "";
+
+    panel.innerHTML = `
+      <div class="info-content">
+        <h4 class="info-title">${info.title}</h4>
+        <p class="info-description">${info.description}</p>
+        ${tipsHTML}
+      </div>
+    `;
+  }
+
+  /**
+   * Update all UI elements after a change
+   * @param {boolean} render - Whether to re-render the canvas (default: true)
+   * @memberof MapCreator
+   */
+  refreshUI(render = true) {
+    this.updatePropertiesPanel();
+    this.updateMarkerSelectors();
+    this.updateItemDetailsPanel();
+    this.updateContextToolbar();
+    if (render) {
+      this.render();
+    }
   }
 
   /**
@@ -216,6 +380,9 @@ class MapCreator {
       }
       if (this.markerPlacementMode) {
         this.markerPlacementMode = null;
+        // Update info panel back to select mode when canceling marker placement
+        this.updateToolInfoPanel("select");
+        this.render();
       }
       this.updatePropertiesPanel();
     }
@@ -473,13 +640,28 @@ class MapCreator {
         );
         if (!room.markers) room.markers = [];
         room.markers.push(marker);
+
+        // Select the newly placed marker
+        this.selectedItem = {
+          type: "marker",
+          room: room,
+          marker: marker,
+          markerIndex: room.markers.length - 1,
+        };
+
         this.markerPlacementMode = null;
         this.updatePropertiesPanel();
         this.updateMarkerSelectors();
+        this.updateItemDetailsPanel();
+
+        // Update info panel back to select mode
+        this.updateToolInfoPanel("select");
         this.render();
       } else {
         // Clicked outside - cancel
         this.markerPlacementMode = null;
+        // Update info panel back to select mode
+        this.updateToolInfoPanel("select");
         this.updatePropertiesPanel();
       }
       return;
@@ -487,7 +669,57 @@ class MapCreator {
 
     // Select tool - for selecting existing items and dragging rooms/markers
     if (this.currentTool === "select") {
-      // Check for markers first (highest priority)
+      // Check for standalone markers first (highest priority)
+      const standaloneMarkerResult = this.getStandaloneMarkerAtPosition(
+        mouseX,
+        mouseY
+      );
+      if (standaloneMarkerResult) {
+        // Select and prepare to drag standalone marker
+        this.selectedItem = {
+          type: "standaloneMarker",
+          marker: standaloneMarkerResult,
+        };
+        this.refreshUI();
+
+        // Prepare to drag standalone marker
+        this.dragState = {
+          type: "standaloneMarker",
+          marker: standaloneMarkerResult,
+          startX: mouseX,
+          startY: mouseY,
+          markerStartX: standaloneMarkerResult.x,
+          markerStartY: standaloneMarkerResult.y,
+        };
+        return;
+      }
+
+      // Check for standalone labels (second priority)
+      const standaloneLabelResult = this.getStandaloneLabelAtPosition(
+        mouseX,
+        mouseY
+      );
+      if (standaloneLabelResult) {
+        // Select and prepare to drag standalone label
+        this.selectedItem = {
+          type: "standaloneLabel",
+          label: standaloneLabelResult,
+        };
+        this.refreshUI();
+
+        // Prepare to drag standalone label
+        this.dragState = {
+          type: "standaloneLabel",
+          label: standaloneLabelResult,
+          startX: mouseX,
+          startY: mouseY,
+          labelStartX: standaloneLabelResult.x,
+          labelStartY: standaloneLabelResult.y,
+        };
+        return;
+      }
+
+      // Check for room markers (third priority)
       const markerResult = this.getMarkerAtPosition(mouseX, mouseY);
       if (markerResult) {
         // Select and prepare to drag marker
@@ -497,10 +729,7 @@ class MapCreator {
           marker: markerResult.marker,
           markerIndex: markerResult.index,
         };
-        this.updatePropertiesPanel();
-        this.updateMarkerSelectors();
-        this.updateItemDetailsPanel();
-        this.render();
+        this.refreshUI();
 
         // Prepare to drag marker
         this.dragState = {
@@ -524,10 +753,7 @@ class MapCreator {
       const clickedItem = this.getItemAtPosition(mouseX, mouseY);
       if (clickedItem) {
         this.selectedItem = clickedItem;
-        this.updatePropertiesPanel();
-        this.updateMarkerSelectors();
-        this.updateItemDetailsPanel();
-        this.render();
+        this.refreshUI();
 
         // If clicked on a room, prepare to drag it - use unsnapped coordinates
         // BUT: Don't allow room dragging if a marker was previously selected
@@ -557,10 +783,7 @@ class MapCreator {
       } else {
         // Clicked on empty space - deselect
         this.selectedItem = null;
-        this.updatePropertiesPanel();
-        this.updateMarkerSelectors();
-        this.updateItemDetailsPanel();
-        this.render();
+        this.refreshUI();
       }
       return;
     }
@@ -622,6 +845,63 @@ class MapCreator {
         this.finishWall(x, y);
         return;
       }
+      return;
+    }
+
+    // For standalone marker tool, place marker at click location
+    if (this.currentTool === "standaloneMarker") {
+      // Check if click is inside a room - standalone markers cannot be placed in rooms
+      const clickedRoom = this.getRoomAtPosition(mouseX, mouseY);
+      if (clickedRoom) {
+        // Clicked inside a room - don't allow standalone marker here
+        return;
+      }
+
+      // Create standalone marker with default "terminal" type
+      const marker = new StandaloneMarker(
+        `standalone-marker-${this.nextId++}`,
+        "terminal",
+        x,
+        y
+      );
+      this.mapData.addStandaloneMarker(marker);
+
+      // Switch back to select mode
+      this.setTool("select");
+
+      // Auto-select the new marker
+      this.selectedItem = {
+        type: "standaloneMarker",
+        marker: marker,
+      };
+      this.updatePropertiesPanel();
+      this.updateItemDetailsPanel();
+      this.render();
+      return;
+    }
+
+    // For standalone label tool, place label at click location
+    if (this.currentTool === "standaloneLabel") {
+      // Create standalone label with default text
+      const label = new StandaloneLabel(
+        `standalone-label-${this.nextId++}`,
+        "Label",
+        x,
+        y
+      );
+      this.mapData.addStandaloneLabel(label);
+
+      // Switch back to select mode
+      this.setTool("select");
+
+      // Auto-select the new label
+      this.selectedItem = {
+        type: "standaloneLabel",
+        label: label,
+      };
+      this.updatePropertiesPanel();
+      this.updateItemDetailsPanel();
+      this.render();
       return;
     }
 
@@ -735,7 +1015,15 @@ class MapCreator {
       const deltaX = mouseX - this.dragState.startX;
       const deltaY = mouseY - this.dragState.startY;
 
-      if (this.dragState.type === "marker") {
+      if (this.dragState.type === "standaloneMarker") {
+        // Update standalone marker position (absolute on map)
+        this.dragState.marker.x = this.dragState.markerStartX + deltaX;
+        this.dragState.marker.y = this.dragState.markerStartY + deltaY;
+      } else if (this.dragState.type === "standaloneLabel") {
+        // Update standalone label position (absolute)
+        this.dragState.label.x = this.dragState.labelStartX + deltaX;
+        this.dragState.label.y = this.dragState.labelStartY + deltaY;
+      } else if (this.dragState.type === "marker") {
         // Update marker position (relative to room)
         this.dragState.marker.x = this.dragState.markerStartX + deltaX;
         this.dragState.marker.y = this.dragState.markerStartY + deltaY;
@@ -861,7 +1149,31 @@ class MapCreator {
     if (this.dragState) {
       const { x, y } = this.getMouseCoordinates(e);
 
-      if (this.dragState.type === "marker") {
+      if (this.dragState.type === "standaloneMarker") {
+        // Finalize standalone marker position with grid snapping (absolute)
+        const deltaX = x - this.dragState.startX;
+        const deltaY = y - this.dragState.startY;
+
+        // Snap marker position
+        this.dragState.marker.x = this.renderer.snapToGrid(
+          this.dragState.markerStartX + deltaX
+        );
+        this.dragState.marker.y = this.renderer.snapToGrid(
+          this.dragState.markerStartY + deltaY
+        );
+      } else if (this.dragState.type === "standaloneLabel") {
+        // Finalize standalone label position with grid snapping (absolute)
+        const deltaX = x - this.dragState.startX;
+        const deltaY = y - this.dragState.startY;
+
+        // Snap label position
+        this.dragState.label.x = this.renderer.snapToGrid(
+          this.dragState.labelStartX + deltaX
+        );
+        this.dragState.label.y = this.renderer.snapToGrid(
+          this.dragState.labelStartY + deltaY
+        );
+      } else if (this.dragState.type === "marker") {
         // Finalize marker position with grid snapping (relative to room)
         const deltaX = x - this.dragState.startX;
         const deltaY = y - this.dragState.startY;
@@ -1822,6 +2134,85 @@ class MapCreator {
   }
 
   /**
+   * Get a standalone marker at a given position (if any)
+   *
+   * @param {number} x
+   * @param {number} y
+   * @return {import("./types").StandaloneMarker|null}
+   * @memberof MapCreator
+   */
+  getStandaloneMarkerAtPosition(x, y) {
+    const markerSize = 16; // Match the size from drawRoomMarker
+    const hitRadius = markerSize * 1.5; // Increase hit area for easier clicking
+
+    // If a standalone marker is currently selected, check it first for priority
+    if (this.selectedItem && this.selectedItem.type === "standaloneMarker") {
+      const marker = this.selectedItem.marker;
+      const distance = Math.sqrt(
+        Math.pow(x - marker.x, 2) + Math.pow(y - marker.y, 2)
+      );
+
+      if (distance <= hitRadius) {
+        return marker;
+      }
+    }
+
+    // Check all standalone markers
+    if (this.mapData.standaloneMarkers) {
+      for (let marker of this.mapData.standaloneMarkers) {
+        const distance = Math.sqrt(
+          Math.pow(x - marker.x, 2) + Math.pow(y - marker.y, 2)
+        );
+
+        if (distance <= hitRadius) {
+          return marker;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Get a standalone label at a given position (if any)
+   *
+   * @param {number} x
+   * @param {number} y
+   * @return {import("./types").StandaloneLabel|null}
+   * @memberof MapCreator
+   */
+  getStandaloneLabelAtPosition(x, y) {
+    const hitRadius = 30; // Larger hit area for text labels
+
+    // If a standalone label is currently selected, check it first for priority
+    if (this.selectedItem && this.selectedItem.type === "standaloneLabel") {
+      const label = this.selectedItem.label;
+      const distance = Math.sqrt(
+        Math.pow(x - label.x, 2) + Math.pow(y - label.y, 2)
+      );
+
+      if (distance <= hitRadius) {
+        return label;
+      }
+    }
+
+    // Check all standalone labels
+    if (this.mapData.standaloneLabels) {
+      for (let label of this.mapData.standaloneLabels) {
+        const distance = Math.sqrt(
+          Math.pow(x - label.x, 2) + Math.pow(y - label.y, 2)
+        );
+
+        if (distance <= hitRadius) {
+          return label;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Get a marker at a given position within a room (if any)
    *
    * @param {number} x
@@ -2025,55 +2416,90 @@ class MapCreator {
 
   render() {
     this.renderer.render(this.mapData, this.selectedItem);
+    this.saveToLocalStorage();
+  }
 
-    // Draw marker placement indicator if in placement mode
-    if (this.markerPlacementMode) {
-      this.drawMarkerPlacementIndicator();
+  /**
+   * Save the current map to localStorage
+   *
+   * @memberof MapCreator
+   */
+  saveToLocalStorage() {
+    try {
+      const mapJSON = this.mapData.toJSON();
+      const jsonString = JSON.stringify(mapJSON);
+      localStorage.setItem("mothership-map-autosave", jsonString);
+    } catch (error) {
+      console.error("Failed to save to localStorage:", error);
     }
   }
 
   /**
-   * Draw an indicator when in marker placement mode
+   * Load map from localStorage if it exists
    *
    * @memberof MapCreator
    */
-  drawMarkerPlacementIndicator() {
-    const canvas = document.getElementById("mapCanvas");
-    const ctx = this.renderer.ctx;
+  loadFromLocalStorage() {
+    try {
+      const savedMap = localStorage.getItem("mothership-map-autosave");
+      if (savedMap) {
+        const parsedData = JSON.parse(savedMap);
+        this.mapData.fromJSON(parsedData);
 
-    ctx.save();
+        // Recalculate nextId to avoid ID conflicts
+        this.recalculateNextId();
 
-    // Draw indicator in top-right corner (no transformation needed, absolute positioning)
-    const padding = 15;
-    const text = "PLACING MARKER - Click in room or press ESC to cancel";
+        // Update the map name input
+        const mapNameInput = document.getElementById("mapName");
+        if (mapNameInput) {
+          mapNameInput.value = this.mapData.mapName || "";
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load from localStorage:", error);
+      // Clear corrupted data
+      localStorage.removeItem("mothership-map-autosave");
+    }
+  }
 
-    // Set font to measure text
-    ctx.font = "bold 14px sans-serif";
-    const metrics = ctx.measureText(text);
-    const textWidth = metrics.width;
-    const textHeight = 20;
+  /**
+   * Create a new map (clear current map and localStorage)
+   *
+   * @memberof MapCreator
+   */
+  newMap() {
+    if (
+      confirm(
+        "Are you sure you want to create a new map? This will clear your current map. Make sure to export your current map if you want to save it!"
+      )
+    ) {
+      // Clear localStorage
+      localStorage.removeItem("mothership-map-autosave");
 
-    // Background rectangle
-    const rectX = canvas.width - textWidth - padding * 2;
-    const rectY = padding;
-    const rectWidth = textWidth + padding * 2;
-    const rectHeight = textHeight + padding;
+      // Reset map data
+      this.mapData = new MapData();
+      this.selectedItem = null;
+      this.drawingState = null;
+      this.hallwayCreationState = null;
+      this.wallCreationState = null;
+      this.markerPlacementMode = null;
 
-    ctx.fillStyle = "rgba(0, 81, 255, 0.9)";
-    ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
+      // Reset map name input
+      const mapNameInput = document.getElementById("mapName");
+      if (mapNameInput) {
+        mapNameInput.value = "";
+      }
 
-    // White border
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(rectX, rectY, rectWidth, rectHeight);
+      // Update UI
+      this.updateMarkerSelectors();
+      this.updateContextToolbar();
+      this.updateItemDetailsPanel();
+      this.updateToolInfoPanel("select");
+      this.setTool("select");
 
-    // Text
-    ctx.fillStyle = "#ffffff";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(text, rectX + rectWidth / 2, rectY + rectHeight / 2);
-
-    ctx.restore();
+      // Render without saving to localStorage since we just cleared it
+      this.renderer.render(this.mapData, this.selectedItem);
+    }
   }
 
   /**
@@ -2149,6 +2575,7 @@ class MapCreator {
                   <option value="npc" ${item.marker.type === "npc" ? "selected" : ""}>NPC</option>
                   <option value="loot" ${item.marker.type === "loot" ? "selected" : ""}>Loot</option>
                   <option value="door" ${item.marker.type === "door" ? "selected" : ""}>Door</option>
+                  <option value="ladder" ${item.marker.type === "ladder" ? "selected" : ""}>Ladder</option>
                   <option value="window" ${item.marker.type === "window" ? "selected" : ""}>Window</option>
                   <option value="airlock" ${item.marker.type === "airlock" ? "selected" : ""}>Airlock</option>
                   <option value="elevator" ${item.marker.type === "elevator" ? "selected" : ""}>Elevator</option>
@@ -2158,9 +2585,52 @@ class MapCreator {
                 Marker Label:
                 <input type="text" id="detailsMarkerLabel" value="${item.marker.label || ""}" placeholder="Optional">
               </label>`;
+      html += `<label>
+                Rotation: ${item.marker.rotation || 0}°
+                <button id="detailsMarkerRotate" class="action-btn" style="margin-top: 4px;">Rotate 90°</button>
+              </label>`;
       html += `<div class="checkbox-container">
                 <input type="checkbox" id="detailsMarkerVisible" ${item.marker.visible !== false ? "checked" : ""}>
                 <label for="detailsMarkerVisible" style="margin: 0;">Visible by Default</label>
+              </div>`;
+    } else if (item.type === "standaloneMarker") {
+      // Standalone marker details
+      html += `<label>
+                Marker Type:
+                <select id="detailsStandaloneMarkerType" class="toolbar-select">
+                  <option value="terminal" ${item.marker.type === "terminal" ? "selected" : ""}>Terminal</option>
+                  <option value="hazard" ${item.marker.type === "hazard" ? "selected" : ""}>Hazard</option>
+                  <option value="objective" ${item.marker.type === "objective" ? "selected" : ""}>Objective</option>
+                  <option value="npc" ${item.marker.type === "npc" ? "selected" : ""}>NPC</option>
+                  <option value="loot" ${item.marker.type === "loot" ? "selected" : ""}>Loot</option>
+                  <option value="door" ${item.marker.type === "door" ? "selected" : ""}>Door</option>
+                  <option value="ladder" ${item.marker.type === "ladder" ? "selected" : ""}>Ladder</option>
+                  <option value="window" ${item.marker.type === "window" ? "selected" : ""}>Window</option>
+                  <option value="airlock" ${item.marker.type === "airlock" ? "selected" : ""}>Airlock</option>
+                  <option value="elevator" ${item.marker.type === "elevator" ? "selected" : ""}>Elevator</option>
+                </select>
+              </label>`;
+      html += `<label>
+                Marker Label:
+                <input type="text" id="detailsStandaloneMarkerLabel" value="${item.marker.label || ""}" placeholder="Optional">
+              </label>`;
+      html += `<label>
+                Rotation: ${item.marker.rotation || 0}°
+                <button id="detailsStandaloneMarkerRotate" class="action-btn" style="margin-top: 4px;">Rotate 90°</button>
+              </label>`;
+      html += `<div class="checkbox-container">
+                <input type="checkbox" id="detailsStandaloneMarkerVisible" ${item.marker.visible !== false ? "checked" : ""}>
+                <label for="detailsStandaloneMarkerVisible" style="margin: 0;">Visible by Default</label>
+              </div>`;
+    } else if (item.type === "standaloneLabel") {
+      // Standalone label details
+      html += `<label>
+                Label Text:
+                <input type="text" id="detailsStandaloneLabelText" value="${item.label.text || ""}" placeholder="Enter text">
+              </label>`;
+      html += `<div class="checkbox-container">
+                <input type="checkbox" id="detailsStandaloneLabelVisible" ${item.label.visible !== false ? "checked" : ""}>
+                <label for="detailsStandaloneLabelVisible" style="margin: 0;">Visible by Default</label>
               </div>`;
     } else if (item.type === "room") {
       // Room details
@@ -2201,6 +2671,10 @@ class MapCreator {
                 <input type="checkbox" id="detailsStartMarkerVisible" ${!item.startMarker || item.startMarker.visible !== false ? "checked" : ""} ${!item.startMarker || item.startMarker.type === "none" ? "disabled" : ""}>
                 <label for="detailsStartMarkerVisible" style="margin: 0;">Visible by Default</label>
               </div>`;
+      html += `<label style="display: ${!item.startMarker || item.startMarker.type === "none" ? "none" : "block"};" id="detailsStartMarkerRotationContainer">
+                Rotation: ${(item.startMarker && item.startMarker.rotation) || 0}°
+                <button id="detailsStartMarkerRotate" class="action-btn" style="margin-top: 4px;">Rotate 90°</button>
+              </label>`;
       html += `<hr style="border: 0; border-top: 1px solid #444; margin: 8px 0;">`;
       html += `<label style="font-weight: bold; margin-bottom: 4px;">End Marker</label>`;
       html += `<label>
@@ -2216,6 +2690,10 @@ class MapCreator {
                 <input type="checkbox" id="detailsEndMarkerVisible" ${!item.endMarker || item.endMarker.visible !== false ? "checked" : ""} ${!item.endMarker || item.endMarker.type === "none" ? "disabled" : ""}>
                 <label for="detailsEndMarkerVisible" style="margin: 0;">Visible by Default</label>
               </div>`;
+      html += `<label style="display: ${!item.endMarker || item.endMarker.type === "none" ? "none" : "block"};" id="detailsEndMarkerRotationContainer">
+                Rotation: ${(item.endMarker && item.endMarker.rotation) || 0}°
+                <button id="detailsEndMarkerRotate" class="action-btn" style="margin-top: 4px;">Rotate 90°</button>
+              </label>`;
     } else if (item.type === "wall") {
       // Wall details - only show for standalone walls (not room walls)
       if (!item.parentRoomId) {
@@ -2227,6 +2705,10 @@ class MapCreator {
         html += `<div class="checkbox-container">
                   <input type="checkbox" id="detailsWallVisible" ${item.visible !== false ? "checked" : ""}>
                   <label for="detailsWallVisible" style="margin: 0;">Visible by Default</label>
+                </div>`;
+        html += `<div class="checkbox-container" style="margin-top: 8px;">
+                  <input type="checkbox" id="detailsWallDotted" ${item.isDotted ? "checked" : ""}>
+                  <label for="detailsWallDotted" style="margin: 0;">Dotted Line</label>
                 </div>`;
       }
       // Room walls don't show these fields (inherit from parent room)
@@ -2257,6 +2739,61 @@ class MapCreator {
         ?.addEventListener("change", (e) => {
           item.marker.visible = e.target.checked;
           this.updatePropertiesPanel();
+          this.render();
+        });
+
+      document
+        .getElementById("detailsMarkerRotate")
+        ?.addEventListener("click", () => {
+          if (!item.marker.rotation) item.marker.rotation = 0;
+          item.marker.rotation = (item.marker.rotation + 90) % 360;
+          this.updateItemDetailsPanel();
+          this.render();
+        });
+    } else if (item.type === "standaloneMarker") {
+      document
+        .getElementById("detailsStandaloneMarkerType")
+        ?.addEventListener("change", (e) => {
+          item.marker.type = e.target.value;
+          this.updatePropertiesPanel();
+          this.render();
+        });
+
+      document
+        .getElementById("detailsStandaloneMarkerLabel")
+        ?.addEventListener("input", (e) => {
+          item.marker.label = e.target.value;
+          this.updatePropertiesPanel();
+        });
+
+      document
+        .getElementById("detailsStandaloneMarkerVisible")
+        ?.addEventListener("change", (e) => {
+          item.marker.visible = e.target.checked;
+          this.updatePropertiesPanel();
+          this.render();
+        });
+
+      document
+        .getElementById("detailsStandaloneMarkerRotate")
+        ?.addEventListener("click", () => {
+          if (!item.marker.rotation) item.marker.rotation = 0;
+          item.marker.rotation = (item.marker.rotation + 90) % 360;
+          this.updateItemDetailsPanel();
+          this.render();
+        });
+    } else if (item.type === "standaloneLabel") {
+      document
+        .getElementById("detailsStandaloneLabelText")
+        ?.addEventListener("input", (e) => {
+          item.label.text = e.target.value;
+          this.render();
+        });
+
+      document
+        .getElementById("detailsStandaloneLabelVisible")
+        ?.addEventListener("change", (e) => {
+          item.label.visible = e.target.checked;
           this.render();
         });
     } else if (item.type === "room") {
@@ -2359,6 +2896,28 @@ class MapCreator {
             this.render();
           }
         });
+
+      document
+        .getElementById("detailsStartMarkerRotate")
+        ?.addEventListener("click", () => {
+          if (item.startMarker) {
+            if (!item.startMarker.rotation) item.startMarker.rotation = 0;
+            item.startMarker.rotation = (item.startMarker.rotation + 90) % 360;
+            this.updateItemDetailsPanel();
+            this.render();
+          }
+        });
+
+      document
+        .getElementById("detailsEndMarkerRotate")
+        ?.addEventListener("click", () => {
+          if (item.endMarker) {
+            if (!item.endMarker.rotation) item.endMarker.rotation = 0;
+            item.endMarker.rotation = (item.endMarker.rotation + 90) % 360;
+            this.updateItemDetailsPanel();
+            this.render();
+          }
+        });
     } else if (item.type === "wall") {
       // Event listeners only for standalone walls
       if (!item.parentRoomId) {
@@ -2374,6 +2933,14 @@ class MapCreator {
           .getElementById("detailsWallVisible")
           ?.addEventListener("change", (e) => {
             item.visible = e.target.checked;
+            this.updatePropertiesPanel();
+            this.render();
+          });
+
+        document
+          .getElementById("detailsWallDotted")
+          ?.addEventListener("change", (e) => {
+            item.isDotted = e.target.checked;
             this.updatePropertiesPanel();
             this.render();
           });
@@ -2609,32 +3176,14 @@ class MapCreator {
       return;
     }
 
-    const room = this.selectedItem;
-    const newMarker = {
-      type: "terminal",
-      x: room.width / 2,
-      y: room.height / 2,
-      label: "",
-      visible: true,
+    // Enter marker placement mode
+    this.markerPlacementMode = {
+      room: this.selectedItem,
+      markerType: "terminal",
     };
 
-    if (!room.markers) {
-      room.markers = [];
-    }
-
-    room.markers.push(newMarker);
-
-    // Select the newly added marker
-    this.selectedItem = {
-      type: "marker",
-      room: room,
-      marker: newMarker,
-      markerIndex: room.markers.length - 1,
-    };
-
-    this.updatePropertiesPanel();
-    this.updateMarkerSelectors();
-    this.updateItemDetailsPanel();
+    // Update the info panel to show marker placement instructions
+    this.updateToolInfoPanel("roomMarker");
     this.render();
   }
 
@@ -2651,6 +3200,12 @@ class MapCreator {
     if (this.selectedItem.type === "marker") {
       // Delete marker from room
       this.selectedItem.room.markers.splice(this.selectedItem.markerIndex, 1);
+    } else if (this.selectedItem.type === "standaloneMarker") {
+      // Delete standalone marker
+      this.mapData.removeItem("standaloneMarker", this.selectedItem.marker.id);
+    } else if (this.selectedItem.type === "standaloneLabel") {
+      // Delete standalone label
+      this.mapData.removeItem("standaloneLabel", this.selectedItem.label.id);
     } else if (
       this.selectedItem.type === "wall" &&
       this.selectedItem.parentRoomId
@@ -2687,13 +3242,33 @@ class MapCreator {
     this.render();
   }
 
+  /**
+   * Validate that map has a name before export
+   * @returns {boolean}
+   */
+  validateMapName() {
+    const mapName = this.mapData.mapName.trim();
+    const errorElement = document.getElementById("mapNameError");
+
+    if (!mapName) {
+      errorElement.style.display = "block";
+      document.getElementById("mapName").focus();
+      return false;
+    }
+
+    errorElement.style.display = "none";
+    return true;
+  }
+
   exportJSON() {
+    if (!this.validateMapName()) return;
+
     const json = JSON.stringify(this.mapData.toJSON(), null, 2);
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${this.mapData.mapName || "map"}.json`;
+    a.download = `${this.mapData.mapName}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -2740,6 +3315,22 @@ class MapCreator {
       }
     });
 
+    // Check all standalone marker IDs
+    this.mapData.standaloneMarkers.forEach((marker) => {
+      const numericId = parseInt(marker.id.replace(/\D/g, ""), 10);
+      if (!isNaN(numericId) && numericId > maxId) {
+        maxId = numericId;
+      }
+    });
+
+    // Check all standalone label IDs
+    this.mapData.standaloneLabels.forEach((label) => {
+      const numericId = parseInt(label.id.replace(/\D/g, ""), 10);
+      if (!isNaN(numericId) && numericId > maxId) {
+        maxId = numericId;
+      }
+    });
+
     // Set nextId to one more than the highest ID found
     this.nextId = maxId + 1;
   }
@@ -2776,6 +3367,8 @@ class MapCreator {
   }
 
   generateShareString() {
+    if (!this.validateMapName()) return;
+
     const shareString = this.mapData.toShareString();
     const message = `Share this string to share your map:\n\n${shareString}`;
 
@@ -2806,13 +3399,142 @@ class MapCreator {
       alert("Invalid share string!");
     }
   }
+
+  /**
+   * Calculate the bounding box of all map elements
+   * @returns {{minX: number, minY: number, maxX: number, maxY: number}}
+   */
+  calculateMapBounds() {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    const padding = 50; // Extra padding around the map
+
+    // Check rooms
+    this.mapData.rooms.forEach((room) => {
+      if (room.shape === "circle") {
+        const radius = room.width / 2;
+        minX = Math.min(minX, room.x - radius);
+        minY = Math.min(minY, room.y - radius);
+        maxX = Math.max(maxX, room.x + radius);
+        maxY = Math.max(maxY, room.y + radius);
+      } else {
+        minX = Math.min(minX, room.x);
+        minY = Math.min(minY, room.y);
+        maxX = Math.max(maxX, room.x + room.width);
+        maxY = Math.max(maxY, room.y + room.height);
+      }
+    });
+
+    // Check hallways
+    this.mapData.hallways.forEach((hallway) => {
+      hallway.segments.forEach((segment) => {
+        minX = Math.min(minX, segment.x1, segment.x2);
+        minY = Math.min(minY, segment.y1, segment.y2);
+        maxX = Math.max(maxX, segment.x1, segment.x2);
+        maxY = Math.max(maxY, segment.y1, segment.y2);
+      });
+    });
+
+    // Check standalone walls
+    this.mapData.walls.forEach((wall) => {
+      wall.segments.forEach((segment) => {
+        minX = Math.min(minX, segment.x1, segment.x2);
+        minY = Math.min(minY, segment.y1, segment.y2);
+        maxX = Math.max(maxX, segment.x1, segment.x2);
+        maxY = Math.max(maxY, segment.y1, segment.y2);
+      });
+    });
+
+    // Check standalone markers
+    this.mapData.standaloneMarkers.forEach((marker) => {
+      minX = Math.min(minX, marker.x);
+      minY = Math.min(minY, marker.y);
+      maxX = Math.max(maxX, marker.x);
+      maxY = Math.max(maxY, marker.y);
+    });
+
+    // Check standalone labels
+    this.mapData.standaloneLabels.forEach((label) => {
+      minX = Math.min(minX, label.x);
+      minY = Math.min(minY, label.y);
+      maxX = Math.max(maxX, label.x);
+      maxY = Math.max(maxY, label.y);
+    });
+
+    // If no elements found, use default bounds
+    if (!isFinite(minX)) {
+      return { minX: 0, minY: 0, maxX: 800, maxY: 600 };
+    }
+
+    return {
+      minX: minX - padding,
+      minY: minY - padding,
+      maxX: maxX + padding,
+      maxY: maxY + padding,
+    };
+  }
+
+  /**
+   * Export a screenshot of the map
+   */
+  exportScreenshot() {
+    if (!this.validateMapName()) return;
+
+    // Calculate the bounds of all map elements
+    const bounds = this.calculateMapBounds();
+    const width = bounds.maxX - bounds.minX;
+    const height = bounds.maxY - bounds.minY;
+
+    // Create a temporary canvas
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = width;
+    tempCanvas.height = height;
+    const tempCtx = tempCanvas.getContext("2d");
+
+    // Fill with black background (before creating renderer)
+    tempCtx.fillStyle = "#000000";
+    tempCtx.fillRect(0, 0, width, height);
+
+    // Create a temporary renderer with the temp canvas
+    const tempRenderer = new MapRenderer(tempCanvas);
+    tempRenderer.showGrid = false; // Don't show grid in screenshot
+    tempRenderer.offsetX = -bounds.minX; // Offset to crop to bounds
+    tempRenderer.offsetY = -bounds.minY;
+
+    // Render the map on the temporary canvas (this will call clear, so we need to prevent it)
+    // Save the clear method temporarily
+    const originalClear = tempRenderer.clear.bind(tempRenderer);
+    tempRenderer.clear = function () {
+      // Re-fill with black instead of clearing to transparent
+      tempCtx.fillStyle = "#000000";
+      tempCtx.fillRect(0, 0, width, height);
+    };
+
+    // Render the map
+    tempRenderer.render(this.mapData, null);
+
+    // Restore original clear method
+    tempRenderer.clear = originalClear;
+
+    // Convert canvas to blob and download
+    tempCanvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const fileName = `${this.mapData.mapName.replace(/[^a-z0-9]/gi, "_")}.png`;
+      link.download = fileName;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+  }
 }
 
 // Initialize the application when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
-  window.mapCreator = new MapCreator();
   var canvas = document.querySelector("canvas");
-  fitToContainer(canvas);
 
   function fitToContainer(canvas) {
     // Make it visually fill the positioned parent
@@ -2822,6 +3544,12 @@ document.addEventListener("DOMContentLoaded", () => {
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
   }
+
+  // Fit canvas to container BEFORE creating MapCreator
+  fitToContainer(canvas);
+
+  // Now initialize the application
+  window.mapCreator = new MapCreator();
 
   // Handle window resize to keep canvas resolution in sync with display size
   let resizeTimeout;

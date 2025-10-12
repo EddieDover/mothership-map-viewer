@@ -1,0 +1,13 @@
+{
+  "header": "",
+  "bumpFiles": [
+    {
+      "filename": "package.json",
+      "type": "json"
+    },
+    {
+      "filename": "src/module.json",
+      "type": "json"
+    }
+  ]
+}

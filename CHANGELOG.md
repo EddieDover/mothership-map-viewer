@@ -1,4 +1,58 @@
-# Changelog
+## [1.4.0](https://github.com/EddieDover/mothership-map-viewer/compare/v1.3.2...v1.4.0) (2025-10-12)
+
+### Features
+
+- add multi-map support with selector and delete functionality ([8bee990](https://github.com/EddieDover/mothership-map-viewer/commit/8bee990be9acc87f975e044b6655119dc7dbb735))
+- add rotation functionality for markers ([2bf1fb5](https://github.com/EddieDover/mothership-map-viewer/commit/2bf1fb580b42f8c00695bd064a9c94a45b2aef1f))
+- **docs:** add new SVG marker and tool icons for enhanced visual representation ([f6e2274](https://github.com/EddieDover/mothership-map-viewer/commit/f6e2274a685afce3a520297752756c2e1a160060))
+- implement SVG path definitions for room and hallway markers ([0651526](https://github.com/EddieDover/mothership-map-viewer/commit/06515263f8b9472f481f206042c94f8e32addb8b))
+- **map:** implement rotation functionality for markers and update UI interactions ([f08862e](https://github.com/EddieDover/mothership-map-viewer/commit/f08862e0e3b563ff483df49e7888d7d4f5bc415f))
+- **site:** add SVG path definitions for room and hallway markers ([0443a0b](https://github.com/EddieDover/mothership-map-viewer/commit/0443a0bcada1d52ae59d72561b724e964b3f11bf))
+- **site:** add validation for map name ([e348da3](https://github.com/EddieDover/mothership-map-viewer/commit/e348da31e14cb5fd20411a16202c2b46f5eaab67))
+
+### Bug Fixes
+
+- fixed logic to determine next available ID for standalone markers and labels ([79a99c7](https://github.com/EddieDover/mothership-map-viewer/commit/79a99c73b0800149e73bb9d3cf6620fcdd31c8b2))
+- standalone labels now save into localStorage properly ([90b94c5](https://github.com/EddieDover/mothership-map-viewer/commit/90b94c58dff6dd82d16767c1501e288f305d33a6))
+
+## [1.3.2](https://github.com/EddieDover/mothership-map-viewer/compare/v1.3.1...v1.3.2) (2025-10-11)
+
+### Features
+
+- added more button links ([1983f4a](https://github.com/EddieDover/mothership-map-viewer/commit/1983f4a131af378cc05031ee06f132ec5e4a1408))
+- **site:** add 'New Map' button and localStorage functionality for map management ([a19579e](https://github.com/EddieDover/mothership-map-viewer/commit/a19579e57e1f7d10a2c4f09c569b61ab6010496c))
+- **site:** add tool info panel with context-sensitive instructions ([4ebf3f2](https://github.com/EddieDover/mothership-map-viewer/commit/4ebf3f2e2c06ad732a326d1b123d999beab1ff71))
+
+## [1.3.1](https://github.com/EddieDover/mothership-map-viewer/compare/v1.3.0...v1.3.1) (2025-10-11)
+
+### Misc
+
+- Consolidated duplicated code in both the site and foundry module. Reduces the final code output by about 10K and helps me keep things less complex for development purposes.
+
+## [1.3.0](https://github.com/EddieDover/mothership-map-viewer/compare/v1.2.0...v1.3.0) (2025-10-11)
+
+### Features
+
+- player list shows character names and character sheets if clicked ([e023b4c](https://github.com/EddieDover/mothership-map-viewer/commit/e023b4cc83c8b127e383f4fa2d2e4761da93a61a))
+- **site:** added wiki link to sidebar ([80f99a8](https://github.com/EddieDover/mothership-map-viewer/commit/80f99a87c4f73d9c13d2530af470e505786d54dd))
+
+### Bug Fixes
+
+- adding changelog and readme to build for people using module managers ([5d8eee8](https://github.com/EddieDover/mothership-map-viewer/commit/5d8eee802ae105217f76323fcda928b517ef199e))
+
+## [1.2.0](https://github.com/EddieDover/mothership-map-viewer/compare/v1.1.0...v1.2.0) (2025-10-10)
+
+### Features
+
+- added dotted walls ([37a5250](https://github.com/EddieDover/mothership-map-viewer/commit/37a525084f0c65003e29e8388dd88084f24d7d3b))
+- added ladder markers ([2a577e0](https://github.com/EddieDover/mothership-map-viewer/commit/2a577e06f6fb81e902cadfcb6366dd7d55660fa2))
+- added standalone labels ([277c0ba](https://github.com/EddieDover/mothership-map-viewer/commit/277c0baf1953c691031c883fb42a0ef5daa01019))
+- added standalone map markers ([91aa152](https://github.com/EddieDover/mothership-map-viewer/commit/91aa15270617be40d3458c4702f880fa606c2777))
+
+### Bug Fixes
+
+- adjusted margin to allow placing room markers on walls ([b264325](https://github.com/EddieDover/mothership-map-viewer/commit/b2643256aecc5ddedf1f9a7421c2994048f4dca7))
+- optimize canvas zoom event handling for improved performance ([e6ed609](https://github.com/EddieDover/mothership-map-viewer/commit/e6ed6099772b31c865c4c8d086f32e8edc569bcc))
 
 ## [1.1.0](https://github.com/EddieDover/mothership-map-viewer/compare/v1.0.0...v1.1.0) (2025-10-10)
 

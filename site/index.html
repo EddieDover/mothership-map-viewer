@@ -37,29 +37,61 @@
             </div>
             <p style="margin-top: 8px; font-size: 0.85em; color: #aaa">
               <strong>Marker Types:</strong> Terminal, Hazard, Loot, NPC, Door,
-              Window
+              Ladder, Window, Airlock, Elevator
             </p>
+          </div>
+
+          <div class="tool-section">
+            <h3>Map</h3>
+            <button id="newMapBtn" class="action-btn">New Map</button>
           </div>
 
           <div class="tool-section">
             <h3>Map Properties</h3>
             <label>
               Map Name:
-              <input type="text" id="mapName" placeholder="Untitled Map" />
+              <input
+                type="text"
+                id="mapName"
+                placeholder="Untitled Map"
+                required
+              />
             </label>
+            <div
+              id="mapNameError"
+              style="
+                color: #ff4444;
+                font-size: 12px;
+                margin-top: 4px;
+                display: none;
+              "
+            >
+              Map name is required for export
+            </div>
           </div>
 
           <div class="tool-section">
             <h3>View</h3>
             <button id="resetViewBtn" class="action-btn">Reset View</button>
-            <label style="display: flex; align-items: center; margin-top: 8px; cursor: pointer;">
-              <input type="checkbox" id="snapToGridToggle" style="margin-right: 8px;" />
+            <button
+              id="snapToGridToggle"
+              class="action-btn"
+              style="margin-top: 8px"
+            >
+              <input
+                type="checkbox"
+                id="snapToGridCheckbox"
+                style="margin-right: 8px; pointer-events: none"
+              />
               <span>Snap to Grid</span>
-            </label>
+            </button>
           </div>
 
           <div class="tool-section">
             <h3>Export/Import</h3>
+            <button id="seeCommunityMaps" class="action-btn">
+              View Community Maps
+            </button>
             <button id="exportBtn" class="action-btn">Export JSON</button>
             <button id="importBtn" class="action-btn">Import JSON</button>
             <button id="shareBtn" class="action-btn">
@@ -67,6 +99,9 @@
             </button>
             <button id="loadShareBtn" class="action-btn">
               Load from Share String
+            </button>
+            <button id="screenshotBtn" class="action-btn">
+              Export Screenshot
             </button>
           </div>
         </aside>
@@ -178,6 +213,49 @@
                   <path d="M3 10 L17 10" />
                 </svg>
               </button>
+              <button
+                id="floatingAddStandaloneMarkerBtn"
+                class="floating-tool-btn"
+                title="Add Standalone Marker"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="0"
+                  stroke="none"
+                  width="20"
+                  height="20"
+                >
+                  <path
+                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+                  />
+                </svg>
+              </button>
+              <button
+                id="floatingAddStandaloneLabelBtn"
+                class="floating-tool-btn"
+                title="Add Standalone Label"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <text
+                    x="5"
+                    y="15"
+                    font-size="14"
+                    font-weight="bold"
+                    fill="currentColor"
+                  >
+                    T
+                  </text>
+                </svg>
+              </button>
             </div>
 
             <!-- Context-sensitive floating toolbar (appears when item is selected) -->
@@ -195,16 +273,15 @@
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
+                  fill="currentColor"
                   viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="size-6"
+                  stroke-width="0"
+                  stroke="none"
+                  width="20"
+                  height="20"
                 >
                   <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5"
+                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
                   />
                 </svg>
               </button>
@@ -290,6 +367,17 @@
               <!-- Content will be populated dynamically -->
             </div>
 
+            <!-- Tool Info Panel -->
+            <div id="toolInfoPanel" class="floating-toolbar tool-info-panel">
+              <div class="info-content">
+                <h4 class="info-title">Select Object</h4>
+                <p class="info-description">
+                  Click to select rooms, hallways, markers, or labels. Drag
+                  rooms to move them around the canvas.
+                </p>
+              </div>
+            </div>
+
             <canvas id="mapCanvas"></canvas>
           </div>
         </main>
@@ -309,6 +397,7 @@
     <script src="version.js"></script>
     <script src="constants.js"></script>
     <script src="map-schema.js"></script>
+    <script src="marker-paths.js"></script>
     <script src="map-renderer.js"></script>
     <script src="map-creator.js"></script>
     <script>

@@ -1,7 +1,7 @@
 {
   "name": "mothership-map-viewer",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.4.0",
   "description": "Adds a map viewer for Mothership RPG maps to Foundry VTT.",
   "homepage": "https://github.com/EddieDover/mothership-map-viewer#readme",
   "url": "https://github.com/EddieDover/mothership-map-viewer",
@@ -20,7 +20,7 @@
     "flags": {}
   },
   "type": "module",
-  "main": "scripts/crew-relationships.js",
+  "main": "src/scripts/mothership-map-viewer.js",
   "scripts": {
     "build": "node build.js",
     "package": "node build.js --package",
@@ -43,7 +43,8 @@
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
     "prettier": "^3.6.2",
-    "prettier-eslint": "^16.4.2"
+    "prettier-eslint": "^16.4.2",
+    "sass": "^1.93.2"
   },
   "commit-and-tag-version": {
     "skip": {

@@ -24,7 +24,7 @@
       "path": "lang/es.json"
     }
   ],
-  "version": "1.1.0",
+  "version": "1.4.0",
   "compatibility": {
     "minimum": "13",
     "verified": "13"
@@ -38,8 +38,12 @@
     }
   ],
   "socket": true,
-  "esmodules": ["scripts/mothership-map-viewer.js"],
-  "styles": ["styles/mothership-map-viewer.css"],
+  "esmodules": [
+    "scripts/mothership-map-viewer.js"
+  ],
+  "styles": [
+    "styles/mothership-map-viewer.css"
+  ],
   "relationships": {
     "systems": [
       {
