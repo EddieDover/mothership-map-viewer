@@ -4,14 +4,117 @@ A Foundry VTT module for displaying and managing maps created with the Mothershi
 
 ## Features
 
+### Foundry VTT Module
+
 - **Import Maps**: Load maps via JSON file or share string
 - **GM Visibility Controls**: Toggle visibility of:
   - Individual rooms
   - Room markers (terminals, hazards, objectives, loot, NPCs, doors, windows, airlocks, ladders, elevators)
   - Hallways (both regular and secret passages)
   - Hallway endpoint markers (doors, grates, and airlocks)
-  - Standalone walls (normal and dotted), markers, and labels.
+  - Standalone walls (normal and dotted)
+  - Standalone markers
+  - Standalone labels
+- **Player Views**: Open individual map viewers for each player and see real-time visibility updates (know who has the map open and who closed it)
 - **Accurate Rendering**: Maps render exactly as they appear in the creator tool
+
+### Map Creator Tool
+
+#### Drawing Tools
+
+<p align="center">
+  <img src="docs/images/tool-select.svg" alt="Select" title="Select Object" />
+  <img src="docs/images/tool-rectangle.svg" alt="Rectangle" title="Add Rectangle Room" />
+  <img src="docs/images/tool-circle.svg" alt="Circle" title="Add Circle Room" />
+  <img src="docs/images/tool-hallway.svg" alt="Hallway" title="Add Hallway" />
+  <img src="docs/images/tool-wall.svg" alt="Wall" title="Add Wall" />
+  <img src="docs/images/tool-marker.svg" alt="Marker" title="Add Marker" />
+  <img src="docs/images/tool-label.svg" alt="Label" title="Add Label" />
+</p>
+
+- **Rooms**:
+  - Rectangular rooms with adjustable dimensions
+  - Circular rooms with adjustable radius
+  - Add labels to identify rooms
+  - Place internal walls within rooms
+  - Add multiple markers within rooms
+- **Hallways**:
+  - Multi-segment paths connecting rooms
+  - Click room edges to snap hallways
+  - Support for L-shaped and complex paths
+  - Endpoint markers (doors, grates, airlocks, or none for merging)
+- **Standalone Elements**:
+  - Walls for open areas between rooms
+  - Markers that can be placed anywhere
+  - Text labels for annotations
+
+#### Marker Types
+
+<p align="center">
+  <img src="docs/images/marker-terminal.svg" alt="Terminal" title="Terminal" />
+  <img src="docs/images/marker-hazard.svg" alt="Hazard" title="Hazard" />
+  <img src="docs/images/marker-loot.svg" alt="Loot" title="Loot" />
+  <img src="docs/images/marker-npc.svg" alt="NPC" title="NPC" />
+  <img src="docs/images/marker-door.svg" alt="Door" title="Door" />
+  <img src="docs/images/marker-ladder.svg" alt="Ladder" title="Ladder" />
+  <img src="docs/images/marker-window.svg" alt="Window" title="Window" />
+  <img src="docs/images/marker-airlock.svg" alt="Airlock" title="Airlock" />
+  <img src="docs/images/marker-elevator.svg" alt="Elevator" title="Elevator" />
+</p>
+
+- **Terminal**: Computing terminal or console
+- **Hazard**: Environmental danger or warning
+- **Loot**: Valuable items or supplies
+- **NPC**: Non-player character location
+- **Door**: Doorway or passage
+- **Ladder**: Vertical access point
+- **Window**: Window or viewport
+- **Airlock**: Sealed chamber entrance
+- **Elevator**: Vertical transport
+
+#### Hallway Endpoint Markers
+
+<p align="center">
+  <img src="docs/images/hallway-door.svg" alt="Door" title="Door" />
+  <img src="docs/images/hallway-grate.svg" alt="Grate" title="Grate" />
+  <img src="docs/images/hallway-airlock.svg" alt="Airlock" title="Airlock" />
+</p>
+
+- **Door**: Doorway connecting hallway segments
+- **Grate**: Ventilation grate or grated passage
+- **Airlock**: Sealed chamber entrance at hallway ends
+- **None**: No marker (for merging hallway segments seamlessly)
+
+#### Editing Features
+
+- **Selection Tool**: Click to select any element
+- **Move Rooms**: Drag rooms to reposition them
+- **Copy/Paste**: Duplicate elements with Ctrl+C and Ctrl+V
+- **Delete**: Remove elements with Delete or Backspace keys
+- **Snap to Grid**: Toggle grid snapping for precise alignment
+- **Pan View**: Right-click and drag to navigate large maps
+- **Reset View**: A button is available to easily reset your view
+
+#### Visibility Controls
+
+- Set default visibility for rooms, hallways, and markers
+- Fine-grained control over what players see on first import
+- All visibility can be adjusted in Foundry by the GM after import
+
+#### Import/Export
+
+- **JSON**: Save and Load maps as JSON files.
+- **Share Strings**: Generate and Load Base64-encoded, gzipped share codes
+- **Community Maps**: Access shared maps from the wiki
+- **Auto-Save**: Automatic localStorage backup (survives page refresh)
+
+#### User Experience
+
+- **Floating Toolbars**: Quick access to all drawing tools
+- **Context Toolbars**: Tool-specific options when items are selected
+- **Info Panel**: Real-time instructions for the current tool
+- **Item Details Panel**: Edit properties of selected elements
+- **Dropdown Selectors**: Quickly navigate between rooms, hallways, and markers
 
 ## Requirements
 
