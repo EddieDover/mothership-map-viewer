@@ -1,3 +1,17 @@
+## [1.4.1](https://github.com/EddieDover/mothership-map-viewer/compare/v1.4.0...v1.4.1) (2025-10-12)
+
+### Features
+
+- added in-room labels ([f2b1a65](https://github.com/EddieDover/mothership-map-viewer/commit/f2b1a65dd9461333dfaea180ae1b3462245159bf))
+- **site:** add room label rendering and visibility controls ([b22e014](https://github.com/EddieDover/mothership-map-viewer/commit/b22e0141f745bf0597947d4250ea80c7ac260b34))
+- **site:** add version information display to site footer ([c6d7987](https://github.com/EddieDover/mothership-map-viewer/commit/c6d7987126fea821a4bcba8124303544835deb1d))
+
+### Bug Fixes
+
+- **site:** corrected JSON export ([8299989](https://github.com/EddieDover/mothership-map-viewer/commit/8299989f539db045c889c7178e3cd1b7723213ee))
+- **site:** delete/backspace now correctly removes standalone markers and labels ([13fbe15](https://github.com/EddieDover/mothership-map-viewer/commit/13fbe15420ef3129382038900f0d57339ae56dd1))
+- **site:** fixed hallway icon in selected room panel ([a7a8565](https://github.com/EddieDover/mothership-map-viewer/commit/a7a8565e30db8a367dd7595dc0fd7b6b421e945a))
+
 ## [1.4.0](https://github.com/EddieDover/mothership-map-viewer/compare/v1.3.2...v1.4.0) (2025-10-12)
 
 ### Features
