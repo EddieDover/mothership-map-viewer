@@ -128,6 +128,13 @@ A Foundry VTT module for displaying and managing maps created with the Mothershi
 3. <s>Search for "Mothership Map Viewer"</s> (soon) or paste the manifest URL
 4. Click Install
 
+### Manifest URL
+
+```
+https://github.com/EddieDover/mothership-map-viewer/releases/latest/download/module.json
+```
+
+
 ## Usage
 
 ### Map Creator
