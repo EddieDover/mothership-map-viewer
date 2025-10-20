@@ -22,6 +22,11 @@
       "lang": "es",
       "name": "Spanish",
       "path": "lang/es.json"
+    },
+    {
+      "lang": "fr",
+      "name": "French",
+      "path": "lang/fr.json"
     }
   ],
   "version": "1.4.1",
@@ -38,12 +43,8 @@
     }
   ],
   "socket": true,
-  "esmodules": [
-    "scripts/mothership-map-viewer.js"
-  ],
-  "styles": [
-    "styles/mothership-map-viewer.css"
-  ],
+  "esmodules": ["scripts/mothership-map-viewer.js"],
+  "styles": ["styles/mothership-map-viewer.css"],
   "relationships": {
     "systems": [
       {
@@ -52,6 +53,14 @@
         "compatibility": {
           "minimum": "0.6.0",
           "verified": "0.6.0"
+        }
+      },
+      {
+        "id": "mothership-fr",
+        "type": "system",
+        "compatibility": {
+          "minimum": "1.6.41",
+          "verified": "1.6.41"
         }
       }
     ]
