@@ -23,6 +23,8 @@
   "main": "src/scripts/mothership-map-viewer.js",
   "scripts": {
     "build": "node build.js",
+    "copy": "node copy.js",
+    "deploy": "npm run build && npm run copy",
     "package": "node build.js --package",
     "release": "commit-and-tag-version --sign",
     "release:dry": "commit-and-tag-version --dry-run",

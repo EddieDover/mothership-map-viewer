@@ -8,8 +8,8 @@ import { decodeShareString } from "./utils.js";
 
 // Socket handler for syncing map data to players
 class MothershipMapSocketHandler {
+  identifier = "module.mothership-map-viewer";
   constructor() {
-    this.identifier = "module.mothership-map-viewer";
     this.registerSocketListeners();
     console.log("Mothership Map Viewer | Socket handler initialized");
   }
@@ -116,7 +116,7 @@ class PlayerMapDisplay extends BaseMapRenderer {
 
   static getInstance(options) {
     // If an instance exists and is rendered, bring it to focus
-    if (PlayerMapDisplay._instance && PlayerMapDisplay._instance.rendered) {
+    if (PlayerMapDisplay._instance?.rendered) {
       PlayerMapDisplay._instance.bringToFront();
       return PlayerMapDisplay._instance;
     }
@@ -191,10 +191,7 @@ class MothershipMapViewer extends BaseMapRenderer {
 
   static getInstance(options) {
     // If an instance exists and is rendered, bring it to focus
-    if (
-      MothershipMapViewer._instance &&
-      MothershipMapViewer._instance.rendered
-    ) {
+    if (MothershipMapViewer._instance?.rendered) {
       MothershipMapViewer._instance.bringToTop();
       return MothershipMapViewer._instance;
     }

@@ -12,9 +12,9 @@ import { drawHallwayMarker, drawRoomMarker } from "./map-icons.js";
 export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
   // Shared constants
   static WALL_THICKNESS = 10;
-  static DEFAULT_SCALE = 1.0;
+  static DEFAULT_SCALE = 1;
   static MIN_SCALE = 0.1;
-  static MAX_SCALE = 5.0;
+  static MAX_SCALE = 5;
 
   constructor(options = {}) {
     super(options);
