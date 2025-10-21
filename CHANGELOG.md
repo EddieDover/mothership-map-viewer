@@ -1,3 +1,11 @@
+
+## [1.4.2](https://github.com/EddieDover/mothership-map-viewer/compare/v1.4.1...v1.4.2) (2025-10-21)
+
+
+### Features
+
+* added French language and system support ([b9c0303](https://github.com/EddieDover/mothership-map-viewer/commit/b9c0303277d19910cb6d8721ff4c25e9410491c1))
+
 ## [1.4.1](https://github.com/EddieDover/mothership-map-viewer/compare/v1.4.0...v1.4.1) (2025-10-12)
 
 ### Features
