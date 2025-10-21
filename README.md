@@ -125,8 +125,15 @@ A Foundry VTT module for displaying and managing maps created with the Mothershi
 
 1. In Foundry VTT, go to the Add-on Modules tab
 2. Click "Install Module"
-3. Search for "Mothership Map Viewer" or paste the manifest URL
+3. <s>Search for "Mothership Map Viewer"</s> (soon) or paste the manifest URL
 4. Click Install
+
+### Manifest URL
+
+```
+https://github.com/EddieDover/mothership-map-viewer/releases/latest/download/module.json
+```
+
 
 ## Usage
 
@@ -138,6 +145,10 @@ A Foundry VTT module for displaying and managing maps created with the Mothershi
    - Place Markers in rooms to represent terminals, npcs, hazards, etc. If you'd like a custom marker added, file an Issue and we'll see if I can figure out how to draw it.
    - Decide which Rooms, Hallways, and Markers should be visible by default in Foundry. All Rooms, Hallways, and Markers can have their visibility toggled at any time inside Foundry, this is just give the GM less work after importing.
 2. Export as JSON or a Sharable String (Base64 encoded, gzip'd version of the same JSON).
+
+#### Wiki
+
+The [Wiki](https://www.github.com/eddiedover/mothership-map-viewer/wiki) will eventually, hopefully, hold maps submitted by users.
 
 ### Map Viewer
 
@@ -167,3 +178,9 @@ A Foundry VTT module for displaying and managing maps created with the Mothershi
 | GM View | Player View |
 | --- | --- |
 | <img width="1363" height="1055" alt="image" src="https://github.com/user-attachments/assets/dcab0f95-3152-401c-a201-e2205c2b1a5a" /> | <img width="1013" height="908" alt="image" src="https://github.com/user-attachments/assets/22c047cd-fc66-4974-b9ae-3e7c31494ba9" /> |
+
+## Support
+
+Please file an Issue if possible. For things not bug related, please use the Discussion tab and open a discussion.
+
+Or feel free to contact me on Discord: EddieDover or at my Discord Server [here](https://discord.gg/hshfZA73fG).
