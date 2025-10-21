@@ -1,0 +1,37 @@
+{
+  "MOTHERSHIP_MAP_VIEWER": {
+    "Title": "Visualiseur de Cartes Mothership",
+    "Import": "Importer",
+    "PlayerMapTitle": "Carte Mothership",
+    "ImportShareString": "Importer une Chaîne de Partage",
+    "notifications": {
+      "ImportSuccess": "Carte importée avec succès.",
+      "ImportError": "Erreur lors de l'importation de la carte. Veuillez consulter la console pour plus de détails.",
+      "NoMapLoaded": "Aucune carte chargée. Veuillez d'abord importer une carte.",
+      "MapShown": "Carte affichée aux joueurs.",
+      "MapUpdated": "Carte mise à jour pour les joueurs.",
+      "MapClosed": "Carte fermée pour les joueurs.",
+      "PlayerViewOpened": "Vue joueur ouverte.",
+      "PlayerViewUpdated": "Vue joueur mise à jour.",
+      "PlayerViewClosed": "Vue joueur fermée."
+    },
+    "forms": {
+      "viewer": {
+        "Feedback": "Commentaires",
+        "Discord": "Discord",
+        "BugReport": "Signaler un Bug",
+        "VisibilityControls": "Contrôles de Visibilité",
+        "ImportJSON": "Importer JSON",
+        "ImportShareString": "Importer une Chaîne de Partage",
+        "ShowToPlayers": "Afficher aux Joueurs",
+        "UpdatePlayers": "Mettre à Jour les Joueurs",
+        "ClosePlayerView": "Fermer la Vue Joueur",
+        "NoMapLoaded": "Aucune carte chargée. Importez une carte pour commencer.",
+        "HallwayVisibility": "Visibilité des Couloirs",
+        "StandaloneWalls": "Murs Isolés",
+        "CommunityMaps": "Cartes de la Communauté",
+        "GoToMapCreator": "Créateur de Cartes"
+      }
+    }
+  }
+}

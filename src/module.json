@@ -22,9 +22,14 @@
       "lang": "es",
       "name": "Spanish",
       "path": "lang/es.json"
+    },
+    {
+      "lang": "fr",
+      "name": "French",
+      "path": "lang/fr.json"
     }
   ],
-  "version": "1.4.1",
+  "version": "1.4.2",
   "compatibility": {
     "minimum": "13",
     "verified": "13"
@@ -52,6 +57,14 @@
         "compatibility": {
           "minimum": "0.6.0",
           "verified": "0.6.0"
+        }
+      },
+      {
+        "id": "mothership-fr",
+        "type": "system",
+        "compatibility": {
+          "minimum": "1.6.41",
+          "verified": "1.6.41"
         }
       }
     ]
