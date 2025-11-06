@@ -262,11 +262,11 @@ class MapCreator {
       hallway: {
         title: "Add Hallway",
         description:
-          "Click on room edges to create connected hallway paths. Hallways must start and end on a room.",
+          "Click on room edges or hallways to create connected hallway paths. Hallways must start and end on a room or another hallway.",
         tips: [
           "<strong>Connect Rooms:</strong> Click on the edges of rooms to snap hallways to them",
           "<strong>Add Turns:</strong> Click multiple points to create L-shaped or complex paths",
-          "<strong>Must Connect:</strong> Hallways must start and end on a room. For paths that don't connect rooms, use standalone walls instead",
+          "<strong>Must Connect:</strong> Hallways must start and end on a room or another hallway. For paths that don't connect rooms, use standalone walls instead",
         ],
       },
       wall: {
