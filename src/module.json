@@ -29,7 +29,7 @@
       "path": "lang/fr.json"
     }
   ],
-  "version": "1.4.2",
+  "version": "1.4.3",
   "compatibility": {
     "minimum": "13",
     "verified": "13"
