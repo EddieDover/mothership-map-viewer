@@ -125,7 +125,7 @@ A Foundry VTT module for displaying and managing maps created with the Mothershi
 
 1. In Foundry VTT, go to the Add-on Modules tab
 2. Click "Install Module"
-3. <s>Search for "Mothership Map Viewer"</s> (soon) or paste the manifest URL
+3. Search for "Mothership Map Viewer" inside Foundry or paste the manifest URL
 4. Click Install
 
 ### Manifest URL
