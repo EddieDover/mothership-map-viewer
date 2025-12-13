@@ -289,12 +289,14 @@ class MapRenderer {
 
       // Label - white (drawn last so it's on top)
       if (room.label) {
+        const labelText =
+          room.labelVisible !== false ? room.label : `(${room.label})`;
         this.ctx.fillStyle = "#ffffff";
         this.ctx.font = "bold 14px sans-serif";
         this.ctx.textAlign = "center";
         this.ctx.textBaseline = "middle";
         this.ctx.fillText(
-          room.label,
+          labelText,
           room.x + room.width / 2,
           room.y + room.height / 2
         );

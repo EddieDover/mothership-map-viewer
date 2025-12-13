@@ -28,6 +28,7 @@
         "ClosePlayerView": "Cerrar Vista de Jugador",
         "NoMapLoaded": "No hay mapa cargado. Importa un mapa para comenzar.",
         "HallwayVisibility": "Visibilidad de Pasillos",
+        "ShowName": "Mostrar Nombre",
         "StandaloneWalls": "Paredes Independientes",
         "CommunityMaps": "Mapas de la Comunidad",
         "GoToMapCreator": "Creador de Mapas"

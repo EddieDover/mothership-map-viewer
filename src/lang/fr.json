@@ -28,6 +28,7 @@
         "ClosePlayerView": "Fermer la Vue Joueur",
         "NoMapLoaded": "Aucune carte chargée. Importez une carte pour commencer.",
         "HallwayVisibility": "Visibilité des Couloirs",
+        "ShowName": "Afficher le Nom",
         "StandaloneWalls": "Murs Isolés",
         "CommunityMaps": "Cartes de la Communauté",
         "GoToMapCreator": "Créateur de Cartes"

@@ -511,6 +511,7 @@ class MothershipMapViewer extends BaseMapRenderer {
     if (targetMapData.rooms) {
       targetMapData.rooms.forEach((room) => {
         if (room.visible === undefined) room.visible = true;
+        if (room.labelVisible === undefined) room.labelVisible = true;
         if (room.markers) {
           room.markers.forEach((marker) => {
             if (marker.visible === undefined) marker.visible = true;
@@ -568,6 +569,12 @@ class MothershipMapViewer extends BaseMapRenderer {
                 room.visible ? "checked" : ""
               }>
               ${label}
+            </label>
+            <label style="margin-left: 20px; display: block; font-size: 0.9em;">
+              <input type="checkbox" class="room-name-visibility" data-index="${index}" ${
+                room.labelVisible ? "checked" : ""
+              }>
+              ${game.i18n.localize("MOTHERSHIP_MAP_VIEWER.forms.viewer.ShowName") || "Show Name"}
             </label>
         `;
 
@@ -762,6 +769,17 @@ class MothershipMapViewer extends BaseMapRenderer {
         checkbox.addEventListener("change", (e) => {
           const index = parseInt(e.target.dataset.index);
           this.mapData.rooms[index].visible = e.target.checked;
+          this._renderMap(document.getElementById(this.getCanvasId()));
+          this._autoUpdatePlayers();
+        });
+      });
+
+    controlsContainer
+      .querySelectorAll(".room-name-visibility")
+      .forEach((checkbox) => {
+        checkbox.addEventListener("change", (e) => {
+          const index = parseInt(e.target.dataset.index);
+          this.mapData.rooms[index].labelVisible = e.target.checked;
           this._renderMap(document.getElementById(this.getCanvasId()));
           this._autoUpdatePlayers();
         });
