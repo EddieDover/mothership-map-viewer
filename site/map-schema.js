@@ -530,6 +530,7 @@ class Room {
     // For circles, width and height represent the bounding box, and radius is calculated
     this.radius = shape === "circle" ? Math.min(width, height) / 2 : null;
     this.label = "";
+    this.labelVisible = true;
     this.markers = []; // Array of {type, x, y, visible} for room markers
     this.labels = []; // Array of {text, x, y} for room labels
     this.walls = []; // Array of Wall objects for walls inside this room

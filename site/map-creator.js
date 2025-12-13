@@ -2903,6 +2903,10 @@ class MapCreator {
                 <input type="text" id="detailsRoomLabel" value="${item.label || ""}" placeholder="Optional">
               </label>`;
       html += `<div class="checkbox-container">
+                <input type="checkbox" id="detailsRoomLabelVisible" ${item.labelVisible !== false ? "checked" : ""}>
+                <label for="detailsRoomLabelVisible" style="margin: 0;">Label Visible by Default</label>
+              </div>`;
+      html += `<div class="checkbox-container">
                 <input type="checkbox" id="detailsRoomVisible" ${item.visible !== false ? "checked" : ""}>
                 <label for="detailsRoomVisible" style="margin: 0;">Visible by Default</label>
               </div>`;
@@ -3074,6 +3078,14 @@ class MapCreator {
           item.label = e.target.value;
           this.updatePropertiesPanel();
           this.updateMarkerSelectors();
+          this.render();
+        });
+
+      document
+        .getElementById("detailsRoomLabelVisible")
+        ?.addEventListener("change", (e) => {
+          item.labelVisible = e.target.checked;
+          this.updatePropertiesPanel();
           this.render();
         });
 
