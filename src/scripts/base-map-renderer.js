@@ -267,13 +267,25 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         // Label
-        if (room.label && room.labelVisible !== false) {
+        let shouldRenderLabel = false;
+        let labelText = room.label;
+
+        if (room.label) {
+          if (room.labelVisible !== false) {
+            shouldRenderLabel = true;
+          } else if (game.user.isGM) {
+            shouldRenderLabel = true;
+            labelText = `(${room.label})`;
+          }
+        }
+
+        if (shouldRenderLabel) {
           ctx.fillStyle = "#ffffff";
           ctx.font = "bold 14px sans-serif";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillText(
-            room.label,
+            labelText,
             room.x + room.width / 2,
             room.y + room.height / 2
           );
