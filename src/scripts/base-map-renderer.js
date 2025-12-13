@@ -267,7 +267,7 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         // Label
-        if (room.label) {
+        if (room.label && room.labelVisible !== false) {
           ctx.fillStyle = "#ffffff";
           ctx.font = "bold 14px sans-serif";
           ctx.textAlign = "center";

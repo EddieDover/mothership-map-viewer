@@ -28,6 +28,7 @@
         "ClosePlayerView": "Close Player View",
         "NoMapLoaded": "No map loaded. Import a map to begin.",
         "HallwayVisibility": "Hallway Visibility",
+        "ShowName": "Show Name",
         "StandaloneWalls": "Standalone Walls",
         "CommunityMaps": "Community Maps",
         "GoToMapCreator": "Map Creator"
