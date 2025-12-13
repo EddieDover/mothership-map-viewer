@@ -17,6 +17,29 @@ class MapData {
   }
 
   /**
+   * Create a MapData instance from a JSON object
+   *
+   * @static
+   * @param {Object} json
+   * @return {MapData}
+   * @memberof MapData
+   */
+  static fromJSON(json) {
+    const mapData = new MapData();
+    if (!json) return mapData;
+
+    mapData.version = json.version || "1.0.0";
+    mapData.mapName = json.mapName || "";
+    mapData.rooms = json.rooms || [];
+    mapData.hallways = json.hallways || [];
+    mapData.walls = json.walls || [];
+    mapData.standaloneMarkers = json.standaloneMarkers || [];
+    mapData.standaloneLabels = json.standaloneLabels || [];
+
+    return mapData;
+  }
+
+  /**
    * Add a room to the map
    *
    * @param {import("./types").Room} room

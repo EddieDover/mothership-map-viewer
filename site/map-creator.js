@@ -20,6 +20,11 @@ class MapCreator {
     this.lastMouseX = 0;
     this.lastMouseY = 0;
 
+    // Undo/Redo stacks
+    this.undoStack = [];
+    this.redoStack = [];
+    this.maxHistorySize = 50;
+
     this.initializeEventListeners();
 
     // Load saved map from localStorage if it exists (after initializing listeners)
@@ -27,6 +32,61 @@ class MapCreator {
 
     this.updateMarkerSelectors();
     this.render();
+  }
+
+  /**
+   * Push current state to undo stack
+   * Call this BEFORE making a change
+   */
+  pushUndoState() {
+    const state = JSON.stringify(this.mapData.toJSON());
+    this.undoStack.push(state);
+    if (this.undoStack.length > this.maxHistorySize) {
+      this.undoStack.shift();
+    }
+    // Clear redo stack when a new action is performed
+    this.redoStack = [];
+  }
+
+  /**
+   * Undo the last action
+   */
+  undo() {
+    if (this.undoStack.length === 0) return;
+
+    // Save current state to redo stack
+    const currentState = JSON.stringify(this.mapData.toJSON());
+    this.redoStack.push(currentState);
+
+    // Restore previous state
+    const previousState = this.undoStack.pop();
+    this.mapData = MapData.fromJSON(JSON.parse(previousState));
+
+    // Restore selection if possible (optional, but nice)
+    this.selectedItem = null;
+
+    this.render();
+    this.refreshUI();
+  }
+
+  /**
+   * Redo the last undone action
+   */
+  redo() {
+    if (this.redoStack.length === 0) return;
+
+    // Save current state to undo stack
+    const currentState = JSON.stringify(this.mapData.toJSON());
+    this.undoStack.push(currentState);
+
+    // Restore next state
+    const nextState = this.redoStack.pop();
+    this.mapData = MapData.fromJSON(JSON.parse(nextState));
+
+    this.selectedItem = null;
+
+    this.render();
+    this.refreshUI();
   }
 
   /**
@@ -381,6 +441,21 @@ class MapCreator {
         activeElement.tagName === "TEXTAREA" ||
         activeElement.isContentEditable);
 
+    // Undo/Redo
+    if ((e.ctrlKey || e.metaKey) && !isTyping) {
+      if (e.key === "z") {
+        e.preventDefault();
+        if (e.shiftKey) {
+          this.redo();
+        } else {
+          this.undo();
+        }
+      } else if (e.key === "y") {
+        e.preventDefault();
+        this.redo();
+      }
+    }
+
     // Escape key cancels hallway/wall creation or marker placement
     if (e.key === "Escape") {
       if (this.hallwayCreationState) {
@@ -532,6 +607,8 @@ class MapCreator {
    */
   pasteFromClipboard() {
     if (!this.clipboard) return;
+
+    this.pushUndoState();
 
     if (this.clipboard.type === "marker") {
       // Find which room the cursor is over, or use selected room
@@ -714,6 +791,7 @@ class MapCreator {
 
     // Marker placement mode
     if (this.markerPlacementMode) {
+      this.pushUndoState();
       const room = this.markerPlacementMode.room;
 
       const wallMargin = WALL_THICKNESS;
@@ -762,6 +840,7 @@ class MapCreator {
 
     // Label placement mode
     if (this.labelPlacementMode) {
+      this.pushUndoState();
       const room = this.labelPlacementMode.room;
 
       const wallMargin = WALL_THICKNESS;
@@ -810,6 +889,9 @@ class MapCreator {
 
     // Select tool - for selecting existing items and dragging rooms/markers
     if (this.currentTool === "select") {
+      // Save state before potential drag
+      this.preDragState = JSON.stringify(this.mapData.toJSON());
+
       // Check for standalone markers first (highest priority)
       const standaloneMarkerResult = this.getStandaloneMarkerAtPosition(
         mouseX,
@@ -961,6 +1043,7 @@ class MapCreator {
       const hallwayPoint = this.getHallwayAtPosition(x, y);
 
       if (!this.hallwayCreationState && (roomEdgeInfo || hallwayPoint)) {
+        this.pushUndoState();
         // First click - start hallway at room edge or hallway
         this.hallwayCreationState = {
           nodes: [{ x, y, edgeInfo: roomEdgeInfo || hallwayPoint }],
@@ -1000,6 +1083,7 @@ class MapCreator {
           // Clicked inside a room (not on edge) - don't allow
           return;
         }
+        this.pushUndoState();
         // First click outside any room or on room edge
         this.wallCreationState = {
           startX: x,
@@ -1024,6 +1108,7 @@ class MapCreator {
         return;
       }
 
+      this.pushUndoState();
       // Create standalone marker with default "terminal" type
       const marker = new StandaloneMarker(
         `standalone-marker-${this.nextId++}`,
@@ -1049,6 +1134,7 @@ class MapCreator {
 
     // For standalone label tool, place label at click location
     if (this.currentTool === "standaloneLabel") {
+      this.pushUndoState();
       // Create standalone label with default text
       const label = new StandaloneLabel(
         `standalone-label-${this.nextId++}`,
@@ -1088,6 +1174,7 @@ class MapCreator {
 
         // Must click inside the selected room
         if (clickedRoom && clickedRoom.id === selectedRoom.id) {
+          this.pushUndoState();
           // First click inside selected room
           this.wallCreationState = {
             startX: x,
@@ -1109,12 +1196,14 @@ class MapCreator {
 
     // Start drawing new room
     if (this.currentTool === "room") {
+      this.pushUndoState();
       this.selectedItem = null;
       this.drawingState = { startX: x, startY: y };
     }
 
     // Start drawing new circle room
     if (this.currentTool === "circle") {
+      this.pushUndoState();
       this.selectedItem = null;
       this.drawingState = { startX: x, startY: y, shape: "circle" };
     }
@@ -1458,6 +1547,19 @@ class MapCreator {
           );
           this.recalculateHallwaySegments(hallway);
         });
+      }
+
+      // Check if anything changed and save undo state
+      if (this.preDragState) {
+        const currentState = JSON.stringify(this.mapData.toJSON());
+        if (currentState !== this.preDragState) {
+          this.undoStack.push(this.preDragState);
+          if (this.undoStack.length > this.maxHistorySize) {
+            this.undoStack.shift();
+          }
+          this.redoStack = [];
+        }
+        this.preDragState = null;
       }
 
       this.dragState = null;
@@ -2728,6 +2830,7 @@ class MapCreator {
         "Are you sure you want to create a new map? This will clear your current map. Make sure to export your current map if you want to save it!"
       )
     ) {
+      this.pushUndoState();
       // Clear localStorage
       localStorage.removeItem("mothership-map-autosave");
 
@@ -2989,22 +3092,26 @@ class MapCreator {
       document
         .getElementById("detailsMarkerType")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.marker.type = e.target.value;
           this.updatePropertiesPanel();
           this.render();
         });
 
-      document
-        .getElementById("detailsMarkerLabel")
-        ?.addEventListener("input", (e) => {
+      const markerLabelInput = document.getElementById("detailsMarkerLabel");
+      if (markerLabelInput) {
+        markerLabelInput.addEventListener("focus", () => this.pushUndoState());
+        markerLabelInput.addEventListener("input", (e) => {
           item.marker.label = e.target.value;
           this.updatePropertiesPanel();
           this.updateMarkerSelectors();
         });
+      }
 
       document
         .getElementById("detailsMarkerVisible")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.marker.visible = e.target.checked;
           this.updatePropertiesPanel();
           this.render();
@@ -3013,6 +3120,7 @@ class MapCreator {
       document
         .getElementById("detailsMarkerRotate")
         ?.addEventListener("click", () => {
+          this.pushUndoState();
           if (!item.marker.rotation) item.marker.rotation = 0;
           item.marker.rotation = (item.marker.rotation + 90) % 360;
           this.updateItemDetailsPanel();
@@ -3022,21 +3130,29 @@ class MapCreator {
       document
         .getElementById("detailsStandaloneMarkerType")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.marker.type = e.target.value;
           this.updatePropertiesPanel();
           this.render();
         });
 
-      document
-        .getElementById("detailsStandaloneMarkerLabel")
-        ?.addEventListener("input", (e) => {
+      const saMarkerLabelInput = document.getElementById(
+        "detailsStandaloneMarkerLabel"
+      );
+      if (saMarkerLabelInput) {
+        saMarkerLabelInput.addEventListener("focus", () =>
+          this.pushUndoState()
+        );
+        saMarkerLabelInput.addEventListener("input", (e) => {
           item.marker.label = e.target.value;
           this.updatePropertiesPanel();
         });
+      }
 
       document
         .getElementById("detailsStandaloneMarkerVisible")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.marker.visible = e.target.checked;
           this.updatePropertiesPanel();
           this.render();
@@ -3045,45 +3161,56 @@ class MapCreator {
       document
         .getElementById("detailsStandaloneMarkerRotate")
         ?.addEventListener("click", () => {
+          this.pushUndoState();
           if (!item.marker.rotation) item.marker.rotation = 0;
           item.marker.rotation = (item.marker.rotation + 90) % 360;
           this.updateItemDetailsPanel();
           this.render();
         });
     } else if (item.type === "standaloneLabel") {
-      document
-        .getElementById("detailsStandaloneLabelText")
-        ?.addEventListener("input", (e) => {
+      const saLabelInput = document.getElementById(
+        "detailsStandaloneLabelText"
+      );
+      if (saLabelInput) {
+        saLabelInput.addEventListener("focus", () => this.pushUndoState());
+        saLabelInput.addEventListener("input", (e) => {
           item.label.text = e.target.value;
           this.render();
         });
+      }
 
       document
         .getElementById("detailsStandaloneLabelVisible")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.label.visible = e.target.checked;
           this.render();
         });
     } else if (item.type === "roomLabel") {
-      document
-        .getElementById("detailsRoomLabelText")
-        ?.addEventListener("input", (e) => {
+      const roomLabelInput = document.getElementById("detailsRoomLabelText");
+      if (roomLabelInput) {
+        roomLabelInput.addEventListener("focus", () => this.pushUndoState());
+        roomLabelInput.addEventListener("input", (e) => {
           item.label.text = e.target.value;
           this.render();
         });
+      }
     } else if (item.type === "room") {
-      document
-        .getElementById("detailsRoomLabel")
-        ?.addEventListener("input", (e) => {
+      const roomLabelInput = document.getElementById("detailsRoomLabel");
+      if (roomLabelInput) {
+        roomLabelInput.addEventListener("focus", () => this.pushUndoState());
+        roomLabelInput.addEventListener("input", (e) => {
           item.label = e.target.value;
           this.updatePropertiesPanel();
           this.updateMarkerSelectors();
           this.render();
         });
+      }
 
       document
         .getElementById("detailsRoomLabelVisible")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.labelVisible = e.target.checked;
           this.updatePropertiesPanel();
           this.render();
@@ -3092,23 +3219,27 @@ class MapCreator {
       document
         .getElementById("detailsRoomVisible")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.visible = e.target.checked;
           this.updatePropertiesPanel();
           this.render();
         });
     } else if (item.type === "hallway") {
-      document
-        .getElementById("detailsHallwayLabel")
-        ?.addEventListener("input", (e) => {
+      const hallwayLabelInput = document.getElementById("detailsHallwayLabel");
+      if (hallwayLabelInput) {
+        hallwayLabelInput.addEventListener("focus", () => this.pushUndoState());
+        hallwayLabelInput.addEventListener("input", (e) => {
           item.label = e.target.value;
           this.updatePropertiesPanel();
           this.updateMarkerSelectors();
           this.render();
         });
+      }
 
       document
         .getElementById("detailsHallwayVisible")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.visible = e.target.checked;
           this.updatePropertiesPanel();
           this.render();
@@ -3117,6 +3248,7 @@ class MapCreator {
       document
         .getElementById("detailsHallwaySecret")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.isSecret = e.target.checked;
           // Auto-update markers based on secret status
           if (item.isSecret) {
@@ -3133,6 +3265,7 @@ class MapCreator {
       document
         .getElementById("detailsStartMarkerType")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           if (e.target.value === "none") {
             item.startMarker = null;
           } else {
@@ -3150,6 +3283,7 @@ class MapCreator {
         .getElementById("detailsStartMarkerVisible")
         ?.addEventListener("change", (e) => {
           if (item.startMarker) {
+            this.pushUndoState();
             item.startMarker.visible = e.target.checked;
             this.render();
           }
@@ -3158,6 +3292,7 @@ class MapCreator {
       document
         .getElementById("detailsEndMarkerType")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           if (e.target.value === "none") {
             item.endMarker = null;
           } else {
@@ -3175,6 +3310,7 @@ class MapCreator {
         .getElementById("detailsEndMarkerVisible")
         ?.addEventListener("change", (e) => {
           if (item.endMarker) {
+            this.pushUndoState();
             item.endMarker.visible = e.target.checked;
             this.render();
           }
@@ -3184,6 +3320,7 @@ class MapCreator {
         .getElementById("detailsStartMarkerRotate")
         ?.addEventListener("click", () => {
           if (item.startMarker) {
+            this.pushUndoState();
             if (!item.startMarker.rotation) item.startMarker.rotation = 0;
             item.startMarker.rotation = (item.startMarker.rotation + 90) % 360;
             this.updateItemDetailsPanel();
@@ -3195,6 +3332,7 @@ class MapCreator {
         .getElementById("detailsEndMarkerRotate")
         ?.addEventListener("click", () => {
           if (item.endMarker) {
+            this.pushUndoState();
             if (!item.endMarker.rotation) item.endMarker.rotation = 0;
             item.endMarker.rotation = (item.endMarker.rotation + 90) % 360;
             this.updateItemDetailsPanel();
@@ -3204,17 +3342,20 @@ class MapCreator {
     } else if (item.type === "wall") {
       // Event listeners only for standalone walls (label and visibility)
       if (!item.parentRoomId) {
-        document
-          .getElementById("detailsWallLabel")
-          ?.addEventListener("input", (e) => {
+        const wallLabelInput = document.getElementById("detailsWallLabel");
+        if (wallLabelInput) {
+          wallLabelInput.addEventListener("focus", () => this.pushUndoState());
+          wallLabelInput.addEventListener("input", (e) => {
             item.label = e.target.value;
             this.updatePropertiesPanel();
             this.render();
           });
+        }
 
         document
           .getElementById("detailsWallVisible")
           ?.addEventListener("change", (e) => {
+            this.pushUndoState();
             item.visible = e.target.checked;
             this.updatePropertiesPanel();
             this.render();
@@ -3225,6 +3366,7 @@ class MapCreator {
       document
         .getElementById("detailsWallDotted")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.isDotted = e.target.checked;
           this.updatePropertiesPanel();
           this.render();
@@ -3498,6 +3640,8 @@ class MapCreator {
    */
   deleteSelectedItem() {
     if (!this.selectedItem) return;
+
+    this.pushUndoState();
 
     let parentRoom = null;
 
