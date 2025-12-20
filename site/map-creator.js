@@ -4002,6 +4002,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Now initialize the application
   window.mapCreator = new MapCreator();
 
+  // Hide loading overlay
+  const loadingOverlay = document.getElementById("loading-overlay");
+  if (loadingOverlay) {
+    loadingOverlay.style.display = "none";
+  }
+
   // Handle window resize to keep canvas resolution in sync with display size
   let resizeTimeout;
   window.addEventListener("resize", () => {

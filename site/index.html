@@ -7,6 +7,18 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div id="loading-overlay">
+      <div class="loading-content">
+        <h2>Loading Mothership Map Creator...</h2>
+        <p id="loading-message">Initializing...</p>
+      </div>
+    </div>
+    <script>
+      function updateLoadingMessage(msg) {
+        const el = document.getElementById("loading-message");
+        if (el) el.textContent = msg;
+      }
+    </script>
     <div class="container">
       <header>
         <h1>Mothership Map Creator</h1>
@@ -432,12 +444,21 @@
     </footer>
 
     <!-- Pako for gzip compression -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"
+      onload="updateLoadingMessage('Loading core components...')"
+    ></script>
     <script src="version.js"></script>
     <script src="constants.js"></script>
-    <script src="map-schema.js"></script>
+    <script
+      src="map-schema.js"
+      onload="updateLoadingMessage('Loading graphics engine...')"
+    ></script>
     <script src="marker-paths.js"></script>
-    <script src="map-renderer.js"></script>
+    <script
+      src="map-renderer.js"
+      onload="updateLoadingMessage('Starting application...')"
+    ></script>
     <script src="map-creator.js"></script>
     <script>
       // Display version information
