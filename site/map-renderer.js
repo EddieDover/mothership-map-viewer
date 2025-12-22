@@ -16,6 +16,11 @@ class MapRenderer {
     this.offsetY = 0;
   }
 
+  focusOn(x, y) {
+    this.offsetX = this.canvas.width / 2 - x;
+    this.offsetY = this.canvas.height / 2 - y;
+  }
+
   /**
    * Clear the canvas
    *
@@ -74,9 +79,10 @@ class MapRenderer {
    *
    * @param {import("./types").MapData} mapData
    * @param {import("./types").Room|import("./types").Hallway|null} [selectedItem=null]
+   * @param {number} [currentFloor=1]
    * @memberof MapRenderer
    */
-  render(mapData, selectedItem = null) {
+  render(mapData, selectedItem = null, currentFloor = 1) {
     this.clear();
 
     // Apply offset transformation
@@ -90,6 +96,10 @@ class MapRenderer {
 
     // Draw rooms first, then hallways (so hallways are on top)
     mapData.rooms.forEach((room) => {
+      const isOnCurrentFloor =
+        (room.floor !== undefined ? room.floor : 1) === currentFloor;
+      this.ctx.globalAlpha = isOnCurrentFloor ? 1.0 : 0.2;
+
       const isRoomSelected =
         selectedItem?.type === "room" && selectedItem?.id === room.id;
       // Pass selected marker info if a marker in this room is selected
@@ -112,6 +122,9 @@ class MapRenderer {
     });
 
     mapData.hallways.forEach((hallway) => {
+      const isOnCurrentFloor =
+        (hallway.floor !== undefined ? hallway.floor : 1) === currentFloor;
+      this.ctx.globalAlpha = isOnCurrentFloor ? 1.0 : 0.2;
       const isHallwaySelected =
         selectedItem?.type === "hallway" && selectedItem?.id === hallway.id;
       this.drawHallway(hallway, isHallwaySelected);
@@ -119,6 +132,9 @@ class MapRenderer {
 
     // Draw standalone walls (not in rooms)
     mapData.walls.forEach((wall) => {
+      const isOnCurrentFloor =
+        (wall.floor !== undefined ? wall.floor : 1) === currentFloor;
+      this.ctx.globalAlpha = isOnCurrentFloor ? 1.0 : 0.2;
       const isWallSelected =
         selectedItem?.type === "wall" && selectedItem?.id === wall.id;
       this.drawWall(wall, isWallSelected);
@@ -126,6 +142,9 @@ class MapRenderer {
 
     // Draw walls inside rooms
     mapData.rooms.forEach((room) => {
+      const isOnCurrentFloor =
+        (room.floor !== undefined ? room.floor : 1) === currentFloor;
+      this.ctx.globalAlpha = isOnCurrentFloor ? 1.0 : 0.2;
       if (room.walls && room.walls.length > 0) {
         // Always show walls in rooms
         room.walls.forEach((wall) => {
@@ -139,6 +158,9 @@ class MapRenderer {
     // Draw standalone markers (not in rooms)
     if (mapData.standaloneMarkers && mapData.standaloneMarkers.length > 0) {
       mapData.standaloneMarkers.forEach((marker) => {
+        const isOnCurrentFloor =
+          (marker.floor !== undefined ? marker.floor : 1) === currentFloor;
+        this.ctx.globalAlpha = isOnCurrentFloor ? 1.0 : 0.2;
         const isMarkerSelected =
           selectedItem?.type === "standaloneMarker" &&
           selectedItem?.marker.id === marker.id;
@@ -157,6 +179,9 @@ class MapRenderer {
     // Draw standalone labels
     if (mapData.standaloneLabels && mapData.standaloneLabels.length > 0) {
       mapData.standaloneLabels.forEach((label) => {
+        const isOnCurrentFloor =
+          (label.floor !== undefined ? label.floor : 1) === currentFloor;
+        this.ctx.globalAlpha = isOnCurrentFloor ? 1.0 : 0.2;
         const isLabelSelected =
           selectedItem?.type === "standaloneLabel" &&
           selectedItem?.label.id === label.id;

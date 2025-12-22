@@ -34,6 +34,20 @@
       <i class="fas fa-globe"></i>
       {{localize "MOTHERSHIP_MAP_VIEWER.forms.viewer.CommunityMaps"}}
     </button>
+    
+    <div class="floor-controls" style="display: flex; align-items: center; margin: 0 10px;">
+        <button id="floor-down-btn" title="Floor Down" style="width: 30px; padding: 0;"><i class="fas fa-arrow-down"></i></button>
+        <span id="currentFloorDisplay" style="margin: 0 8px; font-weight: bold;">Floor 1</span>
+        <button id="floor-up-btn" title="Floor Up" style="width: 30px; padding: 0;"><i class="fas fa-arrow-up"></i></button>
+    </div>
+
+    <button
+      id="toggle-3d-btn"
+      title="Toggle 3D Mode"
+    >
+      <i class="fas fa-cube"></i>
+      3D Mode
+    </button>
     <div style="flex-grow:1"></div>
     <button
       data-action="onFeedback"
@@ -90,7 +104,7 @@
   {{#if hasMap}}
     <div class="map-view-section">
       <div class="map-content">
-        <div class="canvas-container">
+        <div class="canvas-container" id="map-container">
           <canvas id="map-canvas"></canvas>
         </div>
       </div>

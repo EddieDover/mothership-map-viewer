@@ -59,6 +59,40 @@
           </div>
 
           <div class="tool-section">
+            <h3>Floor</h3>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                background: #222;
+                padding: 5px;
+                border-radius: 4px;
+              "
+            >
+              <button
+                id="floorDownBtn"
+                class="action-btn"
+                style="width: 30px; margin: 0; padding: 2px"
+              >
+                -
+              </button>
+              <span
+                id="currentFloorDisplay"
+                style="font-weight: bold; color: white"
+                >Floor 1</span
+              >
+              <button
+                id="floorUpBtn"
+                class="action-btn"
+                style="width: 30px; margin: 0; padding: 2px"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <div class="tool-section">
             <h3>Map Properties</h3>
             <label>
               Map Name:
@@ -85,6 +119,9 @@
           <div class="tool-section">
             <h3>View</h3>
             <button id="resetViewBtn" class="action-btn">Reset View</button>
+            <button id="toggle3dBtn" class="action-btn" style="margin-top: 8px">
+              Switch to 3D View
+            </button>
             <button
               id="snapToGridToggle"
               class="action-btn"
@@ -144,7 +181,7 @@
             <p><strong>Copy/Paste:</strong> Ctrl+C to copy, Ctrl+V to paste</p>
             <p><strong>Delete:</strong> Select an item and press Delete key</p>
           </div>
-          <div class="canvas-container">
+          <div class="canvas-container" id="map-container">
             <!-- Floating toolbar -->
             <div class="floating-toolbar">
               <button
@@ -448,6 +485,11 @@
       src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"
       onload="updateLoadingMessage('Loading core components...')"
     ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+      onload="updateLoadingMessage('Loading 3D engine...')"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="version.js"></script>
     <script src="constants.js"></script>
     <script
@@ -459,6 +501,7 @@
       src="map-renderer.js"
       onload="updateLoadingMessage('Starting application...')"
     ></script>
+    <script src="map-renderer-3d.js"></script>
     <script src="map-creator.js"></script>
     <script>
       // Display version information
