@@ -119,6 +119,13 @@
           <div class="tool-section">
             <h3>View</h3>
             <button id="resetViewBtn" class="action-btn">Reset View</button>
+            <button
+              id="centerViewBtn"
+              class="action-btn"
+              style="margin-top: 8px"
+            >
+              Center View
+            </button>
             <button id="toggle3dBtn" class="action-btn" style="margin-top: 8px">
               Switch to 3D View
             </button>
@@ -402,7 +409,10 @@
             </div>
 
             <!-- Marker selection toolbar -->
-            <div class="floating-toolbar marker-selector-toolbar">
+            <div
+              class="floating-toolbar marker-selector-toolbar"
+              id="markerSelectorToolbar"
+            >
               <div class="toolbar-section">
                 <label for="roomSelector" class="toolbar-label"
                   >Select Room:</label

@@ -56,6 +56,23 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /**
+   * Refresh the map display (2D or 3D) without full re-render
+   */
+  refreshMap() {
+    if (this.is3DMode && this.renderer3d) {
+      this.renderer3d.update(this.mapData, this.currentFloor);
+      if (this.playerLocations) {
+        this.renderer3d.updatePlayerMarkers(this.playerLocations);
+      }
+    } else {
+      const canvas = document.getElementById(this.getCanvasId());
+      if (canvas) {
+        this._renderMap(canvas);
+      }
+    }
+  }
+
   set3DMode(enabled, force = false) {
     if (this.is3DMode === enabled && !force) return;
     this.is3DMode = enabled;
@@ -128,6 +145,55 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
 
   toggle3DMode() {
     this.set3DMode(!this.is3DMode);
+  }
+
+  /**
+   * Center the view on all rooms on the current floor
+   */
+  centerView() {
+    if (!this.mapData || !this.mapData.rooms) return;
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    let hasRooms = false;
+
+    this.mapData.rooms.forEach((room) => {
+      // Check floor
+      const roomFloor = room.floor !== undefined ? room.floor : 1;
+      if (roomFloor !== this.currentFloor) return;
+
+      hasRooms = true;
+      // Use width/height for bounds calculation as they are populated for both shapes
+      // (Circle rooms have width/height = radius * 2 in some contexts, or we use x/y as top-left)
+      const width = room.width || (room.radius ? room.radius * 2 : 0);
+      const height = room.height || (room.radius ? room.radius * 2 : 0);
+
+      minX = Math.min(minX, room.x);
+      minY = Math.min(minY, room.y);
+      maxX = Math.max(maxX, room.x + width);
+      maxY = Math.max(maxY, room.y + height);
+    });
+
+    const canvas = document.getElementById(this.getCanvasId());
+    if (hasRooms) {
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+
+      if (this.is3DMode && this.renderer3d) {
+        this.renderer3d.focusOn(centerX, 0, centerY);
+      } else if (canvas) {
+        this.scrollOffset.x = canvas.width / 2 - centerX * this.scale;
+        this.scrollOffset.y = canvas.height / 2 - centerY * this.scale;
+        this._renderMap(canvas);
+      }
+    } else if (canvas) {
+      // Reset to 0,0 if no rooms
+      this.scrollOffset.x = 0;
+      this.scrollOffset.y = 0;
+      this._renderMap(canvas);
+    }
   }
 
   /**

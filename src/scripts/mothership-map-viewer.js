@@ -51,6 +51,7 @@ class MothershipMapSocketHandler {
     const mapData = payload.mapData || payload;
     const mapId = payload.mapId || null;
     const instance = PlayerMapDisplay.getInstance({ mapData, mapId });
+    instance.shouldCenter = true;
     await instance.render(true);
 
     // Sync view mode if provided
@@ -68,7 +69,12 @@ class MothershipMapSocketHandler {
     if (app) {
       app.mapData = mapData;
       app.mapId = mapId;
-      app.render();
+
+      if (app.rendered) {
+        app.refreshMap();
+      } else {
+        app.render({ force: true });
+      }
     }
   }
 
@@ -132,7 +138,7 @@ class PlayerMapDisplay extends BaseMapRenderer {
       title: "MOTHERSHIP_MAP_VIEWER.PlayerMapTitle",
       resizable: true,
     },
-    position: { width: 1000, height: 900 },
+    position: { width: 1200, height: 900 },
     classes: ["mothership-player-map"],
   };
 
@@ -192,6 +198,11 @@ class PlayerMapDisplay extends BaseMapRenderer {
         this._setupCanvasDragScroll(canvas);
         this._setupCanvasZoom(canvas);
         this._renderMap(canvas);
+
+        if (this.shouldCenter) {
+          this.centerView();
+          this.shouldCenter = false;
+        }
       }
     }
 
@@ -334,7 +345,7 @@ class MothershipMapViewer extends BaseMapRenderer {
       title: "MOTHERSHIP_MAP_VIEWER.Title",
       resizable: true,
     },
-    position: { width: 900, height: 900 },
+    position: { height: 900 },
     classes: ["mothership-map-viewer"],
     actions: {
       onBugReport: MothershipMapViewer.onBugReport,
@@ -455,6 +466,11 @@ class MothershipMapViewer extends BaseMapRenderer {
         this._setupCanvasDragScroll(canvas);
         this._setupCanvasZoom(canvas);
         this._renderMap(canvas);
+
+        if (this.shouldCenter) {
+          this.centerView();
+          this.shouldCenter = false;
+        }
       }
     }
 
@@ -530,6 +546,7 @@ class MothershipMapViewer extends BaseMapRenderer {
               "MOTHERSHIP_MAP_VIEWER.notifications.ImportSuccess"
             )
           );
+          this.shouldCenter = true;
           this.render();
         } catch (err) {
           ui.notifications.error(
@@ -579,6 +596,7 @@ class MothershipMapViewer extends BaseMapRenderer {
             "MOTHERSHIP_MAP_VIEWER.notifications.ImportSuccess"
           )
         );
+        this.shouldCenter = true;
         this.render();
       } catch (err) {
         ui.notifications.error(

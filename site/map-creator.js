@@ -179,6 +179,11 @@ class MapCreator {
       .getElementById("resetViewBtn")
       .addEventListener("click", () => this.resetView());
 
+    // Center View button
+    document
+      .getElementById("centerViewBtn")
+      .addEventListener("click", () => this.centerView());
+
     // 3D Toggle button
     document
       .getElementById("toggle3dBtn")
@@ -279,11 +284,18 @@ class MapCreator {
     const btn = document.getElementById("toggle3dBtn");
     const canvas = document.getElementById("mapCanvas");
     const container = document.getElementById("map-container");
+    const markerSelectorToolbar = document.getElementById(
+      "markerSelectorToolbar"
+    );
 
     if (this.is3DMode) {
       // Switch to 3D
+      this.selectedItem = null;
+      this.refreshUI(false);
+
       if (btn) btn.textContent = "2D Mode";
       if (canvas) canvas.style.display = "none";
+      if (markerSelectorToolbar) markerSelectorToolbar.style.display = "none";
 
       if (!this.renderer3d) {
         this.renderer3d = new MapRenderer3D(container);
@@ -295,11 +307,13 @@ class MapCreator {
       // Switch to 2D
       if (btn) btn.textContent = "3D Mode";
       if (canvas) canvas.style.display = "block";
+      if (markerSelectorToolbar) markerSelectorToolbar.style.display = "flex";
 
       if (this.renderer3d) {
         this.renderer3d.dispose();
         this.renderer3d = null;
       }
+      this.refreshUI();
 
       this.render();
     }
@@ -2955,6 +2969,8 @@ class MapCreator {
         if (mapNameInput) {
           mapNameInput.value = this.mapData.mapName || "";
         }
+
+        this.centerView();
       }
     } catch (error) {
       console.error("Failed to load from localStorage:", error);
@@ -4081,6 +4097,52 @@ class MapCreator {
   }
 
   /**
+   * Center the view on all rooms on the current floor
+   *
+   * @memberof MapCreator
+   */
+  centerView() {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    let hasRooms = false;
+
+    this.mapData.rooms.forEach((room) => {
+      if ((room.floor !== undefined ? room.floor : 1) !== this.currentFloor)
+        return;
+
+      hasRooms = true;
+      if (room.shape === "circle") {
+        minX = Math.min(minX, room.x);
+        minY = Math.min(minY, room.y);
+        maxX = Math.max(maxX, room.x + room.radius * 2);
+        maxY = Math.max(maxY, room.y + room.radius * 2);
+      } else {
+        minX = Math.min(minX, room.x);
+        minY = Math.min(minY, room.y);
+        maxX = Math.max(maxX, room.x + room.width);
+        maxY = Math.max(maxY, room.y + room.height);
+      }
+    });
+
+    if (hasRooms) {
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+
+      if (this.is3DMode && this.renderer3d) {
+        this.renderer3d.focusOn(centerX, 0, centerY);
+      } else {
+        this.renderer.focusOn(centerX, centerY);
+        this.render();
+      }
+    } else {
+      // If no rooms, just reset view
+      this.resetView();
+    }
+  }
+
+  /**
    * Validate that map has a name before export
    * @returns {boolean}
    */
@@ -4194,6 +4256,7 @@ class MapCreator {
         this.recalculateNextId(); // Recalculate nextId after loading
         this.updatePropertiesPanel();
         this.updateMarkerSelectors(); // Populate dropdowns with loaded data
+        this.centerView();
         this.render();
         alert("Map imported successfully!");
       } catch (error) {

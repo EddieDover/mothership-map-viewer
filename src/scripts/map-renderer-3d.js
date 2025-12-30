@@ -76,6 +76,12 @@ export class MapRenderer3D {
     this.renderer.render(this.scene, this.camera);
   }
 
+  focusOn(x, y, z) {
+    if (!this.controls) return;
+    this.controls.target.set(x, y, z);
+    this.controls.update();
+  }
+
   update(mapData, currentFloor) {
     if (!this.isInitialized) this.init();
 
