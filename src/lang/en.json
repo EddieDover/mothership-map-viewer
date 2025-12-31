@@ -31,7 +31,18 @@
         "ShowName": "Show Name",
         "StandaloneWalls": "Standalone Walls",
         "CommunityMaps": "Community Maps",
-        "GoToMapCreator": "Map Creator"
+        "GoToMapCreator": "Map Creator",
+        "NoPlayersViewing": "No players currently viewing",
+        "FilterRooms": "Filter rooms...",
+        "FloorDown": "Floor Down",
+        "FloorUp": "Floor Up",
+        "Floor": "Floor",
+        "Toggle3DMode": "Toggle 3D Mode",
+        "Mode3D": "3D Mode",
+        "CurrentMap": "Current Map",
+        "DeleteCurrentMap": "Delete current map",
+        "DeleteMap": "Delete Map",
+        "ActiveViewers": "Active Viewers"
       }
     }
   }

@@ -31,7 +31,18 @@
         "ShowName": "Mostrar Nombre",
         "StandaloneWalls": "Paredes Independientes",
         "CommunityMaps": "Mapas de la Comunidad",
-        "GoToMapCreator": "Creador de Mapas"
+        "GoToMapCreator": "Creador de Mapas",
+        "NoPlayersViewing": "No hay jugadores viendo actualmente",
+        "FilterRooms": "Filtrar habitaciones...",
+        "FloorDown": "Bajar Piso",
+        "FloorUp": "Subir Piso",
+        "Floor": "Piso",
+        "Toggle3DMode": "Alternar Modo 3D",
+        "Mode3D": "Modo 3D",
+        "CurrentMap": "Mapa Actual",
+        "DeleteCurrentMap": "Eliminar mapa actual",
+        "DeleteMap": "Eliminar Mapa",
+        "ActiveViewers": "Espectadores Activos"
       }
     }
   }

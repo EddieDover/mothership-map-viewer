@@ -31,7 +31,18 @@
         "ShowName": "Afficher le Nom",
         "StandaloneWalls": "Murs Isolés",
         "CommunityMaps": "Cartes de la Communauté",
-        "GoToMapCreator": "Créateur de Cartes"
+        "GoToMapCreator": "Créateur de Cartes",
+        "NoPlayersViewing": "Aucun joueur ne regarde actuellement",
+        "FilterRooms": "Filtrer les salles...",
+        "FloorDown": "Descendre d'un étage",
+        "FloorUp": "Monter d'un étage",
+        "Floor": "Étage",
+        "Toggle3DMode": "Basculer le mode 3D",
+        "Mode3D": "Mode 3D",
+        "CurrentMap": "Carte Actuelle",
+        "DeleteCurrentMap": "Supprimer la carte actuelle",
+        "DeleteMap": "Supprimer la Carte",
+        "ActiveViewers": "Spectateurs Actifs"
       }
     }
   }
