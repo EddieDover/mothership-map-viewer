@@ -473,7 +473,6 @@ class MothershipMapViewer extends BaseMapRenderer {
 
   // eslint-disable-next-line no-unused-vars
   async _onRender(context, options) {
-    // Import buttons
     document
       .getElementById("import-json-btn")
       .addEventListener("click", () => this._onImportJSON());
@@ -481,19 +480,16 @@ class MothershipMapViewer extends BaseMapRenderer {
       .getElementById("import-share-btn")
       .addEventListener("click", () => this._onImportShareString());
 
-    // 3D Toggle
     const toggle3dBtn = this.element.querySelector("#toggle-3d-btn");
     if (toggle3dBtn) {
       toggle3dBtn.addEventListener("click", () => this.toggle3DMode());
     }
 
-    // Center View
     const centerBtn = this.element.querySelector("#center-view-btn");
     if (centerBtn) {
       centerBtn.addEventListener("click", () => this.centerView());
     }
 
-    // Floor controls
     const floorUpBtn = this.element.querySelector("#floor-up-btn");
     if (floorUpBtn) {
       floorUpBtn.addEventListener("click", () => {
@@ -507,7 +503,6 @@ class MothershipMapViewer extends BaseMapRenderer {
       });
     }
 
-    // Map selector
     const mapSelector = document.getElementById("map-selector-dropdown");
     if (mapSelector) {
       mapSelector.addEventListener("change", (e) => {
@@ -515,13 +510,11 @@ class MothershipMapViewer extends BaseMapRenderer {
       });
     }
 
-    // Delete map button
     const deleteMapBtn = document.getElementById("delete-map-btn");
     if (deleteMapBtn) {
       deleteMapBtn.addEventListener("click", () => this._onDeleteMap());
     }
 
-    // Player view buttons
     const showAllBtn = document.getElementById("show-all-players-btn");
     const closeAllBtn = document.getElementById("close-all-players-btn");
 
@@ -532,7 +525,6 @@ class MothershipMapViewer extends BaseMapRenderer {
       closeAllBtn.addEventListener("click", () => this._onClosePlayerView());
     }
 
-    // Canvas rendering
     if (this.mapData) {
       const canvas = document.getElementById(this.getCanvasId());
       if (canvas) {
@@ -548,15 +540,12 @@ class MothershipMapViewer extends BaseMapRenderer {
       }
     }
 
-    // Visibility controls
     this._setupVisibilityControls(document);
     this._setupCollapsibleHeader(document);
 
-    // Initialize active viewers display
     this._updateActiveViewersDisplay();
     this._updateButtonVisibility();
 
-    // Filter input
     const filterInput = document.getElementById("gm-room-filter");
     if (filterInput) {
       filterInput.value = this.filterText || "";
@@ -695,7 +684,6 @@ class MothershipMapViewer extends BaseMapRenderer {
     const targetMapData = mapData || this.mapData;
     if (!targetMapData) return;
 
-    // Initialize room visibility flags
     if (targetMapData.rooms) {
       targetMapData.rooms.forEach((room) => {
         if (room.visible === undefined) room.visible = true;
@@ -713,7 +701,6 @@ class MothershipMapViewer extends BaseMapRenderer {
       });
     }
 
-    // Initialize hallway visibility flags
     if (targetMapData.hallways) {
       targetMapData.hallways.forEach((hallway) => {
         if (hallway.visible === undefined) hallway.visible = true;
@@ -726,7 +713,6 @@ class MothershipMapViewer extends BaseMapRenderer {
       });
     }
 
-    // Initialize standalone marker visibility flags
     if (!targetMapData.standaloneMarkers) {
       targetMapData.standaloneMarkers = [];
     } else {
@@ -744,7 +730,6 @@ class MothershipMapViewer extends BaseMapRenderer {
 
     let controlsHTML = '<div class="visibility-section">';
 
-    // Room controls
     if (this.mapData.rooms && this.mapData.rooms.length > 0) {
       controlsHTML += "<h3>Rooms</h3>";
 
@@ -766,7 +751,6 @@ class MothershipMapViewer extends BaseMapRenderer {
             </label>
         `;
 
-        // Room markers
         if (room.markers && room.markers.length > 0) {
           controlsHTML +=
             '<div class="marker-controls" style="margin-left: 20px;">';
@@ -785,7 +769,6 @@ class MothershipMapViewer extends BaseMapRenderer {
           controlsHTML += "</div>";
         }
 
-        // Room labels
         if (room.labels && room.labels.length > 0) {
           controlsHTML +=
             '<div class="label-controls" style="margin-left: 20px;">';
@@ -807,7 +790,6 @@ class MothershipMapViewer extends BaseMapRenderer {
       });
     }
 
-    // Hallway controls
     if (this.mapData.hallways && this.mapData.hallways.length > 0) {
       controlsHTML += `<h3 style="margin-top: 20px;">${game.i18n.localize("MOTHERSHIP_MAP_VIEWER.forms.viewer.HallwayVisibility")}</h3>`;
       this.mapData.hallways.forEach((hallway, index) => {
@@ -822,7 +804,6 @@ class MothershipMapViewer extends BaseMapRenderer {
               ${label} ${type}
             </label>`;
 
-        // Hallway start marker
         if (hallway.startMarker) {
           const startMarker = hallway.startMarker;
           controlsHTML += `
@@ -836,7 +817,6 @@ class MothershipMapViewer extends BaseMapRenderer {
             </div>`;
         }
 
-        // Hallway end marker
         if (hallway.endMarker) {
           const endMarker = hallway.endMarker;
           controlsHTML += `
@@ -850,7 +830,6 @@ class MothershipMapViewer extends BaseMapRenderer {
             </div>`;
         }
 
-        // Hallway markers
         const hallwayAllMarkers = [...(hallway.markers ?? [])].filter(
           (m) => m && m.type !== "none"
         );
@@ -999,7 +978,6 @@ class MothershipMapViewer extends BaseMapRenderer {
         });
       });
 
-    // Hallway start marker
     controlsContainer
       .querySelectorAll(".hallway-start-marker-visibility")
       .forEach((checkbox) => {
@@ -1011,7 +989,6 @@ class MothershipMapViewer extends BaseMapRenderer {
         });
       });
 
-    // Hallway end marker
     controlsContainer
       .querySelectorAll(".hallway-end-marker-visibility")
       .forEach((checkbox) => {
@@ -1023,7 +1000,6 @@ class MothershipMapViewer extends BaseMapRenderer {
         });
       });
 
-    // Hallway other markers
     controlsContainer
       .querySelectorAll(".hallway-marker-visibility")
       .forEach((checkbox) => {
@@ -1124,7 +1100,6 @@ class MothershipMapViewer extends BaseMapRenderer {
         }
       });
 
-      // Add user to the target map
       if (map) {
         map.activeViewers.add(userId);
       }
@@ -1136,7 +1111,6 @@ class MothershipMapViewer extends BaseMapRenderer {
         this.activeViewers.delete(userId);
       }
     } else if (status === "closed") {
-      // Remove user from all maps
       this.maps.forEach((m) => {
         m.activeViewers.delete(userId);
       });
@@ -1177,7 +1151,6 @@ class MothershipMapViewer extends BaseMapRenderer {
       const playerName = character ? character.name : null;
       const characterName = character ? character.id : null;
 
-      // Room selector options
       let roomOptions = "";
       if (this.mapData && this.mapData.rooms) {
         roomOptions = this.mapData.rooms
@@ -1273,12 +1246,10 @@ class MothershipMapViewer extends BaseMapRenderer {
       this.playerLocations[userId] = roomIndex;
     }
 
-    // Update local 3D view
     if (this.is3DMode && this.renderer3d) {
       this.renderer3d.updatePlayerMarkers(this.playerLocations);
     }
 
-    // Sync with players
     if (this.mapShownToPlayers) {
       game.modules
         .get("mothership-map-viewer")
@@ -1289,7 +1260,6 @@ class MothershipMapViewer extends BaseMapRenderer {
   _reopenMapForPlayer(userId) {
     if (!this.mapData) return;
 
-    // Emit to specific user
     game.socket.emit(
       "module.mothership-map-viewer",
       {
@@ -1305,7 +1275,6 @@ class MothershipMapViewer extends BaseMapRenderer {
   }
 
   _closeMapForPlayer(userId) {
-    // Emit close to specific user
     game.socket.emit(
       "module.mothership-map-viewer",
       { type: "closeMap", payload: null },
@@ -1316,7 +1285,6 @@ class MothershipMapViewer extends BaseMapRenderer {
       `Map closed for ${game.users.get(userId)?.name || "player"}`
     );
 
-    // Update the viewer status locally
     this.activeViewers.delete(userId);
     this._updateActiveViewersDisplay();
     this._updateButtonVisibility();
@@ -1341,7 +1309,6 @@ class MothershipMapViewer extends BaseMapRenderer {
   }
 }
 
-// Hook to add button to sidebar
 Hooks.once("ready", () => {
   console.log("Mothership Map Viewer | Module loaded");
 });

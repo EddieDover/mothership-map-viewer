@@ -20,17 +20,14 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(options = {}) {
     super(options);
 
-    // Scroll state
     this.scrollOffset = { x: 0, y: 0 };
     this.isDragging = false;
     this.dragStart = { x: 0, y: 0 };
 
-    // Zoom state
     this.scale = BaseMapRenderer.DEFAULT_SCALE;
     this.minScale = BaseMapRenderer.MIN_SCALE;
     this.maxScale = BaseMapRenderer.MAX_SCALE;
 
-    // Floor state
     this.currentFloor = 1;
     this.is3DMode = false;
     this.renderer3d = null;
@@ -87,7 +84,6 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
     const container = this.element.querySelector("#map-container");
 
     if (this.is3DMode) {
-      // Switch to 3D
       if (btn) {
         btn.innerHTML = '<i class="fas fa-layer-group"></i> 2D Mode';
         btn.title = "Switch to 2D Mode";
@@ -127,7 +123,6 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       }, 100);
 
-      // Restore camera state
       if (cameraState) {
         this.renderer3d.camera.position.copy(cameraState.position);
         this.renderer3d.controls.target.copy(cameraState.target);
@@ -139,7 +134,6 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
         this.renderer3d.updatePlayerMarkers(this.playerLocations);
       }
     } else {
-      // Switch to 2D
       if (btn) {
         btn.innerHTML = '<i class="fas fa-cube"></i> 3D Mode';
         btn.title = "Switch to 3D Mode";
@@ -175,7 +169,6 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
     let hasRooms = false;
 
     this.mapData.rooms.forEach((room) => {
-      // Check floor
       const roomFloor = room.floor !== undefined ? room.floor : 1;
       if (roomFloor !== this.currentFloor) return;
 
@@ -204,7 +197,6 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
         this._renderMap(canvas);
       }
     } else if (canvas) {
-      // Reset to 0,0 if no rooms
       this.scrollOffset.x = 0;
       this.scrollOffset.y = 0;
       this._renderMap(canvas);
@@ -224,7 +216,6 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
   _setupCanvasResize(canvas) {
     const container = canvas.parentElement;
 
-    // Clean up any existing observer
     if (this._resizeObserver) {
       this._resizeObserver.disconnect();
     }
@@ -233,14 +224,11 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
     let lastWidth = 0;
     let lastHeight = 0;
 
-    // Create a resize observer to adjust canvas when container size changes
     this._resizeObserver = new ResizeObserver((entries) => {
-      // Clear any pending resize
       if (resizeTimeout) {
         clearTimeout(resizeTimeout);
       }
 
-      // Debounce the actual resize operation
       resizeTimeout = setTimeout(() => {
         for (const entry of entries) {
           const rect = entry.contentRect;
@@ -265,7 +253,6 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
               canvas.height = newHeight;
               this._renderMap(canvas);
 
-              // Reconnect after a brief delay
               setTimeout(() => {
                 if (this._resizeObserver) {
                   this._resizeObserver.observe(container);
@@ -377,11 +364,9 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const ctx = canvas.getContext("2d");
 
-    // Clear canvas
     ctx.fillStyle = "#1a1a1a";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Apply scroll offset and zoom
     ctx.save();
     ctx.translate(this.scrollOffset.x, this.scrollOffset.y);
     ctx.scale(this.scale, this.scale);
@@ -390,46 +375,37 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
     const roomMarkersToRender = [];
     const roomLabelsToRender = [];
 
-    // Draw only visible rooms
     if (this.mapData.rooms) {
       this.mapData.rooms.forEach((room) => {
         if (!room.visible) return;
 
-        // Check floor
         const roomFloor = room.floor !== undefined ? room.floor : 1;
         if (roomFloor !== this.currentFloor) return;
 
         if (room.shape === "circle") {
-          // Circle room
           const centerX = room.x + room.width / 2;
           const centerY = room.y + room.height / 2;
           const radius = room.radius || Math.min(room.width, room.height) / 2;
 
-          // Fill
           ctx.fillStyle = "#000000";
           ctx.beginPath();
           ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
           ctx.fill();
 
-          // Border
           ctx.strokeStyle = "#ffffff";
           ctx.lineWidth = BaseMapRenderer.WALL_THICKNESS;
           ctx.beginPath();
           ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
           ctx.stroke();
         } else {
-          // Rectangle room (default)
-          // Fill
           ctx.fillStyle = "#000000";
           ctx.fillRect(room.x, room.y, room.width, room.height);
 
-          // Border
           ctx.strokeStyle = "#ffffff";
           ctx.lineWidth = BaseMapRenderer.WALL_THICKNESS;
           ctx.strokeRect(room.x, room.y, room.width, room.height);
         }
 
-        // Collect visible markers for later rendering
         if (room.markers) {
           room.markers.forEach((marker) => {
             if (marker.visible) {
@@ -442,7 +418,6 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
           });
         }
 
-        // Collect visible labels for later rendering
         if (room.labels) {
           room.labels.forEach((label) => {
             if (label.visible !== false) {
@@ -455,7 +430,6 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
           });
         }
 
-        // Label
         let shouldRenderLabel = false;
         let labelText = room.label;
 
@@ -482,13 +456,11 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
-    // Draw hallways and markers
     if (this.mapData.hallways) {
       this.mapData.hallways.forEach((hallway) => {
         const hallwayFloor = hallway.floor !== undefined ? hallway.floor : 1;
         if (hallwayFloor !== this.currentFloor) return;
 
-        // Draw hallway body only if visible
         if (hallway.visible) {
           if (hallway.isSecret) {
             this._drawSecretHallway(ctx, hallway);
@@ -534,7 +506,6 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
-    // Draw standalone walls (only visible ones)
     if (this.mapData.walls) {
       this.mapData.walls.forEach((wall) => {
         const wallFloor = wall.floor !== undefined ? wall.floor : 1;
@@ -560,17 +531,14 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
-    // Draw room markers last (on top of hallways)
     roomMarkersToRender.forEach((marker) => {
       this._drawRoomMarker(ctx, marker.x, marker.y, marker.type);
     });
 
-    // Draw room labels (on top of markers)
     roomLabelsToRender.forEach((label) => {
       this._drawRoomLabel(ctx, label.x, label.y, label.text);
     });
 
-    // Draw standalone markers (not in rooms)
     if (
       this.mapData.standaloneMarkers &&
       this.mapData.standaloneMarkers.length > 0
@@ -585,7 +553,6 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
-    // Draw standalone labels (not in rooms)
     if (
       this.mapData.standaloneLabels &&
       this.mapData.standaloneLabels.length > 0
@@ -600,7 +567,6 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
-    // Restore context
     ctx.restore();
   }
 
