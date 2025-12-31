@@ -275,6 +275,28 @@ class MothershipMapViewer extends BaseMapRenderer {
     return "map-canvas";
   }
 
+  setFilterText(text) {
+    this.filterText = text.toLowerCase().trim();
+    this._filterVisibilityList();
+  }
+
+  _filterVisibilityList() {
+    const container = document.getElementById("visibility-controls");
+    if (!container) return;
+
+    const items = container.querySelectorAll(".visibility-item");
+    const filter = this.filterText.toLowerCase();
+
+    items.forEach((item) => {
+      const label = item.textContent.toLowerCase();
+      if (label.includes(filter)) {
+        item.style.display = "block";
+      } else {
+        item.style.display = "none";
+      }
+    });
+  }
+
   // Helper methods for multi-map management
   _generateMapId() {
     return `map-${this.nextMapId++}`;
@@ -481,6 +503,16 @@ class MothershipMapViewer extends BaseMapRenderer {
     // Initialize active viewers display
     this._updateActiveViewersDisplay();
     this._updateButtonVisibility();
+
+    // Filter input
+    const filterInput = document.getElementById("gm-room-filter");
+    if (filterInput) {
+      filterInput.value = this.filterText || "";
+      filterInput.addEventListener("input", (e) => {
+        this.setFilterText(e.target.value);
+      });
+      this._filterVisibilityList();
+    }
 
     // Restore 3D mode if active (force update as DOM was replaced)
     if (this.is3DMode) {
