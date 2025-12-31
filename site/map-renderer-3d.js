@@ -13,6 +13,7 @@ class MapRenderer3D {
     this.mapData = null;
     this.currentFloor = 1;
     this.resizeHandler = this.onWindowResize.bind(this);
+    this.playerMarkers = [];
   }
 
   init() {
@@ -45,6 +46,10 @@ class MapRenderer3D {
       );
       this.controls.enableDamping = true;
       this.controls.dampingFactor = 0.05;
+    } else if (typeof OrbitControls !== "undefined") {
+      this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+      this.controls.enableDamping = true;
+      this.controls.dampingFactor = 0.05;
     }
 
     // Lights
@@ -59,7 +64,6 @@ class MapRenderer3D {
     this.isInitialized = true;
     this.animate();
 
-    // Handle resize
     window.addEventListener("resize", this.resizeHandler, false);
   }
 
@@ -85,6 +89,80 @@ class MapRenderer3D {
     if (!this.controls) return;
     this.controls.target.set(x, y, z);
     this.controls.update();
+  }
+
+  update(mapData, currentFloor) {
+    if (!this.isInitialized) this.init();
+
+    this.mapData = mapData;
+    this.currentFloor = currentFloor;
+
+    // Clear existing meshes
+    while (this.scene.children.length > 0) {
+      this.scene.remove(this.scene.children[0]);
+    }
+
+    // Clear player markers reference
+    this.playerMarkers = [];
+
+    // Re-add lights
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    this.scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(100, 200, 100);
+    this.scene.add(directionalLight);
+
+    this.buildMap();
+  }
+
+  updatePlayerMarkers(playerLocations) {
+    if (!this.isInitialized || !this.mapData) return;
+
+    // Clear existing markers
+    this.playerMarkers.forEach((marker) => {
+      this.scene.remove(marker);
+    });
+    this.playerMarkers = [];
+
+    if (!playerLocations) return;
+
+    const FLOOR_HEIGHT_STEP = 64;
+    const WALL_HEIGHT = 32;
+
+    // Create markers
+    for (const [userId, roomIndex] of Object.entries(playerLocations)) {
+      const room = this.mapData.rooms[roomIndex];
+      if (!room) continue;
+
+      const floor = room.floor !== undefined ? room.floor : 1;
+      const yPos = (floor - 1) * FLOOR_HEIGHT_STEP;
+
+      let centerX, centerY;
+      if (room.shape === "circle") {
+        centerX = room.x + room.radius;
+        centerY = room.y + room.radius;
+      } else {
+        centerX = room.x + room.width / 2;
+        centerY = room.y + room.height / 2;
+      }
+
+      // Create red hazy sphere
+      const geometry = new THREE.SphereGeometry(8, 16, 16);
+      const material = new THREE.MeshBasicMaterial({
+        color: 0xff0000,
+        transparent: true,
+        opacity: 0.6,
+        depthTest: false, // Always visible
+      });
+      const sphere = new THREE.Mesh(geometry, material);
+      sphere.renderOrder = 999; // On top
+
+      // Position in center of room, floating slightly
+      sphere.position.set(centerX, yPos + WALL_HEIGHT / 2, centerY);
+
+      this.scene.add(sphere);
+      this.playerMarkers.push(sphere);
+    }
   }
 
   createTextSprite(message, parameters = {}) {
@@ -121,27 +199,9 @@ class MapRenderer3D {
     context.font = "Bold " + fontsize + "px " + fontface;
 
     // background color
-    context.fillStyle =
-      "rgba(" +
-      backgroundColor.r +
-      "," +
-      backgroundColor.g +
-      "," +
-      backgroundColor.b +
-      "," +
-      backgroundColor.a +
-      ")";
+    context.fillStyle = `rgba(${backgroundColor.r},${backgroundColor.g},${backgroundColor.b},${backgroundColor.a})`;
     // border color
-    context.strokeStyle =
-      "rgba(" +
-      borderColor.r +
-      "," +
-      borderColor.g +
-      "," +
-      borderColor.b +
-      "," +
-      borderColor.a +
-      ")";
+    context.strokeStyle = `rgba(${borderColor.r},${borderColor.g},${borderColor.b},${borderColor.a})`;
 
     context.lineWidth = borderThickness;
 
@@ -167,16 +227,7 @@ class MapRenderer3D {
     context.stroke();
 
     // text color
-    context.fillStyle =
-      "rgba(" +
-      textColor.r +
-      "," +
-      textColor.g +
-      "," +
-      textColor.b +
-      "," +
-      textColor.a +
-      ")";
+    context.fillStyle = `rgba(${textColor.r},${textColor.g},${textColor.b},${textColor.a})`;
     context.textAlign = "center";
     context.textBaseline = "middle";
     context.fillText(message, canvas.width / 2, canvas.height / 2);
@@ -202,30 +253,6 @@ class MapRenderer3D {
     return sprite;
   }
 
-  update(mapData, currentFloor) {
-    if (!this.isInitialized) this.init();
-
-    this.mapData = mapData;
-    this.currentFloor = currentFloor;
-
-    // Clear existing meshes (except lights if we want to keep them, but easier to rebuild all)
-    // Actually, let's keep lights and camera, remove meshes.
-    // A simple way is to remove everything and re-add lights.
-    while (this.scene.children.length > 0) {
-      this.scene.remove(this.scene.children[0]);
-    }
-
-    // Re-add lights
-    const ambientLight = new THREE.AmbientLight(0x404040);
-    this.scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(100, 200, 100);
-    this.scene.add(directionalLight);
-
-    // Rebuild map
-    this.buildMap();
-  }
-
   buildMap() {
     if (!this.mapData) return;
 
@@ -249,6 +276,8 @@ class MapRenderer3D {
 
     // Rooms
     this.mapData.rooms.forEach((room) => {
+      if (room.visible === false) return;
+
       const floor = room.floor !== undefined ? room.floor : 1;
       const yPos = (floor - 1) * FLOOR_HEIGHT_STEP;
 
@@ -320,7 +349,6 @@ class MapRenderer3D {
         );
         this.scene.add(w2);
 
-        // Left wall
         const w3 = new THREE.Mesh(
           new THREE.BoxGeometry(2, WALL_HEIGHT, room.height),
           wallMat
@@ -395,6 +423,8 @@ class MapRenderer3D {
 
     // Hallways
     this.mapData.hallways.forEach((hallway) => {
+      if (hallway.visible === false) return;
+
       const floor = hallway.floor !== undefined ? hallway.floor : 1;
       const yPos = (floor - 1) * FLOOR_HEIGHT_STEP;
       const material = getMaterial(floor, 0x005500);
@@ -452,6 +482,8 @@ class MapRenderer3D {
 
     // Standalone Walls
     this.mapData.walls.forEach((wall) => {
+      if (wall.visible === false) return;
+
       const floor = wall.floor !== undefined ? wall.floor : 1;
       const yPos = (floor - 1) * FLOOR_HEIGHT_STEP;
       const material = getMaterial(floor, 0x00aa00); // Lighter for walls
@@ -477,6 +509,8 @@ class MapRenderer3D {
     // Markers (Simple spheres for now)
     if (this.mapData.standaloneMarkers) {
       this.mapData.standaloneMarkers.forEach((marker) => {
+        if (marker.visible === false) return;
+
         const floor = marker.floor !== undefined ? marker.floor : 1;
         const yPos = (floor - 1) * FLOOR_HEIGHT_STEP;
         const material = getMaterial(floor, 0xff0000);
