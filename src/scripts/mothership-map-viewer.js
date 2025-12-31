@@ -336,6 +336,7 @@ class MothershipMapViewer extends BaseMapRenderer {
   _saveMaps() {
     // Prepare maps for saving (remove Sets)
     const mapsToSave = this.maps.map((m) => {
+      // eslint-disable-next-line no-unused-vars
       const { activeViewers, ...rest } = m;
       return rest;
     });
@@ -1349,6 +1350,7 @@ Hooks.on("renderSceneDirectory", (app, html) => {
   html.querySelector(".directory-header .action-buttons").append(button);
 });
 
+// eslint-disable-next-line no-unused-vars
 Hooks.on("userConnected", (user, connected) => {
   if (MothershipMapViewer._instance && MothershipMapViewer._instance.rendered) {
     MothershipMapViewer._instance._updateActiveViewersDisplay();
