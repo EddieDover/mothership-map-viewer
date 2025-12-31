@@ -119,9 +119,18 @@ export class MapRenderer3D {
 
     const FLOOR_HEIGHT_STEP = 64;
     const WALL_HEIGHT = 32;
+    const OFFSET = 12;
 
-    // Create markers
+    // Group players by room
+    const playersByRoom = {};
     for (const [userId, roomIndex] of Object.entries(playerLocations)) {
+      if (!playersByRoom[roomIndex]) playersByRoom[roomIndex] = [];
+      playersByRoom[roomIndex].push(userId);
+    }
+
+    // Create markers for each room
+    for (const [roomIndexStr, userIds] of Object.entries(playersByRoom)) {
+      const roomIndex = parseInt(roomIndexStr);
       const room = this.mapData.rooms[roomIndex];
       if (!room) continue;
 
@@ -137,22 +146,52 @@ export class MapRenderer3D {
         centerY = room.y + room.height / 2;
       }
 
-      // Create red hazy sphere
-      const geometry = new THREE.SphereGeometry(8, 16, 16);
-      const material = new THREE.MeshBasicMaterial({
-        color: 0xff0000,
-        transparent: true,
-        opacity: 0.6,
-        depthTest: false, // Always visible
+      const count = userIds.length;
+
+      userIds.forEach((userId, index) => {
+        let offsetX = 0;
+        let offsetZ = 0;
+
+        if (count === 2) {
+          // Side by side
+          offsetX = (index === 0 ? -1 : 1) * OFFSET;
+        } else if (count === 3) {
+          // Triangle
+          const angle = (index * 2 * Math.PI) / 3 - Math.PI / 2;
+          offsetX = Math.cos(angle) * OFFSET;
+          offsetZ = Math.sin(angle) * OFFSET;
+        } else if (count === 4) {
+          // Square
+          offsetX = (index % 2 === 0 ? -1 : 1) * OFFSET;
+          offsetZ = (index < 2 ? -1 : 1) * OFFSET;
+        } else if (count > 4) {
+          // Circle
+          const angle = (index * 2 * Math.PI) / count;
+          offsetX = Math.cos(angle) * OFFSET * 1.5;
+          offsetZ = Math.sin(angle) * OFFSET * 1.5;
+        }
+
+        // Create red hazy sphere
+        const geometry = new THREE.SphereGeometry(8, 16, 16);
+        const material = new THREE.MeshBasicMaterial({
+          color: 0xff0000,
+          transparent: true,
+          opacity: 0.6,
+          depthTest: false, // Always visible
+        });
+        const sphere = new THREE.Mesh(geometry, material);
+        sphere.renderOrder = 999; // On top
+
+        // Position in center of room + offset, floating slightly
+        sphere.position.set(
+          centerX + offsetX,
+          yPos + WALL_HEIGHT / 2,
+          centerY + offsetZ
+        );
+
+        this.scene.add(sphere);
+        this.playerMarkers.push(sphere);
       });
-      const sphere = new THREE.Mesh(geometry, material);
-      sphere.renderOrder = 999; // On top
-
-      // Position in center of room, floating slightly
-      sphere.position.set(centerX, yPos + WALL_HEIGHT / 2, centerY);
-
-      this.scene.add(sphere);
-      this.playerMarkers.push(sphere);
     }
   }
 
