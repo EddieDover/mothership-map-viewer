@@ -1313,3 +1313,9 @@ Hooks.on("renderSceneDirectory", (app, html) => {
 
   html.querySelector(".directory-header .action-buttons").append(button);
 });
+
+Hooks.on("userConnected", (user, connected) => {
+  if (MothershipMapViewer._instance && MothershipMapViewer._instance.rendered) {
+    MothershipMapViewer._instance._updateActiveViewersDisplay();
+  }
+});
