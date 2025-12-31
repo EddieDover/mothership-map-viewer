@@ -77,6 +77,11 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this.is3DMode === enabled && !force) return;
     this.is3DMode = enabled;
 
+    // Save preference if this is the GM viewer
+    if (game.user.isGM && this.constructor.name === "MothershipMapViewer") {
+      game.settings.set("mothership-map-viewer", "default3DMode", enabled);
+    }
+
     const btn = this.element.querySelector("#toggle-3d-btn");
     const canvas = document.getElementById(this.getCanvasId());
     const container = this.element.querySelector("#map-container");
@@ -115,6 +120,13 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
 
       this.renderer3d.init();
 
+      // Force a resize check after a short delay to ensure correct sizing after DOM settlement
+      setTimeout(() => {
+        if (this.renderer3d) {
+          this.renderer3d.onWindowResize();
+        }
+      }, 100);
+
       // Restore camera state
       if (cameraState) {
         this.renderer3d.camera.position.copy(cameraState.position);
@@ -132,7 +144,10 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
         btn.innerHTML = '<i class="fas fa-cube"></i> 3D Mode';
         btn.title = "Switch to 3D Mode";
       }
-      if (canvas) canvas.style.display = "block";
+      if (canvas) {
+        canvas.style.display = "block";
+        this._fitCanvasToContainer(canvas);
+      }
 
       if (this.renderer3d) {
         this.renderer3d.dispose();

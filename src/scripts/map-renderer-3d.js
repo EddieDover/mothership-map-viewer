@@ -60,13 +60,13 @@ export class MapRenderer3D {
 
   onWindowResize() {
     if (!this.camera || !this.renderer) return;
-    this.camera.aspect =
-      this.container.clientWidth / this.container.clientHeight;
+
+    const width = this.container.clientWidth || 1;
+    const height = this.container.clientHeight || 1;
+
+    this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(
-      this.container.clientWidth,
-      this.container.clientHeight
-    );
+    this.renderer.setSize(width, height);
   }
 
   animate() {

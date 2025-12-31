@@ -252,11 +252,40 @@ class MothershipMapViewer extends BaseMapRenderer {
     this.currentMapId = null;
     this.nextMapId = 1;
 
-    // Legacy support - will be removed once migration is complete
-    this.mapData = null;
-    this.activeViewers = new Set();
+    // Load saved maps
+    const savedMaps =
+      game.settings.get("mothership-map-viewer", "savedMaps") || [];
+    if (Array.isArray(savedMaps) && savedMaps.length > 0) {
+      this.maps = savedMaps.map((m) => ({
+        ...m,
+        activeViewers: new Set(),
+      }));
+
+      // Set current map to the first one if available
+      if (this.maps.length > 0) {
+        this._setCurrentMap(this.maps[0].id);
+
+        // Update nextMapId to avoid collisions
+        const maxId = this.maps.reduce((max, m) => {
+          const idNum = parseInt(m.id.replace("map-", ""));
+          return isNaN(idNum) ? max : Math.max(max, idNum);
+        }, 0);
+        this.nextMapId = maxId + 1;
+      }
+    }
+
+    // Load 3D mode preference
+    this.is3DMode =
+      game.settings.get("mothership-map-viewer", "default3DMode") || false;
+
+    // Initialize active map state (required by BaseMapRenderer)
+    if (!this.mapData) {
+      this.mapData = null;
+      this.activeViewers = new Set();
+    }
     this.mapShownToPlayers = false;
     this.playerLocations = {}; // Map of userId -> roomIndex
+    this.filterText = "";
 
     MothershipMapViewer._instance = this;
   }
@@ -298,6 +327,15 @@ class MothershipMapViewer extends BaseMapRenderer {
   }
 
   // Helper methods for multi-map management
+  _saveMaps() {
+    // Prepare maps for saving (remove Sets)
+    const mapsToSave = this.maps.map((m) => {
+      const { activeViewers, ...rest } = m;
+      return rest;
+    });
+    game.settings.set("mothership-map-viewer", "savedMaps", mapsToSave);
+  }
+
   _generateMapId() {
     return `map-${this.nextMapId++}`;
   }
@@ -312,6 +350,7 @@ class MothershipMapViewer extends BaseMapRenderer {
       activeViewers: new Set(),
     };
     this.maps.push(map);
+    this._saveMaps();
     return id;
   }
 
@@ -324,7 +363,7 @@ class MothershipMapViewer extends BaseMapRenderer {
     const map = this.maps.find((m) => m.id === mapId);
     if (map) {
       this.currentMapId = mapId;
-      // Update legacy properties for backward compatibility
+      // Sync active map data for BaseMapRenderer
       this.mapData = map.mapData;
       this.activeViewers = map.activeViewers;
       return true;
@@ -355,6 +394,7 @@ class MothershipMapViewer extends BaseMapRenderer {
           this.activeViewers = new Set();
         }
       }
+      this._saveMaps();
       return true;
     }
     return false;
@@ -367,7 +407,7 @@ class MothershipMapViewer extends BaseMapRenderer {
       title: "MOTHERSHIP_MAP_VIEWER.Title",
       resizable: true,
     },
-    position: { height: 900 },
+    position: { width: 1200, height: 900 },
     classes: ["mothership-map-viewer"],
     actions: {
       onBugReport: MothershipMapViewer.onBugReport,
@@ -1297,6 +1337,22 @@ Hooks.once("ready", () => {
 Hooks.once("init", () => {
   const myPackage = game.modules.get("mothership-map-viewer");
   myPackage.socketHandler = new MothershipMapSocketHandler();
+
+  game.settings.register("mothership-map-viewer", "savedMaps", {
+    name: "Saved Maps",
+    scope: "world",
+    config: false,
+    type: Object,
+    default: [],
+  });
+
+  game.settings.register("mothership-map-viewer", "default3DMode", {
+    name: "Default 3D Mode",
+    scope: "client",
+    config: false,
+    type: Boolean,
+    default: false,
+  });
 });
 
 Hooks.on("renderSceneDirectory", (app, html) => {
