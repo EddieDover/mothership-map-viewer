@@ -39,6 +39,7 @@
         "Floor": "Floor",
         "Toggle3DMode": "Toggle 3D Mode",
         "Mode3D": "3D Mode",
+        "CenterView": "Center View",
         "CurrentMap": "Current Map",
         "DeleteCurrentMap": "Delete current map",
         "DeleteMap": "Delete Map",

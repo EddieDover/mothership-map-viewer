@@ -39,6 +39,7 @@
         "Floor": "Piso",
         "Toggle3DMode": "Alternar Modo 3D",
         "Mode3D": "Modo 3D",
+        "CenterView": "Centrar Vista",
         "CurrentMap": "Mapa Actual",
         "DeleteCurrentMap": "Eliminar mapa actual",
         "DeleteMap": "Eliminar Mapa",

@@ -1,5 +1,6 @@
 <div class="mothership-map-viewer-container">
   <div class="map-controls">
+    <div class="map-button-stack">
     <button
       data-action="onImportJson"
       id="import-json-btn"
@@ -18,6 +19,8 @@
       <i class="fas fa-share"></i>
       {{localize "MOTHERSHIP_MAP_VIEWER.forms.viewer.ImportShareString"}}
     </button>
+    </div>
+    <div class="map-button-stack">
     <button
       data-action="onGoToMapCreator"
       id="go-to-editor-btn"
@@ -34,7 +37,7 @@
       <i class="fas fa-globe"></i>
       {{localize "MOTHERSHIP_MAP_VIEWER.forms.viewer.CommunityMaps"}}
     </button>
-    
+    </div>
     <div class="floor-controls" style="display: flex; align-items: center; margin: 0 10px;">
         <button id="floor-down-btn" title="{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.FloorDown'}}" style="width: 30px; padding: 0;"><i class="fas fa-arrow-down"></i></button>
         <span id="currentFloorDisplay" style="margin: 0 8px; font-weight: bold;">{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.Floor'}} 1</span>
@@ -47,6 +50,13 @@
     >
       <i class="fas fa-cube"></i>
       {{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.Mode3D'}}
+    </button>
+    <button
+      id="center-view-btn"
+      title="{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.CenterView'}}"
+    >
+      <i class="fas fa-crosshairs"></i>
+      {{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.CenterView'}}
     </button>
     <div style="flex-grow:1"></div>
     <button

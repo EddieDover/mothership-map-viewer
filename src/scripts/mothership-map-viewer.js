@@ -177,6 +177,12 @@ class PlayerMapDisplay extends BaseMapRenderer {
       toggle3dBtn.addEventListener("click", () => this.toggle3DMode());
     }
 
+    // Center View
+    const centerBtn = this.element.querySelector("#center-view-btn");
+    if (centerBtn) {
+      centerBtn.addEventListener("click", () => this.centerView());
+    }
+
     // Floor controls
     const floorUpBtn = this.element.querySelector("#floor-up-btn");
     if (floorUpBtn) {
@@ -479,6 +485,12 @@ class MothershipMapViewer extends BaseMapRenderer {
     const toggle3dBtn = this.element.querySelector("#toggle-3d-btn");
     if (toggle3dBtn) {
       toggle3dBtn.addEventListener("click", () => this.toggle3DMode());
+    }
+
+    // Center View
+    const centerBtn = this.element.querySelector("#center-view-btn");
+    if (centerBtn) {
+      centerBtn.addEventListener("click", () => this.centerView());
     }
 
     // Floor controls
