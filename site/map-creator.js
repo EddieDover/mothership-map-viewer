@@ -3104,6 +3104,7 @@ class MapCreator {
                   <option value="window" ${item.marker.type === "window" ? "selected" : ""}>Window</option>
                   <option value="airlock" ${item.marker.type === "airlock" ? "selected" : ""}>Airlock</option>
                   <option value="elevator" ${item.marker.type === "elevator" ? "selected" : ""}>Elevator</option>
+                  <option value="stairs" ${item.marker.type === "stairs" ? "selected" : ""}>Stairs</option>
                 </select>
               </label>`;
       html += `<label>
@@ -3137,6 +3138,7 @@ class MapCreator {
                   <option value="window" ${item.marker.type === "window" ? "selected" : ""}>Window</option>
                   <option value="airlock" ${item.marker.type === "airlock" ? "selected" : ""}>Airlock</option>
                   <option value="elevator" ${item.marker.type === "elevator" ? "selected" : ""}>Elevator</option>
+                  <option value="stairs" ${item.marker.type === "stairs" ? "selected" : ""}>Stairs</option>
                 </select>
               </label>`;
       html += `<label>
