@@ -43,7 +43,15 @@
         "CurrentMap": "Mapa Actual",
         "DeleteCurrentMap": "Eliminar mapa actual",
         "DeleteMap": "Eliminar Mapa",
-        "ActiveViewers": "Espectadores Activos"
+        "ActiveViewers": "Espectadores Activos",
+        "Update": "Actualizar",
+        "RoomSettings": "Configuración de la Habitación",
+        "RoomColor": "Color de la Habitación",
+        "DefaultColor": "Predeterminado (Verde)",
+        "Red": "Rojo",
+        "Orange": "Naranja",
+        "Yellow": "Amarillo",
+        "Blue": "Azul"
       }
     }
   }

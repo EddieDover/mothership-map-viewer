@@ -319,7 +319,10 @@ export class MapRenderer3D {
         geometry = new THREE.BoxGeometry(room.width, 2, room.height);
       }
 
-      const material = getMaterial(floor, 0x004400);
+      const floorColor = room.color || 0x004400;
+      const wallColor = room.color || 0x008800;
+
+      const material = getMaterial(floor, floorColor);
       const mesh = new THREE.Mesh(geometry, material);
 
       if (room.shape === "circle") {
@@ -351,9 +354,8 @@ export class MapRenderer3D {
       this.scene.add(ceilingMesh);
 
       // Walls for room
-      // We can create 4 walls for rectangle
       if (room.shape !== "circle") {
-        const wallMat = getMaterial(floor, 0x008800);
+        const wallMat = getMaterial(floor, wallColor);
 
         // Top wall
         const w1 = new THREE.Mesh(
@@ -411,7 +413,7 @@ export class MapRenderer3D {
           1,
           true
         );
-        const wallMat = getMaterial(floor, 0x008800);
+        const wallMat = getMaterial(floor, wallColor);
         const w = new THREE.Mesh(wallGeo, wallMat);
         w.position.set(
           room.x + room.radius,

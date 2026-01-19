@@ -43,7 +43,15 @@
         "CurrentMap": "Carte Actuelle",
         "DeleteCurrentMap": "Supprimer la carte actuelle",
         "DeleteMap": "Supprimer la Carte",
-        "ActiveViewers": "Spectateurs Actifs"
+        "ActiveViewers": "Spectateurs Actifs",
+        "Update": "Mettre à Jour",
+        "RoomSettings": "Paramètres de la Salle",
+        "RoomColor": "Couleur de la Salle",
+        "DefaultColor": "Par Défaut (Vert)",
+        "Red": "Rouge",
+        "Orange": "Orange",
+        "Yellow": "Jaune",
+        "Blue": "Bleu"
       }
     }
   }

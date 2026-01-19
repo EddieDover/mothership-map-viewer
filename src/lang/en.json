@@ -43,7 +43,15 @@
         "CurrentMap": "Current Map",
         "DeleteCurrentMap": "Delete current map",
         "DeleteMap": "Delete Map",
-        "ActiveViewers": "Active Viewers"
+        "ActiveViewers": "Active Viewers",
+        "Update": "Update",
+        "RoomSettings": "Room Settings",
+        "RoomColor": "Room Color",
+        "DefaultColor": "Default (Green)",
+        "Red": "Red",
+        "Orange": "Orange",
+        "Yellow": "Yellow",
+        "Blue": "Blue"
       }
     }
   }

@@ -738,12 +738,15 @@ class MothershipMapViewer extends BaseMapRenderer {
         const label = room.label || `Room ${index + 1}`;
         controlsHTML += `
           <div class="visibility-item">
-            <label>
-              <input type="checkbox" class="room-visibility" data-index="${index}" ${
-                room.visible ? "checked" : ""
-              }>
-              ${label}
-            </label>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <label>
+                <input type="checkbox" class="room-visibility" data-index="${index}" ${
+                  room.visible ? "checked" : ""
+                }>
+                ${label}
+              </label>
+              <i class="fas fa-cog room-settings" data-index="${index}" title="${game.i18n.localize("MOTHERSHIP_MAP_VIEWER.forms.viewer.RoomSettings")}" style="cursor: pointer; color: #aaa;"></i>
+            </div>
             <label style="margin-left: 20px; display: block; font-size: 0.9em;">
               <input type="checkbox" class="room-name-visibility" data-index="${index}" ${
                 room.labelVisible ? "checked" : ""
@@ -934,6 +937,14 @@ class MothershipMapViewer extends BaseMapRenderer {
           updateVisibility();
         });
       });
+
+    controlsContainer.querySelectorAll(".room-settings").forEach((icon) => {
+      icon.addEventListener("click", (e) => {
+        const index = parseInt(e.target.dataset.index);
+        const room = this.mapData.rooms[index];
+        this._showRoomContext(room, index);
+      });
+    });
 
     controlsContainer
       .querySelectorAll(".room-name-visibility")
@@ -1307,6 +1318,88 @@ class MothershipMapViewer extends BaseMapRenderer {
       closeBtn.style.display = "none";
       this.mapShownToPlayers = false;
     }
+  }
+
+  getRoomAtPosition(x, y) {
+    if (!this.mapData || !this.mapData.rooms) return null;
+
+    for (let i = 0; i < this.mapData.rooms.length; i++) {
+      const room = this.mapData.rooms[i];
+      if ((room.floor !== undefined ? room.floor : 1) !== this.currentFloor)
+        continue;
+      if (room.shape === "circle") {
+        const centerX = room.x + room.radius;
+        const centerY = room.y + room.radius;
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const distanceSquared = dx * dx + dy * dy;
+        if (distanceSquared <= room.radius * room.radius) {
+          return { room, index: i };
+        }
+      } else {
+        if (
+          x >= room.x &&
+          x <= room.x + room.width &&
+          y >= room.y &&
+          y <= room.y + room.height
+        ) {
+          return { room, index: i };
+        }
+      }
+    }
+    return null;
+  }
+
+  _showRoomContext(room, index) {
+    const d = new foundry.applications.api.DialogV2({
+      window: {
+        title: game.i18n.localize(
+          "MOTHERSHIP_MAP_VIEWER.forms.viewer.RoomSettings"
+        ),
+      },
+      content: `
+        <form>
+          <div class="form-group">
+            <label class="room-color-label">${game.i18n.localize("MOTHERSHIP_MAP_VIEWER.forms.viewer.RoomColor")}</label>
+            <select name="color">
+              <option value="">${game.i18n.localize("MOTHERSHIP_MAP_VIEWER.forms.viewer.DefaultColor")}</option>
+              <option value="#ff0000" ${room.color === "#ff0000" ? "selected" : ""}>${game.i18n.localize("MOTHERSHIP_MAP_VIEWER.forms.viewer.Red")}</option>
+              <option value="#ffa500" ${room.color === "#ffa500" ? "selected" : ""}>${game.i18n.localize("MOTHERSHIP_MAP_VIEWER.forms.viewer.Orange")}</option>
+              <option value="#ffff00" ${room.color === "#ffff00" ? "selected" : ""}>${game.i18n.localize("MOTHERSHIP_MAP_VIEWER.forms.viewer.Yellow")}</option>
+              <option value="#0000ff" ${room.color === "#0000ff" ? "selected" : ""}>${game.i18n.localize("MOTHERSHIP_MAP_VIEWER.forms.viewer.Blue")}</option>
+            </select>
+          </div>
+        </form>
+      `,
+      buttons: [
+        {
+          action: "save",
+          label: game.i18n.localize(
+            "MOTHERSHIP_MAP_VIEWER.forms.viewer.Update"
+          ),
+          default: true,
+          callback: (event, button) => {
+            const form = button.form;
+            const color = form.elements.color.value;
+
+            if (color) {
+              this.mapData.rooms[index].color = color;
+            } else {
+              delete this.mapData.rooms[index].color;
+            }
+
+            this._saveMaps();
+            this.render();
+
+            game.socket.emit("module.mothership-map-viewer", {
+              type: "updateMap",
+              payload: { mapId: this.currentMapId, mapData: this.mapData },
+            });
+          },
+        },
+      ],
+    });
+    d.render(true);
   }
 }
 
