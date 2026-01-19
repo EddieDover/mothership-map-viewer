@@ -560,6 +560,84 @@ class MapRenderer3D {
         this.scene.add(mesh);
       });
     }
+
+    const allMarkers = [];
+
+    // Collect Room markers
+    if (this.mapData.rooms) {
+      this.mapData.rooms.forEach((room) => {
+        if (room.markers && room.visible !== false) {
+          const floor = room.floor !== undefined ? room.floor : 1;
+          room.markers.forEach((m) => {
+            allMarkers.push({
+              type: m.type,
+              x: room.x + m.x,
+              y: room.y + m.y,
+              floor: floor,
+            });
+          });
+        }
+      });
+    }
+
+    // Collect Standalone markers
+    if (this.mapData.standaloneMarkers) {
+      this.mapData.standaloneMarkers.forEach((m) => {
+        if (m.visible !== false) {
+          const floor = m.floor !== undefined ? m.floor : 1;
+          allMarkers.push({
+            type: m.type,
+            x: m.x,
+            y: m.y,
+            floor: floor,
+          });
+        }
+      });
+    }
+
+    const drawConnector = (m1, m2, color) => {
+      const y1 = (m1.floor - 1) * FLOOR_HEIGHT_STEP + 8;
+      const y2 = (m2.floor - 1) * FLOOR_HEIGHT_STEP + 8;
+
+      const points = [];
+      points.push(new THREE.Vector3(m1.x, y1, m1.y));
+      points.push(new THREE.Vector3(m2.x, y2, m2.y));
+
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const material = new THREE.LineBasicMaterial({
+        color: color,
+        linewidth: 2,
+      });
+
+      const line = new THREE.Line(geometry, material);
+      this.scene.add(line);
+    };
+
+    ["stairs", "elevator"].forEach((type) => {
+      const typeMarkers = allMarkers.filter((m) => m.type === type);
+
+      typeMarkers.sort((a, b) => a.floor - b.floor);
+
+      for (let i = 0; i < typeMarkers.length; i++) {
+        const m1 = typeMarkers[i];
+        for (let j = i + 1; j < typeMarkers.length; j++) {
+          const m2 = typeMarkers[j];
+
+          if (m2.floor === m1.floor + 1) {
+            const dx = Math.abs(m1.x - m2.x);
+            const dy = Math.abs(m1.y - m2.y);
+            const TOLERANCE = 15; // Slightly less than grid size (20)
+
+            if (dx < TOLERANCE && dy < TOLERANCE) {
+              const color = type === "stairs" ? 0xffff00 : 0x00ffff; // Yellow for stairs, Cyan for elevators
+              drawConnector(m1, m2, color);
+            }
+          } else if (m2.floor > m1.floor + 1) {
+            break;
+          }
+        }
+      }
+    });
   }
 
   dispose() {
