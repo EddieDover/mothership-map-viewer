@@ -7,6 +7,18 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div id="loading-overlay">
+      <div class="loading-content">
+        <h2>Loading Mothership Map Creator...</h2>
+        <p id="loading-message">Initializing...</p>
+      </div>
+    </div>
+    <script>
+      function updateLoadingMessage(msg) {
+        const el = document.getElementById("loading-message");
+        if (el) el.textContent = msg;
+      }
+    </script>
     <div class="container">
       <header>
         <h1>Mothership Map Creator</h1>
@@ -47,6 +59,40 @@
           </div>
 
           <div class="tool-section">
+            <h3>Floor</h3>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                background: #222;
+                padding: 5px;
+                border-radius: 4px;
+              "
+            >
+              <button
+                id="floorDownBtn"
+                class="action-btn"
+                style="width: 30px; margin: 0; padding: 2px"
+              >
+                -
+              </button>
+              <span
+                id="currentFloorDisplay"
+                style="font-weight: bold; color: white"
+                >Floor 1</span
+              >
+              <button
+                id="floorUpBtn"
+                class="action-btn"
+                style="width: 30px; margin: 0; padding: 2px"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <div class="tool-section">
             <h3>Map Properties</h3>
             <label>
               Map Name:
@@ -73,6 +119,16 @@
           <div class="tool-section">
             <h3>View</h3>
             <button id="resetViewBtn" class="action-btn">Reset View</button>
+            <button
+              id="centerViewBtn"
+              class="action-btn"
+              style="margin-top: 8px"
+            >
+              Center View
+            </button>
+            <button id="toggle3dBtn" class="action-btn" style="margin-top: 8px">
+              Switch to 3D View
+            </button>
             <button
               id="snapToGridToggle"
               class="action-btn"
@@ -132,7 +188,7 @@
             <p><strong>Copy/Paste:</strong> Ctrl+C to copy, Ctrl+V to paste</p>
             <p><strong>Delete:</strong> Select an item and press Delete key</p>
           </div>
-          <div class="canvas-container">
+          <div class="canvas-container" id="map-container">
             <!-- Floating toolbar -->
             <div class="floating-toolbar">
               <button
@@ -353,7 +409,10 @@
             </div>
 
             <!-- Marker selection toolbar -->
-            <div class="floating-toolbar marker-selector-toolbar">
+            <div
+              class="floating-toolbar marker-selector-toolbar"
+              id="markerSelectorToolbar"
+            >
               <div class="toolbar-section">
                 <label for="roomSelector" class="toolbar-label"
                   >Select Room:</label
@@ -432,12 +491,27 @@
     </footer>
 
     <!-- Pako for gzip compression -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"
+      onload="updateLoadingMessage('Loading core components...')"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+      onload="updateLoadingMessage('Loading 3D engine...')"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="version.js"></script>
     <script src="constants.js"></script>
-    <script src="map-schema.js"></script>
+    <script
+      src="map-schema.js"
+      onload="updateLoadingMessage('Loading graphics engine...')"
+    ></script>
     <script src="marker-paths.js"></script>
-    <script src="map-renderer.js"></script>
+    <script
+      src="map-renderer.js"
+      onload="updateLoadingMessage('Starting application...')"
+    ></script>
+    <script src="map-renderer-3d.js"></script>
     <script src="map-creator.js"></script>
     <script>
       // Display version information

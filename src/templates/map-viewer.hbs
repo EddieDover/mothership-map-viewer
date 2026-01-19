@@ -1,5 +1,6 @@
 <div class="mothership-map-viewer-container">
   <div class="map-controls">
+    <div class="map-button-stack">
     <button
       data-action="onImportJson"
       id="import-json-btn"
@@ -18,6 +19,8 @@
       <i class="fas fa-share"></i>
       {{localize "MOTHERSHIP_MAP_VIEWER.forms.viewer.ImportShareString"}}
     </button>
+    </div>
+    <div class="map-button-stack">
     <button
       data-action="onGoToMapCreator"
       id="go-to-editor-btn"
@@ -33,6 +36,27 @@
     >
       <i class="fas fa-globe"></i>
       {{localize "MOTHERSHIP_MAP_VIEWER.forms.viewer.CommunityMaps"}}
+    </button>
+    </div>
+    <div class="floor-controls" style="display: flex; align-items: center; margin: 0 10px;">
+        <button id="floor-down-btn" title="{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.FloorDown'}}" style="width: 30px; padding: 0;"><i class="fas fa-arrow-down"></i></button>
+        <span id="currentFloorDisplay" style="margin: 0 8px; font-weight: bold;">{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.Floor'}} 1</span>
+        <button id="floor-up-btn" title="{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.FloorUp'}}" style="width: 30px; padding: 0;"><i class="fas fa-arrow-up"></i></button>
+    </div>
+
+    <button
+      id="toggle-3d-btn"
+      title="{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.Toggle3DMode'}}"
+    >
+      <i class="fas fa-cube"></i>
+      {{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.Mode3D'}}
+    </button>
+    <button
+      id="center-view-btn"
+      title="{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.CenterView'}}"
+    >
+      <i class="fas fa-crosshairs"></i>
+      {{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.CenterView'}}
     </button>
     <div style="flex-grow:1"></div>
     <button
@@ -71,7 +95,7 @@
     <div class="map-selector-bar">
       <label for="map-selector-dropdown">
         <i class="fas fa-map"></i>
-        Current Map:
+        {{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.CurrentMap'}}:
       </label>
       <select id="map-selector-dropdown" class="map-selector-dropdown">
         {{#each maps}}
@@ -80,9 +104,9 @@
           </option>
         {{/each}}
       </select>
-      <button id="delete-map-btn" class="delete-map-btn" title="Delete current map">
+      <button id="delete-map-btn" class="delete-map-btn" title="{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.DeleteCurrentMap'}}">
         <i class="fas fa-trash"></i>
-        Delete Map
+        {{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.DeleteMap'}}
       </button>
     </div>
   {{/if}}
@@ -90,7 +114,7 @@
   {{#if hasMap}}
     <div class="map-view-section">
       <div class="map-content">
-        <div class="canvas-container">
+        <div class="canvas-container" id="map-container">
           <canvas id="map-canvas"></canvas>
         </div>
       </div>
@@ -100,7 +124,7 @@
           {{localize "MOTHERSHIP_MAP_VIEWER.forms.viewer.VisibilityControls"}}
         </h2>
         <div class="active-viewers-section">
-          <h2>Active Viewers</h2>
+          <h2>{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.ActiveViewers'}}</h2>
           <div class="viewers-controls">
             <button
               id="show-all-players-btn"
@@ -125,8 +149,11 @@
             </button>
           </div>
           <div id="active-viewers-list" class="active-viewers-list">
-            <p class="no-viewers">No players currently viewing</p>
+            <p class="no-viewers">{{localize "MOTHERSHIP_MAP_VIEWER.forms.viewer.NoPlayersViewing"}}</p>
           </div>
+        </div>
+        <div class="filter-controls" style="padding: 10px 0;">
+            <input type="text" id="gm-room-filter" placeholder="{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.FilterRooms'}}" style="width: 100%; padding: 5px; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;">
         </div>
         <div id="visibility-controls" class="visibility-controls-content"></div>
       </div>

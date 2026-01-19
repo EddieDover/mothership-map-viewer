@@ -19,6 +19,14 @@ class MapCreator {
     this.clipboard = null;
     this.lastMouseX = 0;
     this.lastMouseY = 0;
+    this.currentFloor = 1;
+    this.is3DMode = false;
+    this.renderer3d = null;
+
+    // Undo/Redo stacks
+    this.undoStack = [];
+    this.redoStack = [];
+    this.maxHistorySize = 50;
 
     this.initializeEventListeners();
 
@@ -27,6 +35,61 @@ class MapCreator {
 
     this.updateMarkerSelectors();
     this.render();
+  }
+
+  /**
+   * Push current state to undo stack
+   * Call this BEFORE making a change
+   */
+  pushUndoState() {
+    const state = JSON.stringify(this.mapData.toJSON());
+    this.undoStack.push(state);
+    if (this.undoStack.length > this.maxHistorySize) {
+      this.undoStack.shift();
+    }
+    // Clear redo stack when a new action is performed
+    this.redoStack = [];
+  }
+
+  /**
+   * Undo the last action
+   */
+  undo() {
+    if (this.undoStack.length === 0) return;
+
+    // Save current state to redo stack
+    const currentState = JSON.stringify(this.mapData.toJSON());
+    this.redoStack.push(currentState);
+
+    // Restore previous state
+    const previousState = this.undoStack.pop();
+    this.mapData = MapData.fromJSON(JSON.parse(previousState));
+
+    // Restore selection if possible (optional, but nice)
+    this.selectedItem = null;
+
+    this.render();
+    this.refreshUI();
+  }
+
+  /**
+   * Redo the last undone action
+   */
+  redo() {
+    if (this.redoStack.length === 0) return;
+
+    // Save current state to undo stack
+    const currentState = JSON.stringify(this.mapData.toJSON());
+    this.undoStack.push(currentState);
+
+    // Restore next state
+    const nextState = this.redoStack.pop();
+    this.mapData = MapData.fromJSON(JSON.parse(nextState));
+
+    this.selectedItem = null;
+
+    this.render();
+    this.refreshUI();
   }
 
   /**
@@ -116,6 +179,30 @@ class MapCreator {
       .getElementById("resetViewBtn")
       .addEventListener("click", () => this.resetView());
 
+    // Center View button
+    document
+      .getElementById("centerViewBtn")
+      .addEventListener("click", () => this.centerView());
+
+    // 3D Toggle button
+    document
+      .getElementById("toggle3dBtn")
+      .addEventListener("click", () => this.toggle3DMode());
+
+    // Floor controls
+    const floorUpBtn = document.getElementById("floorUpBtn");
+    if (floorUpBtn) {
+      floorUpBtn.addEventListener("click", () => {
+        this.setFloor(this.currentFloor + 1);
+      });
+    }
+    const floorDownBtn = document.getElementById("floorDownBtn");
+    if (floorDownBtn) {
+      floorDownBtn.addEventListener("click", () => {
+        this.setFloor(this.currentFloor - 1);
+      });
+    }
+
     // Snap to Grid toggle button
     const snapToggleBtn = document.getElementById("snapToGridToggle");
     const snapCheckbox = document.getElementById("snapToGridCheckbox");
@@ -166,6 +253,70 @@ class MapCreator {
     document
       .getElementById("markerSelector")
       .addEventListener("change", (e) => this.handleMarkerSelection(e));
+  }
+
+  /**
+   * Set the current floor
+   * @param {number} floor
+   */
+  setFloor(floor) {
+    this.currentFloor = floor;
+    const display = document.getElementById("currentFloorDisplay");
+    if (display) {
+      display.textContent = `Floor ${floor}`;
+    }
+    this.selectedItem = null; // Deselect items when changing floors
+
+    if (this.is3DMode && this.renderer3d) {
+      this.renderer3d.update(this.mapData, this.currentFloor);
+      this.refreshUI(false); // Don't render 2D canvas
+    } else {
+      this.refreshUI();
+      this.render();
+    }
+  }
+
+  /**
+   * Toggle between 2D and 3D modes
+   */
+  toggle3DMode() {
+    this.is3DMode = !this.is3DMode;
+    const btn = document.getElementById("toggle3dBtn");
+    const canvas = document.getElementById("mapCanvas");
+    const container = document.getElementById("map-container");
+    const markerSelectorToolbar = document.getElementById(
+      "markerSelectorToolbar"
+    );
+
+    if (this.is3DMode) {
+      // Switch to 3D
+      this.selectedItem = null;
+      this.refreshUI(false);
+
+      if (btn) btn.textContent = "2D Mode";
+      if (canvas) canvas.style.display = "none";
+      if (markerSelectorToolbar) markerSelectorToolbar.style.display = "none";
+
+      if (!this.renderer3d) {
+        this.renderer3d = new MapRenderer3D(container);
+      }
+
+      this.renderer3d.init();
+      this.renderer3d.update(this.mapData, this.currentFloor);
+    } else {
+      // Switch to 2D
+      if (btn) btn.textContent = "3D Mode";
+      if (canvas) canvas.style.display = "block";
+      if (markerSelectorToolbar) markerSelectorToolbar.style.display = "flex";
+
+      if (this.renderer3d) {
+        this.renderer3d.dispose();
+        this.renderer3d = null;
+      }
+      this.refreshUI();
+
+      this.render();
+    }
   }
 
   /**
@@ -373,6 +524,8 @@ class MapCreator {
    * @memberof MapCreator
    */
   handleKeyDown(e) {
+    if (this.is3DMode) return;
+
     // Check if user is typing in an input field
     const activeElement = document.activeElement;
     const isTyping =
@@ -380,6 +533,21 @@ class MapCreator {
       (activeElement.tagName === "INPUT" ||
         activeElement.tagName === "TEXTAREA" ||
         activeElement.isContentEditable);
+
+    // Undo/Redo
+    if ((e.ctrlKey || e.metaKey) && !isTyping) {
+      if (e.key === "z") {
+        e.preventDefault();
+        if (e.shiftKey) {
+          this.redo();
+        } else {
+          this.undo();
+        }
+      } else if (e.key === "y") {
+        e.preventDefault();
+        this.redo();
+      }
+    }
 
     // Escape key cancels hallway/wall creation or marker placement
     if (e.key === "Escape") {
@@ -533,6 +701,8 @@ class MapCreator {
   pasteFromClipboard() {
     if (!this.clipboard) return;
 
+    this.pushUndoState();
+
     if (this.clipboard.type === "marker") {
       // Find which room the cursor is over, or use selected room
       let targetRoom = null;
@@ -642,7 +812,8 @@ class MapCreator {
         this.renderer.snapToGrid(this.lastMouseY - halfHeight),
         this.clipboard.data.width,
         this.clipboard.data.height,
-        this.clipboard.data.shape
+        this.clipboard.data.shape,
+        this.currentFloor
       );
       newRoom.label = this.clipboard.data.label
         ? `${this.clipboard.data.label} (Copy)`
@@ -714,6 +885,7 @@ class MapCreator {
 
     // Marker placement mode
     if (this.markerPlacementMode) {
+      this.pushUndoState();
       const room = this.markerPlacementMode.room;
 
       const wallMargin = WALL_THICKNESS;
@@ -762,6 +934,7 @@ class MapCreator {
 
     // Label placement mode
     if (this.labelPlacementMode) {
+      this.pushUndoState();
       const room = this.labelPlacementMode.room;
 
       const wallMargin = WALL_THICKNESS;
@@ -810,6 +983,9 @@ class MapCreator {
 
     // Select tool - for selecting existing items and dragging rooms/markers
     if (this.currentTool === "select") {
+      // Save state before potential drag
+      this.preDragState = JSON.stringify(this.mapData.toJSON());
+
       // Check for standalone markers first (highest priority)
       const standaloneMarkerResult = this.getStandaloneMarkerAtPosition(
         mouseX,
@@ -961,6 +1137,7 @@ class MapCreator {
       const hallwayPoint = this.getHallwayAtPosition(x, y);
 
       if (!this.hallwayCreationState && (roomEdgeInfo || hallwayPoint)) {
+        this.pushUndoState();
         // First click - start hallway at room edge or hallway
         this.hallwayCreationState = {
           nodes: [{ x, y, edgeInfo: roomEdgeInfo || hallwayPoint }],
@@ -1000,6 +1177,7 @@ class MapCreator {
           // Clicked inside a room (not on edge) - don't allow
           return;
         }
+        this.pushUndoState();
         // First click outside any room or on room edge
         this.wallCreationState = {
           startX: x,
@@ -1024,12 +1202,14 @@ class MapCreator {
         return;
       }
 
+      this.pushUndoState();
       // Create standalone marker with default "terminal" type
       const marker = new StandaloneMarker(
         `standalone-marker-${this.nextId++}`,
         "terminal",
         x,
-        y
+        y,
+        this.currentFloor
       );
       this.mapData.addStandaloneMarker(marker);
 
@@ -1049,12 +1229,14 @@ class MapCreator {
 
     // For standalone label tool, place label at click location
     if (this.currentTool === "standaloneLabel") {
+      this.pushUndoState();
       // Create standalone label with default text
       const label = new StandaloneLabel(
         `standalone-label-${this.nextId++}`,
         "Label",
         x,
-        y
+        y,
+        this.currentFloor
       );
       this.mapData.addStandaloneLabel(label);
 
@@ -1088,6 +1270,7 @@ class MapCreator {
 
         // Must click inside the selected room
         if (clickedRoom && clickedRoom.id === selectedRoom.id) {
+          this.pushUndoState();
           // First click inside selected room
           this.wallCreationState = {
             startX: x,
@@ -1109,12 +1292,14 @@ class MapCreator {
 
     // Start drawing new room
     if (this.currentTool === "room") {
+      this.pushUndoState();
       this.selectedItem = null;
       this.drawingState = { startX: x, startY: y };
     }
 
     // Start drawing new circle room
     if (this.currentTool === "circle") {
+      this.pushUndoState();
       this.selectedItem = null;
       this.drawingState = { startX: x, startY: y, shape: "circle" };
     }
@@ -1460,6 +1645,19 @@ class MapCreator {
         });
       }
 
+      // Check if anything changed and save undo state
+      if (this.preDragState) {
+        const currentState = JSON.stringify(this.mapData.toJSON());
+        if (currentState !== this.preDragState) {
+          this.undoStack.push(this.preDragState);
+          if (this.undoStack.length > this.maxHistorySize) {
+            this.undoStack.shift();
+          }
+          this.redoStack = [];
+        }
+        this.preDragState = null;
+      }
+
       this.dragState = null;
       e.target.style.cursor = "default";
       this.render();
@@ -1509,6 +1707,13 @@ class MapCreator {
    */
   checkRoomOverlap(x, y, width, height, shape = "rectangle") {
     for (let existingRoom of this.mapData.rooms) {
+      // Skip rooms on other floors
+      if (
+        (existingRoom.floor !== undefined ? existingRoom.floor : 1) !==
+        this.currentFloor
+      )
+        continue;
+
       if (shape === "circle" && existingRoom.shape === "circle") {
         // Circle-to-circle collision
         const radius1 = width / 2;
@@ -1605,7 +1810,15 @@ class MapCreator {
       return; // Don't create room if it overlaps
     }
 
-    const room = new Room(id, x, y, width, height);
+    const room = new Room(
+      id,
+      x,
+      y,
+      width,
+      height,
+      "rectangle",
+      this.currentFloor
+    );
     this.mapData.addRoom(room);
 
     // Enable selection mode and select the new room
@@ -1646,7 +1859,15 @@ class MapCreator {
       return; // Don't create room if it overlaps
     }
 
-    const room = new Room(id, x, y, diameter, diameter, "circle");
+    const room = new Room(
+      id,
+      x,
+      y,
+      diameter,
+      diameter,
+      "circle",
+      this.currentFloor
+    );
     this.mapData.addRoom(room);
 
     // Enable selection mode and select the new room
@@ -1679,7 +1900,12 @@ class MapCreator {
     }
 
     const id = this.nextId++;
-    const hallway = new Hallway(id, segments, CORRIDOR_WIDTH);
+    const hallway = new Hallway(
+      id,
+      segments,
+      CORRIDOR_WIDTH,
+      this.currentFloor
+    );
 
     // Preserve room attachment information for each node
     hallway.nodes = nodes.map((n) => {
@@ -1781,7 +2007,13 @@ class MapCreator {
     const segments = [segment];
 
     const id = this.nextId++;
-    const wall = new Wall(id, segments, CORRIDOR_WIDTH, parentRoomId);
+    const wall = new Wall(
+      id,
+      segments,
+      CORRIDOR_WIDTH,
+      parentRoomId,
+      this.currentFloor
+    );
 
     // Store nodes for reference (start and end only)
     wall.nodes = [
@@ -1885,6 +2117,8 @@ class MapCreator {
    */
   getRoomAtPosition(x, y) {
     for (let room of this.mapData.rooms) {
+      if ((room.floor !== undefined ? room.floor : 1) !== this.currentFloor)
+        continue;
       if (room.shape === "circle") {
         // Circle collision detection
         const centerX = room.x + room.radius;
@@ -1922,6 +2156,8 @@ class MapCreator {
     const edgeThreshold = EDGE_CLICK_THRESHOLD; // How close to an edge counts as clicking on it
 
     for (let room of this.mapData.rooms) {
+      if ((room.floor !== undefined ? room.floor : 1) !== this.currentFloor)
+        continue;
       if (room.shape === "circle") {
         // Circle edge detection with 8 fixed attachment points
         const centerX = room.x + room.radius;
@@ -2075,6 +2311,10 @@ class MapCreator {
   getHallwayAtPosition(x, y) {
     // Check if clicking on an existing hallway
     for (let hallway of this.mapData.hallways) {
+      if (
+        (hallway.floor !== undefined ? hallway.floor : 1) !== this.currentFloor
+      )
+        continue;
       for (let segment of hallway.segments) {
         if (
           this.isPointNearLine(
@@ -2261,6 +2501,8 @@ class MapCreator {
   getItemAtPosition(x, y) {
     // Check rooms (top layer)
     for (let room of this.mapData.rooms) {
+      if ((room.floor !== undefined ? room.floor : 1) !== this.currentFloor)
+        continue;
       if (
         x >= room.x &&
         x <= room.x + room.width &&
@@ -2299,6 +2541,8 @@ class MapCreator {
 
     // Check standalone walls
     for (let wall of this.mapData.walls) {
+      if ((wall.floor !== undefined ? wall.floor : 1) !== this.currentFloor)
+        continue;
       for (let segment of wall.segments) {
         if (
           this.isPointNearLine(
@@ -2318,6 +2562,10 @@ class MapCreator {
 
     // Check hallways
     for (let hallway of this.mapData.hallways) {
+      if (
+        (hallway.floor !== undefined ? hallway.floor : 1) !== this.currentFloor
+      )
+        continue;
       // Check each segment
       for (let segment of hallway.segments) {
         if (
@@ -2366,6 +2614,10 @@ class MapCreator {
     // Check all standalone markers
     if (this.mapData.standaloneMarkers) {
       for (let marker of this.mapData.standaloneMarkers) {
+        if (
+          (marker.floor !== undefined ? marker.floor : 1) !== this.currentFloor
+        )
+          continue;
         const distance = Math.sqrt(
           Math.pow(x - marker.x, 2) + Math.pow(y - marker.y, 2)
         );
@@ -2405,6 +2657,8 @@ class MapCreator {
     // Check all standalone labels
     if (this.mapData.standaloneLabels) {
       for (let label of this.mapData.standaloneLabels) {
+        if ((label.floor !== undefined ? label.floor : 1) !== this.currentFloor)
+          continue;
         const distance = Math.sqrt(
           Math.pow(x - label.x, 2) + Math.pow(y - label.y, 2)
         );
@@ -2448,6 +2702,8 @@ class MapCreator {
 
     // Check all markers
     for (let room of this.mapData.rooms) {
+      if ((room.floor !== undefined ? room.floor : 1) !== this.currentFloor)
+        continue;
       if (!room.markers || room.markers.length === 0) continue;
 
       // Check each marker in the room (no room bounds check needed)
@@ -2497,6 +2753,8 @@ class MapCreator {
 
     // Check all labels
     for (let room of this.mapData.rooms) {
+      if ((room.floor !== undefined ? room.floor : 1) !== this.currentFloor)
+        continue;
       if (!room.labels || room.labels.length === 0) continue;
 
       // Check each label in the room
@@ -2670,7 +2928,9 @@ class MapCreator {
   }
 
   render() {
-    this.renderer.render(this.mapData, this.selectedItem);
+    if (!this.is3DMode) {
+      this.renderer.render(this.mapData, this.selectedItem, this.currentFloor);
+    }
     this.saveToLocalStorage();
   }
 
@@ -2709,6 +2969,8 @@ class MapCreator {
         if (mapNameInput) {
           mapNameInput.value = this.mapData.mapName || "";
         }
+
+        this.centerView();
       }
     } catch (error) {
       console.error("Failed to load from localStorage:", error);
@@ -2728,6 +2990,7 @@ class MapCreator {
         "Are you sure you want to create a new map? This will clear your current map. Make sure to export your current map if you want to save it!"
       )
     ) {
+      this.pushUndoState();
       // Clear localStorage
       localStorage.removeItem("mothership-map-autosave");
 
@@ -2753,7 +3016,7 @@ class MapCreator {
       this.setTool("select");
 
       // Render without saving to localStorage since we just cleared it
-      this.renderer.render(this.mapData, this.selectedItem);
+      this.renderer.render(this.mapData, this.selectedItem, this.currentFloor);
     }
   }
 
@@ -2794,6 +3057,92 @@ class MapCreator {
   }
 
   /**
+   * Align vertical markers (stairs/elevators)
+   *
+   * @param {object} selectedItem - The currently selected item
+   * @memberof MapCreator
+   */
+  alignVerticalMarkers(selectedItem) {
+    if (!selectedItem || !selectedItem.marker) return;
+
+    const type = selectedItem.marker.type;
+    const targetX =
+      selectedItem.type === "marker"
+        ? selectedItem.room.x + selectedItem.marker.x
+        : selectedItem.marker.x;
+    const targetY =
+      selectedItem.type === "marker"
+        ? selectedItem.room.y + selectedItem.marker.y
+        : selectedItem.marker.y;
+
+    this.pushUndoState();
+    let alignCount = 0;
+    const TOLERANCE = 20; // 1 grid square
+
+    // Helper to check and move marker
+    const alignMarker = (marker, currentX, currentY) => {
+      if (marker.type !== type) return false;
+
+      const dx = Math.abs(currentX - targetX);
+      const dy = Math.abs(currentY - targetY);
+
+      // If close but not exact, move it
+      if (dx < TOLERANCE && dy < TOLERANCE && (dx > 0 || dy > 0)) {
+        return true;
+      }
+      return false;
+    };
+
+    // Check Room Markers
+    if (this.mapData.rooms) {
+      this.mapData.rooms.forEach((room) => {
+        if (room.markers) {
+          room.markers.forEach((m) => {
+            const currentX = room.x + m.x;
+            const currentY = room.y + m.y;
+
+            // Skip the selected marker itself
+            if (selectedItem.type === "marker" && selectedItem.marker === m)
+              return;
+
+            if (alignMarker(m, currentX, currentY)) {
+              // Move relative to room
+              m.x = targetX - room.x;
+              m.y = targetY - room.y;
+              alignCount++;
+            }
+          });
+        }
+      });
+    }
+
+    // Check Standalone Markers
+    if (this.mapData.standaloneMarkers) {
+      this.mapData.standaloneMarkers.forEach((m) => {
+        // Skip the selected marker itself
+        if (
+          selectedItem.type === "standaloneMarker" &&
+          selectedItem.marker === m
+        )
+          return;
+
+        if (alignMarker(m, m.x, m.y)) {
+          m.x = targetX;
+          m.y = targetY;
+          alignCount++;
+        }
+      });
+    }
+
+    if (alignCount > 0) {
+      alert(`Aligned ${alignCount} ${type}(s).`);
+      this.render();
+    } else {
+      alert("No other markers found nearby to align.");
+    }
+  }
+
+  /**
    * Update the item details panel based on selected item
    *
    * @memberof MapCreator
@@ -2825,6 +3174,10 @@ class MapCreator {
     if (item.type === "marker") {
       // Marker details
       html += `<label>
+                Floor:
+                <input type="number" id="detailsMarkerFloor" value="${item.room.floor !== undefined ? item.room.floor : 1}" style="width: 60px;">
+              </label>`;
+      html += `<label>
                 Marker Type:
                 <select id="detailsMarkerType" class="toolbar-select">
                   <option value="terminal" ${item.marker.type === "terminal" ? "selected" : ""}>Terminal</option>
@@ -2837,6 +3190,7 @@ class MapCreator {
                   <option value="window" ${item.marker.type === "window" ? "selected" : ""}>Window</option>
                   <option value="airlock" ${item.marker.type === "airlock" ? "selected" : ""}>Airlock</option>
                   <option value="elevator" ${item.marker.type === "elevator" ? "selected" : ""}>Elevator</option>
+                  <option value="stairs" ${item.marker.type === "stairs" ? "selected" : ""}>Stairs</option>
                 </select>
               </label>`;
       html += `<label>
@@ -2851,8 +3205,17 @@ class MapCreator {
                 <input type="checkbox" id="detailsMarkerVisible" ${item.marker.visible !== false ? "checked" : ""}>
                 <label for="detailsMarkerVisible" style="margin: 0;">Visible by Default</label>
               </div>`;
+
+      // Add Align button for stairs and elevators
+      if (["stairs", "elevator"].includes(item.marker.type)) {
+        html += `<button id="detailsMarkerAlign" class="action-btn" style="margin-top: 8px;">Align Vertically</button>`;
+      }
     } else if (item.type === "standaloneMarker") {
       // Standalone marker details
+      html += `<label>
+                Floor:
+                <input type="number" id="detailsStandaloneMarkerFloor" value="${item.marker.floor !== undefined ? item.marker.floor : 1}" style="width: 60px;">
+              </label>`;
       html += `<label>
                 Marker Type:
                 <select id="detailsStandaloneMarkerType" class="toolbar-select">
@@ -2866,6 +3229,7 @@ class MapCreator {
                   <option value="window" ${item.marker.type === "window" ? "selected" : ""}>Window</option>
                   <option value="airlock" ${item.marker.type === "airlock" ? "selected" : ""}>Airlock</option>
                   <option value="elevator" ${item.marker.type === "elevator" ? "selected" : ""}>Elevator</option>
+                  <option value="stairs" ${item.marker.type === "stairs" ? "selected" : ""}>Stairs</option>
                 </select>
               </label>`;
       html += `<label>
@@ -2880,8 +3244,17 @@ class MapCreator {
                 <input type="checkbox" id="detailsStandaloneMarkerVisible" ${item.marker.visible !== false ? "checked" : ""}>
                 <label for="detailsStandaloneMarkerVisible" style="margin: 0;">Visible by Default</label>
               </div>`;
+
+      // Add Align button for stairs and elevators
+      if (["stairs", "elevator"].includes(item.marker.type)) {
+        html += `<button id="detailsStandaloneMarkerAlign" class="action-btn" style="margin-top: 8px;">Align Vertically</button>`;
+      }
     } else if (item.type === "standaloneLabel") {
       // Standalone label details
+      html += `<label>
+                Floor:
+                <input type="number" id="detailsStandaloneLabelFloor" value="${item.label.floor !== undefined ? item.label.floor : 1}" style="width: 60px;">
+              </label>`;
       html += `<label>
                 Label Text:
                 <input type="text" id="detailsStandaloneLabelText" value="${item.label.text || ""}" placeholder="Enter text">
@@ -2893,21 +3266,37 @@ class MapCreator {
     } else if (item.type === "roomLabel") {
       // Room label details
       html += `<label>
+                Floor:
+                <input type="number" id="detailsRoomLabelFloor" value="${item.room.floor !== undefined ? item.room.floor : 1}" style="width: 60px;">
+              </label>`;
+      html += `<label>
                 Label Text:
                 <input type="text" id="detailsRoomLabelText" value="${item.label.text || ""}" placeholder="Enter text">
               </label>`;
     } else if (item.type === "room") {
       // Room details
       html += `<label>
+                Floor:
+                <input type="number" id="detailsRoomFloor" value="${item.floor !== undefined ? item.floor : 1}" style="width: 60px;">
+              </label>`;
+      html += `<label>
                 Room Label:
                 <input type="text" id="detailsRoomLabel" value="${item.label || ""}" placeholder="Optional">
               </label>`;
+      html += `<div class="checkbox-container">
+                <input type="checkbox" id="detailsRoomLabelVisible" ${item.labelVisible !== false ? "checked" : ""}>
+                <label for="detailsRoomLabelVisible" style="margin: 0;">Label Visible by Default</label>
+              </div>`;
       html += `<div class="checkbox-container">
                 <input type="checkbox" id="detailsRoomVisible" ${item.visible !== false ? "checked" : ""}>
                 <label for="detailsRoomVisible" style="margin: 0;">Visible by Default</label>
               </div>`;
     } else if (item.type === "hallway") {
       // Hallway details
+      html += `<label>
+                Floor:
+                <input type="number" id="detailsHallwayFloor" value="${item.floor !== undefined ? item.floor : 1}" style="width: 60px;">
+              </label>`;
       html += `<label>
                 Hallway Label:
                 <input type="text" id="detailsHallwayLabel" value="${item.label || ""}" placeholder="Optional">
@@ -2963,6 +3352,10 @@ class MapCreator {
       if (!item.parentRoomId) {
         // Standalone wall - show label and visibility
         html += `<label>
+                  Floor:
+                  <input type="number" id="detailsWallFloor" value="${item.floor !== undefined ? item.floor : 1}" style="width: 60px;">
+                </label>`;
+        html += `<label>
                   Wall Label:
                   <input type="text" id="detailsWallLabel" value="${item.label || ""}" placeholder="Optional">
                 </label>`;
@@ -2985,22 +3378,26 @@ class MapCreator {
       document
         .getElementById("detailsMarkerType")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.marker.type = e.target.value;
           this.updatePropertiesPanel();
           this.render();
         });
 
-      document
-        .getElementById("detailsMarkerLabel")
-        ?.addEventListener("input", (e) => {
+      const markerLabelInput = document.getElementById("detailsMarkerLabel");
+      if (markerLabelInput) {
+        markerLabelInput.addEventListener("focus", () => this.pushUndoState());
+        markerLabelInput.addEventListener("input", (e) => {
           item.marker.label = e.target.value;
           this.updatePropertiesPanel();
           this.updateMarkerSelectors();
         });
+      }
 
       document
         .getElementById("detailsMarkerVisible")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.marker.visible = e.target.checked;
           this.updatePropertiesPanel();
           this.render();
@@ -3009,30 +3406,63 @@ class MapCreator {
       document
         .getElementById("detailsMarkerRotate")
         ?.addEventListener("click", () => {
+          this.pushUndoState();
           if (!item.marker.rotation) item.marker.rotation = 0;
           item.marker.rotation = (item.marker.rotation + 90) % 360;
           this.updateItemDetailsPanel();
           this.render();
         });
+
+      const markerFloorInput = document.getElementById("detailsMarkerFloor");
+      if (markerFloorInput) {
+        markerFloorInput.addEventListener("focus", () => this.pushUndoState());
+        markerFloorInput.addEventListener("blur", (e) => {
+          const newFloor = parseInt(e.target.value, 10);
+          if (!isNaN(newFloor) && newFloor !== item.room.floor) {
+            item.room.floor = newFloor;
+            this.render();
+          }
+        });
+        markerFloorInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.target.blur();
+          }
+        });
+      }
+
+      // Align button listener
+      document
+        .getElementById("detailsMarkerAlign")
+        ?.addEventListener("click", () => {
+          this.alignVerticalMarkers(item);
+        });
     } else if (item.type === "standaloneMarker") {
       document
         .getElementById("detailsStandaloneMarkerType")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.marker.type = e.target.value;
           this.updatePropertiesPanel();
           this.render();
         });
 
-      document
-        .getElementById("detailsStandaloneMarkerLabel")
-        ?.addEventListener("input", (e) => {
+      const saMarkerLabelInput = document.getElementById(
+        "detailsStandaloneMarkerLabel"
+      );
+      if (saMarkerLabelInput) {
+        saMarkerLabelInput.addEventListener("focus", () =>
+          this.pushUndoState()
+        );
+        saMarkerLabelInput.addEventListener("input", (e) => {
           item.marker.label = e.target.value;
           this.updatePropertiesPanel();
         });
+      }
 
       document
         .getElementById("detailsStandaloneMarkerVisible")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.marker.visible = e.target.checked;
           this.updatePropertiesPanel();
           this.render();
@@ -3041,62 +3471,170 @@ class MapCreator {
       document
         .getElementById("detailsStandaloneMarkerRotate")
         ?.addEventListener("click", () => {
+          this.pushUndoState();
           if (!item.marker.rotation) item.marker.rotation = 0;
           item.marker.rotation = (item.marker.rotation + 90) % 360;
           this.updateItemDetailsPanel();
           this.render();
         });
-    } else if (item.type === "standaloneLabel") {
+
+      const saMarkerFloorInput = document.getElementById(
+        "detailsStandaloneMarkerFloor"
+      );
+      if (saMarkerFloorInput) {
+        saMarkerFloorInput.addEventListener("focus", () =>
+          this.pushUndoState()
+        );
+        saMarkerFloorInput.addEventListener("blur", (e) => {
+          const newFloor = parseInt(e.target.value, 10);
+          if (!isNaN(newFloor) && newFloor !== item.marker.floor) {
+            item.marker.floor = newFloor;
+            this.render();
+          }
+        });
+        saMarkerFloorInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.target.blur();
+          }
+        });
+      }
+
+      // Align button listener
       document
-        .getElementById("detailsStandaloneLabelText")
-        ?.addEventListener("input", (e) => {
+        .getElementById("detailsStandaloneMarkerAlign")
+        ?.addEventListener("click", () => {
+          this.alignVerticalMarkers(item);
+        });
+    } else if (item.type === "standaloneLabel") {
+      const saLabelInput = document.getElementById(
+        "detailsStandaloneLabelText"
+      );
+      if (saLabelInput) {
+        saLabelInput.addEventListener("focus", () => this.pushUndoState());
+        saLabelInput.addEventListener("input", (e) => {
           item.label.text = e.target.value;
           this.render();
         });
+      }
 
       document
         .getElementById("detailsStandaloneLabelVisible")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.label.visible = e.target.checked;
           this.render();
         });
+
+      const saLabelFloorInput = document.getElementById(
+        "detailsStandaloneLabelFloor"
+      );
+      if (saLabelFloorInput) {
+        saLabelFloorInput.addEventListener("focus", () => this.pushUndoState());
+        saLabelFloorInput.addEventListener("blur", (e) => {
+          const newFloor = parseInt(e.target.value, 10);
+          if (!isNaN(newFloor) && newFloor !== item.label.floor) {
+            item.label.floor = newFloor;
+            this.render();
+          }
+        });
+        saLabelFloorInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.target.blur();
+          }
+        });
+      }
     } else if (item.type === "roomLabel") {
-      document
-        .getElementById("detailsRoomLabelText")
-        ?.addEventListener("input", (e) => {
+      const roomLabelInput = document.getElementById("detailsRoomLabelText");
+      if (roomLabelInput) {
+        roomLabelInput.addEventListener("focus", () => this.pushUndoState());
+        roomLabelInput.addEventListener("input", (e) => {
           item.label.text = e.target.value;
           this.render();
         });
+      }
+
+      const roomLabelFloorInput = document.getElementById(
+        "detailsRoomLabelFloor"
+      );
+      if (roomLabelFloorInput) {
+        roomLabelFloorInput.addEventListener("focus", () =>
+          this.pushUndoState()
+        );
+        roomLabelFloorInput.addEventListener("blur", (e) => {
+          const newFloor = parseInt(e.target.value, 10);
+          if (!isNaN(newFloor) && newFloor !== item.room.floor) {
+            item.room.floor = newFloor;
+            this.render();
+          }
+        });
+        roomLabelFloorInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.target.blur();
+          }
+        });
+      }
     } else if (item.type === "room") {
-      document
-        .getElementById("detailsRoomLabel")
-        ?.addEventListener("input", (e) => {
+      const roomLabelInput = document.getElementById("detailsRoomLabel");
+      if (roomLabelInput) {
+        roomLabelInput.addEventListener("focus", () => this.pushUndoState());
+        roomLabelInput.addEventListener("input", (e) => {
           item.label = e.target.value;
           this.updatePropertiesPanel();
           this.updateMarkerSelectors();
+          this.render();
+        });
+      }
+
+      document
+        .getElementById("detailsRoomLabelVisible")
+        ?.addEventListener("change", (e) => {
+          this.pushUndoState();
+          item.labelVisible = e.target.checked;
+          this.updatePropertiesPanel();
           this.render();
         });
 
       document
         .getElementById("detailsRoomVisible")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.visible = e.target.checked;
           this.updatePropertiesPanel();
           this.render();
         });
+
+      const roomFloorInput = document.getElementById("detailsRoomFloor");
+      if (roomFloorInput) {
+        roomFloorInput.addEventListener("focus", () => this.pushUndoState());
+        roomFloorInput.addEventListener("blur", (e) => {
+          const newFloor = parseInt(e.target.value, 10);
+          if (!isNaN(newFloor) && newFloor !== item.floor) {
+            item.floor = newFloor;
+            this.render();
+          }
+        });
+        roomFloorInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.target.blur();
+          }
+        });
+      }
     } else if (item.type === "hallway") {
-      document
-        .getElementById("detailsHallwayLabel")
-        ?.addEventListener("input", (e) => {
+      const hallwayLabelInput = document.getElementById("detailsHallwayLabel");
+      if (hallwayLabelInput) {
+        hallwayLabelInput.addEventListener("focus", () => this.pushUndoState());
+        hallwayLabelInput.addEventListener("input", (e) => {
           item.label = e.target.value;
           this.updatePropertiesPanel();
           this.updateMarkerSelectors();
           this.render();
         });
+      }
 
       document
         .getElementById("detailsHallwayVisible")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.visible = e.target.checked;
           this.updatePropertiesPanel();
           this.render();
@@ -3105,6 +3643,7 @@ class MapCreator {
       document
         .getElementById("detailsHallwaySecret")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.isSecret = e.target.checked;
           // Auto-update markers based on secret status
           if (item.isSecret) {
@@ -3121,6 +3660,7 @@ class MapCreator {
       document
         .getElementById("detailsStartMarkerType")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           if (e.target.value === "none") {
             item.startMarker = null;
           } else {
@@ -3138,6 +3678,7 @@ class MapCreator {
         .getElementById("detailsStartMarkerVisible")
         ?.addEventListener("change", (e) => {
           if (item.startMarker) {
+            this.pushUndoState();
             item.startMarker.visible = e.target.checked;
             this.render();
           }
@@ -3146,6 +3687,7 @@ class MapCreator {
       document
         .getElementById("detailsEndMarkerType")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           if (e.target.value === "none") {
             item.endMarker = null;
           } else {
@@ -3163,6 +3705,7 @@ class MapCreator {
         .getElementById("detailsEndMarkerVisible")
         ?.addEventListener("change", (e) => {
           if (item.endMarker) {
+            this.pushUndoState();
             item.endMarker.visible = e.target.checked;
             this.render();
           }
@@ -3172,6 +3715,7 @@ class MapCreator {
         .getElementById("detailsStartMarkerRotate")
         ?.addEventListener("click", () => {
           if (item.startMarker) {
+            this.pushUndoState();
             if (!item.startMarker.rotation) item.startMarker.rotation = 0;
             item.startMarker.rotation = (item.startMarker.rotation + 90) % 360;
             this.updateItemDetailsPanel();
@@ -3183,36 +3727,75 @@ class MapCreator {
         .getElementById("detailsEndMarkerRotate")
         ?.addEventListener("click", () => {
           if (item.endMarker) {
+            this.pushUndoState();
             if (!item.endMarker.rotation) item.endMarker.rotation = 0;
             item.endMarker.rotation = (item.endMarker.rotation + 90) % 360;
             this.updateItemDetailsPanel();
             this.render();
           }
         });
+
+      const hallwayFloorInput = document.getElementById("detailsHallwayFloor");
+      if (hallwayFloorInput) {
+        hallwayFloorInput.addEventListener("focus", () => this.pushUndoState());
+        hallwayFloorInput.addEventListener("blur", (e) => {
+          const newFloor = parseInt(e.target.value, 10);
+          if (!isNaN(newFloor) && newFloor !== item.floor) {
+            item.floor = newFloor;
+            this.render();
+          }
+        });
+        hallwayFloorInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.target.blur();
+          }
+        });
+      }
     } else if (item.type === "wall") {
       // Event listeners only for standalone walls (label and visibility)
       if (!item.parentRoomId) {
-        document
-          .getElementById("detailsWallLabel")
-          ?.addEventListener("input", (e) => {
+        const wallLabelInput = document.getElementById("detailsWallLabel");
+        if (wallLabelInput) {
+          wallLabelInput.addEventListener("focus", () => this.pushUndoState());
+          wallLabelInput.addEventListener("input", (e) => {
             item.label = e.target.value;
             this.updatePropertiesPanel();
             this.render();
           });
+        }
 
         document
           .getElementById("detailsWallVisible")
           ?.addEventListener("change", (e) => {
+            this.pushUndoState();
             item.visible = e.target.checked;
             this.updatePropertiesPanel();
             this.render();
           });
+
+        const wallFloorInput = document.getElementById("detailsWallFloor");
+        if (wallFloorInput) {
+          wallFloorInput.addEventListener("focus", () => this.pushUndoState());
+          wallFloorInput.addEventListener("blur", (e) => {
+            const newFloor = parseInt(e.target.value, 10);
+            if (!isNaN(newFloor) && newFloor !== item.floor) {
+              item.floor = newFloor;
+              this.render();
+            }
+          });
+          wallFloorInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              e.target.blur();
+            }
+          });
+        }
       }
 
       // Dotted line listener available for both standalone and room walls
       document
         .getElementById("detailsWallDotted")
         ?.addEventListener("change", (e) => {
+          this.pushUndoState();
           item.isDotted = e.target.checked;
           this.updatePropertiesPanel();
           this.render();
@@ -3236,6 +3819,8 @@ class MapCreator {
     // Clear and repopulate room selector
     roomSelector.innerHTML = '<option value="">-- No room --</option>';
     this.mapData.rooms.forEach((room, index) => {
+      if ((room.floor !== undefined ? room.floor : 1) !== this.currentFloor)
+        return;
       const option = document.createElement("option");
       option.value = index;
       option.textContent = room.label || `Room ${index + 1}`;
@@ -3245,6 +3830,10 @@ class MapCreator {
     // Clear and repopulate hallway selector
     hallwaySelector.innerHTML = '<option value="">-- No hallway --</option>';
     this.mapData.hallways.forEach((hallway, index) => {
+      if (
+        (hallway.floor !== undefined ? hallway.floor : 1) !== this.currentFloor
+      )
+        return;
       const option = document.createElement("option");
       option.value = index;
       option.textContent = hallway.label || `Hallway ${index + 1}`;
@@ -3289,6 +3878,80 @@ class MapCreator {
       markerSelector.innerHTML = '<option value="">-- No marker --</option>';
       markerSelector.disabled = true;
       markerSelectorSection.style.display = "none";
+    }
+  }
+
+  /**
+   * Focus on a specific room
+   * @param {number} roomIndex
+   */
+  focusOnRoom(roomIndex) {
+    if (!this.mapData || !this.mapData.rooms || !this.mapData.rooms[roomIndex])
+      return;
+
+    const room = this.mapData.rooms[roomIndex];
+
+    // Switch to room's floor
+    const floor = room.floor !== undefined ? room.floor : 1;
+    if (this.currentFloor !== floor) {
+      this.setFloor(floor);
+    }
+
+    // Calculate center
+    let centerX, centerY;
+    if (room.shape === "circle") {
+      centerX = room.x + room.radius;
+      centerY = room.y + room.radius;
+    } else {
+      centerX = room.x + room.width / 2;
+      centerY = room.y + room.height / 2;
+    }
+
+    if (this.is3DMode && this.renderer3d) {
+      // 3D Focus
+      const FLOOR_HEIGHT_STEP = 64;
+      const yPos = (floor - 1) * FLOOR_HEIGHT_STEP;
+      this.renderer3d.focusOn(centerX, yPos, centerY);
+    } else {
+      // 2D Focus
+      this.renderer.focusOn(centerX, centerY);
+      this.render();
+    }
+  }
+
+  /**
+   * Focus on a specific hallway
+   * @param {number} hallwayIndex
+   */
+  focusOnHallway(hallwayIndex) {
+    if (
+      !this.mapData ||
+      !this.mapData.hallways ||
+      !this.mapData.hallways[hallwayIndex]
+    )
+      return;
+
+    const hallway = this.mapData.hallways[hallwayIndex];
+
+    // Switch to hallway's floor
+    const floor = hallway.floor !== undefined ? hallway.floor : 1;
+    if (this.currentFloor !== floor) {
+      this.setFloor(floor);
+    }
+
+    // Calculate center (midpoint of start and end)
+    const centerX = (hallway.x1 + hallway.x2) / 2;
+    const centerY = (hallway.y1 + hallway.y2) / 2;
+
+    if (this.is3DMode && this.renderer3d) {
+      // 3D Focus
+      const FLOOR_HEIGHT_STEP = 64;
+      const yPos = (floor - 1) * FLOOR_HEIGHT_STEP;
+      this.renderer3d.focusOn(centerX, yPos, centerY);
+    } else {
+      // 2D Focus
+      this.renderer.focusOn(centerX, centerY);
+      this.render();
     }
   }
 
@@ -3347,6 +4010,9 @@ class MapCreator {
     const room = this.mapData.rooms[roomIndex];
     this.selectedItem = room;
 
+    // Focus on the room
+    this.focusOnRoom(roomIndex);
+
     // Populate marker selector for this room
     this.populateMarkerSelector(roomIndex);
 
@@ -3387,6 +4053,9 @@ class MapCreator {
     // Select the hallway
     const hallway = this.mapData.hallways[hallwayIndex];
     this.selectedItem = hallway;
+
+    // Focus on the hallway
+    this.focusOnHallway(hallwayIndex);
 
     this.updatePropertiesPanel();
     this.updateContextToolbar();
@@ -3487,6 +4156,8 @@ class MapCreator {
   deleteSelectedItem() {
     if (!this.selectedItem) return;
 
+    this.pushUndoState();
+
     let parentRoom = null;
 
     if (this.selectedItem.type === "marker") {
@@ -3535,6 +4206,52 @@ class MapCreator {
     this.renderer.offsetX = 0;
     this.renderer.offsetY = 0;
     this.render();
+  }
+
+  /**
+   * Center the view on all rooms on the current floor
+   *
+   * @memberof MapCreator
+   */
+  centerView() {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    let hasRooms = false;
+
+    this.mapData.rooms.forEach((room) => {
+      if ((room.floor !== undefined ? room.floor : 1) !== this.currentFloor)
+        return;
+
+      hasRooms = true;
+      if (room.shape === "circle") {
+        minX = Math.min(minX, room.x);
+        minY = Math.min(minY, room.y);
+        maxX = Math.max(maxX, room.x + room.radius * 2);
+        maxY = Math.max(maxY, room.y + room.radius * 2);
+      } else {
+        minX = Math.min(minX, room.x);
+        minY = Math.min(minY, room.y);
+        maxX = Math.max(maxX, room.x + room.width);
+        maxY = Math.max(maxY, room.y + room.height);
+      }
+    });
+
+    if (hasRooms) {
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+
+      if (this.is3DMode && this.renderer3d) {
+        this.renderer3d.focusOn(centerX, 0, centerY);
+      } else {
+        this.renderer.focusOn(centerX, centerY);
+        this.render();
+      }
+    } else {
+      // If no rooms, just reset view
+      this.resetView();
+    }
   }
 
   /**
@@ -3651,6 +4368,7 @@ class MapCreator {
         this.recalculateNextId(); // Recalculate nextId after loading
         this.updatePropertiesPanel();
         this.updateMarkerSelectors(); // Populate dropdowns with loaded data
+        this.centerView();
         this.render();
         alert("Map imported successfully!");
       } catch (error) {
@@ -3845,6 +4563,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Now initialize the application
   window.mapCreator = new MapCreator();
+
+  // Hide loading overlay
+  const loadingOverlay = document.getElementById("loading-overlay");
+  if (loadingOverlay) {
+    loadingOverlay.style.display = "none";
+  }
 
   // Handle window resize to keep canvas resolution in sync with display size
   let resizeTimeout;

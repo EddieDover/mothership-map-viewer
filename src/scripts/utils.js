@@ -38,6 +38,7 @@ function fromCompactJSON(compact) {
         height: r[4],
         label: r[5] || "",
         visible: r[6] !== 0,
+        floor: r[11] !== undefined ? r[11] : 1,
         markers: markers.map((i) => ({
           type: i[0],
           x: i[1],
@@ -65,10 +66,9 @@ function fromCompactJSON(compact) {
           label: w[3] || "",
           nodes: w[4] || [],
           isDotted: w[5] !== undefined ? w[5] !== 0 : false,
-          parentRoomId: r[0], // Set parent room ID
+          parentRoomId: r[0],
         })),
       };
-      // Calculate radius for circle rooms
       if (shape === "circle") {
         room.radius = Math.min(room.width, room.height) / 2;
       }
@@ -97,6 +97,7 @@ function fromCompactJSON(compact) {
         label: i[4] || "",
         rotation: i[5] || 0,
       })),
+      floor: h[10] !== undefined ? h[10] : 1,
     })),
     walls: (compact.w || []).map((w) => ({
       id: w[0],
@@ -107,7 +108,8 @@ function fromCompactJSON(compact) {
       nodes: w[4] || [],
       visible: w[5] !== 0,
       isDotted: w[6] !== undefined ? w[6] !== 0 : false,
-      parentRoomId: null, // Standalone walls have no parent
+      floor: w[7] !== undefined ? w[7] : 1,
+      parentRoomId: null,
     })),
     standaloneMarkers: (compact.sm || []).map((m) => ({
       id: m[0],
@@ -117,6 +119,7 @@ function fromCompactJSON(compact) {
       visible: m[4] !== 0,
       label: m[5] || "",
       rotation: m[6] || 0,
+      floor: m[7] !== undefined ? m[7] : 1,
     })),
     standaloneLabels: (compact.sl || []).map((l) => ({
       id: l[0],
@@ -125,6 +128,7 @@ function fromCompactJSON(compact) {
       x: l[2],
       y: l[3],
       visible: l[4] !== 0,
+      floor: l[5] !== undefined ? l[5] : 1,
     })),
   };
 

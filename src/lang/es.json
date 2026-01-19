@@ -28,9 +28,30 @@
         "ClosePlayerView": "Cerrar Vista de Jugador",
         "NoMapLoaded": "No hay mapa cargado. Importa un mapa para comenzar.",
         "HallwayVisibility": "Visibilidad de Pasillos",
+        "ShowName": "Mostrar Nombre",
         "StandaloneWalls": "Paredes Independientes",
         "CommunityMaps": "Mapas de la Comunidad",
-        "GoToMapCreator": "Creador de Mapas"
+        "GoToMapCreator": "Creador de Mapas",
+        "NoPlayersViewing": "No hay jugadores viendo actualmente",
+        "FilterRooms": "Filtrar habitaciones...",
+        "FloorDown": "Bajar Piso",
+        "FloorUp": "Subir Piso",
+        "Floor": "Piso",
+        "Toggle3DMode": "Alternar Modo 3D",
+        "Mode3D": "Modo 3D",
+        "CenterView": "Centrar Vista",
+        "CurrentMap": "Mapa Actual",
+        "DeleteCurrentMap": "Eliminar mapa actual",
+        "DeleteMap": "Eliminar Mapa",
+        "ActiveViewers": "Espectadores Activos",
+        "Update": "Actualizar",
+        "RoomSettings": "Configuración de la Habitación",
+        "RoomColor": "Color de la Habitación",
+        "DefaultColor": "Predeterminado (Verde)",
+        "Red": "Rojo",
+        "Orange": "Naranja",
+        "Yellow": "Amarillo",
+        "Blue": "Azul"
       }
     }
   }

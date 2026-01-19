@@ -5,6 +5,7 @@
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 import { drawHallwayMarker, drawRoomMarker } from "./map-icons.js";
+import { MapRenderer3D } from "./map-renderer-3d.js";
 
 /**
  * Base class for map rendering with canvas management
@@ -19,15 +20,187 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(options = {}) {
     super(options);
 
-    // Scroll state
     this.scrollOffset = { x: 0, y: 0 };
     this.isDragging = false;
     this.dragStart = { x: 0, y: 0 };
 
-    // Zoom state
     this.scale = BaseMapRenderer.DEFAULT_SCALE;
     this.minScale = BaseMapRenderer.MIN_SCALE;
     this.maxScale = BaseMapRenderer.MAX_SCALE;
+
+    this.currentFloor = 1;
+    this.is3DMode = false;
+    this.renderer3d = null;
+  }
+
+  setFloor(floor) {
+    this.currentFloor = floor;
+    const display = this.element.querySelector("#currentFloorDisplay");
+    if (display) {
+      display.textContent = `Floor ${floor}`;
+    }
+
+    if (this.is3DMode && this.renderer3d) {
+      this.renderer3d.update(this.mapData, this.currentFloor);
+      if (this.playerLocations) {
+        this.renderer3d.updatePlayerMarkers(this.playerLocations);
+      }
+    } else {
+      const canvas = document.getElementById(this.getCanvasId());
+      if (canvas) {
+        this._renderMap(canvas);
+      }
+    }
+  }
+
+  /**
+   * Refresh the map display (2D or 3D) without full re-render
+   */
+  refreshMap() {
+    if (this.is3DMode && this.renderer3d) {
+      this.renderer3d.update(this.mapData, this.currentFloor);
+      if (this.playerLocations) {
+        this.renderer3d.updatePlayerMarkers(this.playerLocations);
+      }
+    } else {
+      const canvas = document.getElementById(this.getCanvasId());
+      if (canvas) {
+        this._renderMap(canvas);
+      }
+    }
+  }
+
+  set3DMode(enabled, force = false) {
+    if (this.is3DMode === enabled && !force) return;
+    this.is3DMode = enabled;
+
+    // Save preference if this is the GM viewer
+    if (game.user.isGM && this.constructor.name === "MothershipMapViewer") {
+      game.settings.set("mothership-map-viewer", "default3DMode", enabled);
+    }
+
+    const btn = this.element.querySelector("#toggle-3d-btn");
+    const canvas = document.getElementById(this.getCanvasId());
+    const container = this.element.querySelector("#map-container");
+
+    if (this.is3DMode) {
+      if (btn) {
+        btn.innerHTML = '<i class="fas fa-layer-group"></i> 2D Mode';
+        btn.title = "Switch to 2D Mode";
+      }
+      if (canvas) canvas.style.display = "none";
+
+      // Capture camera state if re-initializing
+      let cameraState = null;
+      if (
+        force &&
+        this.renderer3d &&
+        this.renderer3d.camera &&
+        this.renderer3d.controls
+      ) {
+        cameraState = {
+          position: this.renderer3d.camera.position.clone(),
+          target: this.renderer3d.controls.target.clone(),
+        };
+      }
+
+      // If forcing, dispose old renderer first
+      if (force && this.renderer3d) {
+        this.renderer3d.dispose();
+        this.renderer3d = null;
+      }
+
+      if (!this.renderer3d) {
+        this.renderer3d = new MapRenderer3D(container);
+      }
+
+      this.renderer3d.init();
+
+      // Force a resize check after a short delay to ensure correct sizing after DOM settlement
+      setTimeout(() => {
+        if (this.renderer3d) {
+          this.renderer3d.onWindowResize();
+        }
+      }, 100);
+
+      if (cameraState) {
+        this.renderer3d.camera.position.copy(cameraState.position);
+        this.renderer3d.controls.target.copy(cameraState.target);
+        this.renderer3d.controls.update();
+      }
+
+      this.renderer3d.update(this.mapData, this.currentFloor);
+      if (this.playerLocations) {
+        this.renderer3d.updatePlayerMarkers(this.playerLocations);
+      }
+    } else {
+      if (btn) {
+        btn.innerHTML = '<i class="fas fa-cube"></i> 3D Mode';
+        btn.title = "Switch to 3D Mode";
+      }
+      if (canvas) {
+        canvas.style.display = "block";
+        this._fitCanvasToContainer(canvas);
+      }
+
+      if (this.renderer3d) {
+        this.renderer3d.dispose();
+        this.renderer3d = null;
+      }
+
+      if (canvas) this._renderMap(canvas);
+    }
+  }
+
+  toggle3DMode() {
+    this.set3DMode(!this.is3DMode);
+  }
+
+  /**
+   * Center the view on all rooms on the current floor
+   */
+  centerView() {
+    if (!this.mapData || !this.mapData.rooms) return;
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    let hasRooms = false;
+
+    this.mapData.rooms.forEach((room) => {
+      const roomFloor = room.floor !== undefined ? room.floor : 1;
+      if (roomFloor !== this.currentFloor) return;
+
+      hasRooms = true;
+      // Use width/height for bounds calculation as they are populated for both shapes
+      // (Circle rooms have width/height = radius * 2 in some contexts, or we use x/y as top-left)
+      const width = room.width || (room.radius ? room.radius * 2 : 0);
+      const height = room.height || (room.radius ? room.radius * 2 : 0);
+
+      minX = Math.min(minX, room.x);
+      minY = Math.min(minY, room.y);
+      maxX = Math.max(maxX, room.x + width);
+      maxY = Math.max(maxY, room.y + height);
+    });
+
+    const canvas = document.getElementById(this.getCanvasId());
+    if (hasRooms) {
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+
+      if (this.is3DMode && this.renderer3d) {
+        this.renderer3d.focusOn(centerX, 0, centerY);
+      } else if (canvas) {
+        this.scrollOffset.x = canvas.width / 2 - centerX * this.scale;
+        this.scrollOffset.y = canvas.height / 2 - centerY * this.scale;
+        this._renderMap(canvas);
+      }
+    } else if (canvas) {
+      this.scrollOffset.x = 0;
+      this.scrollOffset.y = 0;
+      this._renderMap(canvas);
+    }
   }
 
   /**
@@ -43,7 +216,6 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
   _setupCanvasResize(canvas) {
     const container = canvas.parentElement;
 
-    // Clean up any existing observer
     if (this._resizeObserver) {
       this._resizeObserver.disconnect();
     }
@@ -52,14 +224,11 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
     let lastWidth = 0;
     let lastHeight = 0;
 
-    // Create a resize observer to adjust canvas when container size changes
     this._resizeObserver = new ResizeObserver((entries) => {
-      // Clear any pending resize
       if (resizeTimeout) {
         clearTimeout(resizeTimeout);
       }
 
-      // Debounce the actual resize operation
       resizeTimeout = setTimeout(() => {
         for (const entry of entries) {
           const rect = entry.contentRect;
@@ -74,19 +243,22 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
             lastWidth = newWidth;
             lastHeight = newHeight;
 
-            // Temporarily disconnect to prevent loops
-            this._resizeObserver.disconnect();
+            if (this.is3DMode && this.renderer3d) {
+              this.renderer3d.onWindowResize();
+            } else {
+              // Temporarily disconnect to prevent loops
+              this._resizeObserver.disconnect();
 
-            canvas.width = newWidth;
-            canvas.height = newHeight;
-            this._renderMap(canvas);
+              canvas.width = newWidth;
+              canvas.height = newHeight;
+              this._renderMap(canvas);
 
-            // Reconnect after a brief delay
-            setTimeout(() => {
-              if (this._resizeObserver) {
-                this._resizeObserver.observe(container);
-              }
-            }, 150);
+              setTimeout(() => {
+                if (this._resizeObserver) {
+                  this._resizeObserver.observe(container);
+                }
+              }, 150);
+            }
           }
         }
       }, 100);
@@ -192,11 +364,9 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const ctx = canvas.getContext("2d");
 
-    // Clear canvas
     ctx.fillStyle = "#1a1a1a";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Apply scroll offset and zoom
     ctx.save();
     ctx.translate(this.scrollOffset.x, this.scrollOffset.y);
     ctx.scale(this.scale, this.scale);
@@ -205,42 +375,37 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
     const roomMarkersToRender = [];
     const roomLabelsToRender = [];
 
-    // Draw only visible rooms
     if (this.mapData.rooms) {
       this.mapData.rooms.forEach((room) => {
         if (!room.visible) return;
 
+        const roomFloor = room.floor !== undefined ? room.floor : 1;
+        if (roomFloor !== this.currentFloor) return;
+
         if (room.shape === "circle") {
-          // Circle room
           const centerX = room.x + room.width / 2;
           const centerY = room.y + room.height / 2;
           const radius = room.radius || Math.min(room.width, room.height) / 2;
 
-          // Fill
           ctx.fillStyle = "#000000";
           ctx.beginPath();
           ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
           ctx.fill();
 
-          // Border
           ctx.strokeStyle = "#ffffff";
           ctx.lineWidth = BaseMapRenderer.WALL_THICKNESS;
           ctx.beginPath();
           ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
           ctx.stroke();
         } else {
-          // Rectangle room (default)
-          // Fill
           ctx.fillStyle = "#000000";
           ctx.fillRect(room.x, room.y, room.width, room.height);
 
-          // Border
           ctx.strokeStyle = "#ffffff";
           ctx.lineWidth = BaseMapRenderer.WALL_THICKNESS;
           ctx.strokeRect(room.x, room.y, room.width, room.height);
         }
 
-        // Collect visible markers for later rendering
         if (room.markers) {
           room.markers.forEach((marker) => {
             if (marker.visible) {
@@ -253,7 +418,6 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
           });
         }
 
-        // Collect visible labels for later rendering
         if (room.labels) {
           room.labels.forEach((label) => {
             if (label.visible !== false) {
@@ -266,14 +430,25 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
           });
         }
 
-        // Label
+        let shouldRenderLabel = false;
+        let labelText = room.label;
+
         if (room.label) {
+          if (room.labelVisible !== false) {
+            shouldRenderLabel = true;
+          } else if (game.user.isGM) {
+            shouldRenderLabel = true;
+            labelText = `(${room.label})`;
+          }
+        }
+
+        if (shouldRenderLabel) {
           ctx.fillStyle = "#ffffff";
           ctx.font = "bold 14px sans-serif";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillText(
-            room.label,
+            labelText,
             room.x + room.width / 2,
             room.y + room.height / 2
           );
@@ -281,10 +456,11 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
-    // Draw hallways and markers
     if (this.mapData.hallways) {
       this.mapData.hallways.forEach((hallway) => {
-        // Draw hallway body only if visible
+        const hallwayFloor = hallway.floor !== undefined ? hallway.floor : 1;
+        if (hallwayFloor !== this.currentFloor) return;
+
         if (hallway.visible) {
           if (hallway.isSecret) {
             this._drawSecretHallway(ctx, hallway);
@@ -330,9 +506,11 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
-    // Draw standalone walls (only visible ones)
     if (this.mapData.walls) {
       this.mapData.walls.forEach((wall) => {
+        const wallFloor = wall.floor !== undefined ? wall.floor : 1;
+        if (wallFloor !== this.currentFloor) return;
+
         if (wall.visible !== false) {
           this._drawWall(ctx, wall);
         }
@@ -342,6 +520,9 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
     // Draw room walls (always visible for visible rooms in player view)
     if (this.mapData.rooms) {
       this.mapData.rooms.forEach((room) => {
+        const roomFloor = room.floor !== undefined ? room.floor : 1;
+        if (roomFloor !== this.currentFloor) return;
+
         if (room.visible && room.walls && room.walls.length > 0) {
           room.walls.forEach((wall) => {
             this._drawWall(ctx, wall);
@@ -350,41 +531,42 @@ export class BaseMapRenderer extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
-    // Draw room markers last (on top of hallways)
     roomMarkersToRender.forEach((marker) => {
       this._drawRoomMarker(ctx, marker.x, marker.y, marker.type);
     });
 
-    // Draw room labels (on top of markers)
     roomLabelsToRender.forEach((label) => {
       this._drawRoomLabel(ctx, label.x, label.y, label.text);
     });
 
-    // Draw standalone markers (not in rooms)
     if (
       this.mapData.standaloneMarkers &&
       this.mapData.standaloneMarkers.length > 0
     ) {
       this.mapData.standaloneMarkers.forEach((marker) => {
+        const markerFloor = marker.floor !== undefined ? marker.floor : 1;
+        if (markerFloor !== this.currentFloor) return;
+
         if (marker.visible !== false) {
           this._drawRoomMarker(ctx, marker.x, marker.y, marker.type);
         }
       });
     }
 
-    // Draw standalone labels (not in rooms)
     if (
       this.mapData.standaloneLabels &&
       this.mapData.standaloneLabels.length > 0
     ) {
       this.mapData.standaloneLabels.forEach((label) => {
+        const labelFloor = label.floor !== undefined ? label.floor : 1;
+        if (labelFloor !== this.currentFloor) return;
+
         if (label.visible !== false) {
           this._drawStandaloneLabel(ctx, label.x, label.y, label.text);
         }
       });
     }
 
-    // Restore context
     ctx.restore();
   }
 

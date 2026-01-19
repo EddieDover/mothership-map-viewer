@@ -93,6 +93,13 @@ const ROOM_MARKER_PATHS = {
     stroke: true,
     fill: false,
   },
+  stairs: {
+    paths: [
+      "M 6 24 L 11 24 L 11 20 L 16 20 L 16 16 L 21 16 L 21 12 L 26 12 L 26 8", // Side Profile Stairs
+    ],
+    stroke: true,
+    fill: false,
+  },
 };
 
 /**

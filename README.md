@@ -1,11 +1,12 @@
 # Mothership Map Viewer for Foundry VTT
 
-A Foundry VTT module for displaying and managing maps created with the Mothership Map Creator tool.
+A Foundry VTT module for displaying and managing 2D and 3D maps created with the Mothership Map Creator tool.
 
 ## Features
 
 ### Foundry VTT Module
 
+- **2D or 3D**: Draw floor plans in 2D and view them in 2D or 3D.
 - **Import Maps**: Load maps via JSON file or share string
 - **GM Visibility Controls**: Toggle visibility of:
   - Individual rooms
@@ -17,6 +18,7 @@ A Foundry VTT module for displaying and managing maps created with the Mothershi
   - Standalone labels
 - **Player Views**: Open individual map viewers for each player and see real-time visibility updates (know who has the map open and who closed it)
 - **Accurate Rendering**: Maps render exactly as they appear in the creator tool
+- **Player Locations**: In 3D view, place a marker where players are in a room, for a more realistic experience.
 
 ### Map Creator Tool
 
@@ -134,7 +136,6 @@ A Foundry VTT module for displaying and managing maps created with the Mothershi
 https://github.com/EddieDover/mothership-map-viewer/releases/latest/download/module.json
 ```
 
-
 ## Usage
 
 ### Map Creator
@@ -172,12 +173,17 @@ The [Wiki](https://www.github.com/eddiedover/mothership-map-viewer/wiki) will ev
 4. **View the Map**:
    - Right-click and move to scroll the canvas as needed.
 
-
 ### Module Screenshots
 
-| GM View | Player View |
-| --- | --- |
-| <img width="1363" height="1055" alt="image" src="https://github.com/user-attachments/assets/dcab0f95-3152-401c-a201-e2205c2b1a5a" /> | <img width="1013" height="908" alt="image" src="https://github.com/user-attachments/assets/22c047cd-fc66-4974-b9ae-3e7c31494ba9" /> |
+| Map Viewer Button |
+| --- |
+| <img width="296" height="233" alt="image" src="https://github.com/user-attachments/assets/27dab678-9ed8-4503-91a0-773ae74f5692" /> |
+
+| GM View                                                                                                                              | Player View                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| <img width="1173" height="911" alt="image" src="https://github.com/user-attachments/assets/fada8b46-2a23-4ade-bf7b-206f6a81d891" /> | <img width="1213" height="915" alt="image" src="https://github.com/user-attachments/assets/a306648a-36e9-4be5-be63-f847a5ed6011" /> |
+| <img width="1148" height="915" alt="image" src="https://github.com/user-attachments/assets/1c34b497-536f-4aed-8087-5b20dffe6c81" /> | <img width="1220" height="914" alt="image" src="https://github.com/user-attachments/assets/6b17cf51-8812-4a9d-8451-03c7fb3b6c84" /> |
+
 
 ## Support
 

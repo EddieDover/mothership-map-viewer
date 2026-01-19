@@ -17,6 +17,29 @@ class MapData {
   }
 
   /**
+   * Create a MapData instance from a JSON object
+   *
+   * @static
+   * @param {Object} json
+   * @return {MapData}
+   * @memberof MapData
+   */
+  static fromJSON(json) {
+    const mapData = new MapData();
+    if (!json) return mapData;
+
+    mapData.version = json.version || "1.0.0";
+    mapData.mapName = json.mapName || "";
+    mapData.rooms = json.rooms || [];
+    mapData.hallways = json.hallways || [];
+    mapData.walls = json.walls || [];
+    mapData.standaloneMarkers = json.standaloneMarkers || [];
+    mapData.standaloneLabels = json.standaloneLabels || [];
+
+    return mapData;
+  }
+
+  /**
    * Add a room to the map
    *
    * @param {import("./types").Room} room
@@ -165,6 +188,7 @@ class MapData {
         radius: room.radius,
         label: room.label,
         visible: room.visible,
+        floor: room.floor !== undefined ? room.floor : 1,
         markers: room.markers || [],
         labels: room.labels || [],
         walls: room.walls || [],
@@ -177,6 +201,7 @@ class MapData {
         label: hallway.label,
         isSecret: hallway.isSecret,
         visible: hallway.visible,
+        floor: hallway.floor !== undefined ? hallway.floor : 1,
         nodes: hallway.nodes,
         startMarker: hallway.startMarker,
         endMarker: hallway.endMarker,
@@ -190,6 +215,7 @@ class MapData {
         label: wall.label,
         nodes: wall.nodes,
         visible: wall.visible,
+        floor: wall.floor !== undefined ? wall.floor : 1,
         isDotted: wall.isDotted,
         parentRoomId: wall.parentRoomId,
       })),
@@ -199,6 +225,7 @@ class MapData {
         x: marker.x,
         y: marker.y,
         visible: marker.visible,
+        floor: marker.floor !== undefined ? marker.floor : 1,
         label: marker.label,
         rotation: marker.rotation,
       })),
@@ -209,6 +236,7 @@ class MapData {
         x: label.x,
         y: label.y,
         visible: label.visible,
+        floor: label.floor !== undefined ? label.floor : 1,
       })),
     };
   }
@@ -231,7 +259,8 @@ class MapData {
         r.y,
         r.width,
         r.height,
-        r.shape || "rectangle"
+        r.shape || "rectangle",
+        r.floor !== undefined ? r.floor : 1
       );
       room.label = r.label || "";
       room.markers = r.markers || [];
@@ -245,7 +274,7 @@ class MapData {
       this.hallways = [];
       if (json.corridors) {
         json.corridors.forEach((c) => {
-          const hallway = new Hallway(c.id, c.segments, c.width);
+          const hallway = new Hallway(c.id, c.segments, c.width, 1);
           hallway.label = c.label;
           hallway.isSecret = false;
           this.hallways.push(hallway);
@@ -253,24 +282,74 @@ class MapData {
       }
       if (json.secretPassages) {
         json.secretPassages.forEach((s) => {
-          const hallway = new Hallway(s.id, s.segments, s.width);
+          const hallway = new Hallway(s.id, s.segments, s.width, 1);
           hallway.label = s.label;
           hallway.isSecret = true;
           this.hallways.push(hallway);
         });
       }
     } else {
-      this.hallways = json.hallways || [];
+      this.hallways = (json.hallways || []).map((h) => {
+        const hallway = new Hallway(
+          h.id,
+          h.segments,
+          h.width,
+          h.floor !== undefined ? h.floor : 1
+        );
+        hallway.label = h.label;
+        hallway.isSecret = h.isSecret;
+        hallway.visible = h.visible;
+        hallway.nodes = h.nodes;
+        hallway.startMarker = h.startMarker;
+        hallway.endMarker = h.endMarker;
+        hallway.markers = h.markers || [];
+        return hallway;
+      });
     }
 
     // Load standalone walls
-    this.walls = json.walls || [];
+    this.walls = (json.walls || []).map((w) => {
+      const wall = new Wall(
+        w.id,
+        w.segments,
+        w.width,
+        w.parentRoomId,
+        w.floor !== undefined ? w.floor : 1
+      );
+      wall.label = w.label;
+      wall.isDotted = w.isDotted;
+      wall.nodes = w.nodes;
+      wall.visible = w.visible;
+      return wall;
+    });
 
     // Load standalone markers
-    this.standaloneMarkers = json.standaloneMarkers || [];
+    this.standaloneMarkers = (json.standaloneMarkers || []).map((m) => {
+      const marker = new StandaloneMarker(
+        m.id,
+        m.type,
+        m.x,
+        m.y,
+        m.floor !== undefined ? m.floor : 1
+      );
+      marker.visible = m.visible;
+      marker.label = m.label;
+      marker.rotation = m.rotation;
+      return marker;
+    });
 
     // Load standalone labels
-    this.standaloneLabels = json.standaloneLabels || [];
+    this.standaloneLabels = (json.standaloneLabels || []).map((l) => {
+      const label = new StandaloneLabel(
+        l.id,
+        l.text,
+        l.x,
+        l.y,
+        l.floor !== undefined ? l.floor : 1
+      );
+      label.visible = l.visible;
+      return label;
+    });
   }
 
   /**
@@ -315,6 +394,7 @@ class MapData {
         room.labels && room.labels.length > 0
           ? room.labels.map((label) => [label.text || "", label.x, label.y])
           : [],
+        room.floor !== undefined ? room.floor : 1,
       ]),
       h: this.hallways.map((hallway) => [
         hallway.id,
@@ -338,6 +418,17 @@ class MapData {
               hallway.endMarker.rotation || 0,
             ]
           : null,
+        hallway.markers
+          ? hallway.markers.map((marker) => [
+              marker.type,
+              marker.x,
+              marker.y,
+              marker.visible !== false ? 1 : 0,
+              marker.label || "",
+              marker.rotation || 0,
+            ])
+          : [],
+        hallway.floor !== undefined ? hallway.floor : 1,
       ]),
       w: this.walls.map((wall) => [
         wall.id,
@@ -347,6 +438,7 @@ class MapData {
         wall.nodes || [],
         wall.visible !== false ? 1 : 0,
         wall.isDotted ? 1 : 0,
+        wall.floor !== undefined ? wall.floor : 1,
       ]),
       sm: this.standaloneMarkers.map((marker) => [
         marker.id,
@@ -356,6 +448,7 @@ class MapData {
         marker.visible !== false ? 1 : 0,
         marker.label || "",
         marker.rotation || 0,
+        marker.floor !== undefined ? marker.floor : 1,
       ]),
       sl: this.standaloneLabels.map((label) => [
         label.id,
@@ -363,6 +456,7 @@ class MapData {
         label.x,
         label.y,
         label.visible !== false ? 1 : 0,
+        label.floor !== undefined ? label.floor : 1,
       ]),
     };
   }
@@ -392,6 +486,7 @@ class MapData {
         height: r[4],
         label: r[5] || "",
         visible: r[6] !== 0,
+        floor: r[11] !== undefined ? r[11] : 1,
         markers: markers.map((i) => ({
           type: i[0],
           x: i[1],
@@ -443,6 +538,15 @@ class MapData {
       endMarker: h[8]
         ? { type: h[8][0], visible: h[8][1] !== 0, rotation: h[8][2] || 0 }
         : null,
+      markers: (h[9] || []).map((i) => ({
+        type: i[0],
+        x: i[1],
+        y: i[2],
+        visible: i[3] !== 0,
+        label: i[4] || "",
+        rotation: i[5] || 0,
+      })),
+      floor: h[10] !== undefined ? h[10] : 1,
     }));
 
     this.walls = (compact.w || []).map((w) => ({
@@ -454,6 +558,7 @@ class MapData {
       nodes: w[4] || [],
       visible: w[5] !== 0,
       isDotted: w[6] !== undefined ? w[6] !== 0 : false,
+      floor: w[7] !== undefined ? w[7] : 1,
       parentRoomId: null, // Standalone walls have no parent
     }));
 
@@ -464,6 +569,8 @@ class MapData {
       y: m[3],
       visible: m[4] !== 0,
       label: m[5] || "",
+      rotation: m[6] || 0,
+      floor: m[7] !== undefined ? m[7] : 1,
     }));
 
     this.standaloneLabels = (compact.sl || []).map((l) => ({
@@ -473,6 +580,7 @@ class MapData {
       x: l[2],
       y: l[3],
       visible: l[4] !== 0,
+      floor: l[5] !== undefined ? l[5] : 1,
     }));
   }
 
@@ -519,7 +627,7 @@ class MapData {
 
 /** @type {import("./types").Room} */
 class Room {
-  constructor(id, x, y, width, height, shape = "rectangle") {
+  constructor(id, x, y, width, height, shape = "rectangle", floor = 1) {
     this.id = id;
     this.type = "room";
     this.shape = shape; // "rectangle" or "circle"
@@ -529,7 +637,9 @@ class Room {
     this.height = height;
     // For circles, width and height represent the bounding box, and radius is calculated
     this.radius = shape === "circle" ? Math.min(width, height) / 2 : null;
+    this.floor = floor;
     this.label = "";
+    this.labelVisible = true;
     this.markers = []; // Array of {type, x, y, visible} for room markers
     this.labels = []; // Array of {text, x, y} for room labels
     this.walls = []; // Array of Wall objects for walls inside this room
@@ -549,11 +659,12 @@ class RoomMarker {
 }
 /** @type {import("./types").Hallway} */
 class Hallway {
-  constructor(id, segments, width) {
+  constructor(id, segments, width, floor = 1) {
     this.id = id;
     this.type = "hallway";
     this.segments = segments; // Array of {x1, y1, x2, y2} for each segment
     this.width = width || CORRIDOR_WIDTH;
+    this.floor = floor;
     this.label = "";
     this.isSecret = false; // Toggle for secret passage appearance
     this.nodes = []; // Array of {x, y} for intermediate points
@@ -573,11 +684,12 @@ class HallwayMarker {
 
 /** @type {import("./types").Wall} */
 class Wall {
-  constructor(id, segments, width, parentRoomId = null) {
+  constructor(id, segments, width, parentRoomId = null, floor = 1) {
     this.id = id;
     this.type = "wall";
     this.segments = segments; // Array of {x1, y1, x2, y2} for each segment
     this.width = width || CORRIDOR_WIDTH;
+    this.floor = floor;
     this.label = "";
     this.isDotted = false; // Toggle for dotted line appearance
     this.nodes = []; // Array of {x, y} for intermediate points
@@ -587,11 +699,12 @@ class Wall {
 
 /** @type {import("./types").StandaloneMarker} */
 class StandaloneMarker {
-  constructor(id, type, x, y) {
+  constructor(id, type, x, y, floor = 1) {
     this.id = id;
     this.type = type;
     this.x = x; // Absolute position on map
     this.y = y;
+    this.floor = floor;
     this.visible = true;
     this.label = "";
     this.rotation = 0; // Rotation in degrees (0, 90, 180, 270)
@@ -600,12 +713,13 @@ class StandaloneMarker {
 
 /** @type {import("./types").StandaloneLabel} */
 class StandaloneLabel {
-  constructor(id, text, x, y) {
+  constructor(id, text, x, y, floor = 1) {
     this.id = id;
     this.type = "standaloneLabel";
     this.text = text;
     this.x = x; // Absolute position on map
     this.y = y;
+    this.floor = floor;
     this.visible = true;
   }
 }

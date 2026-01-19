@@ -1,7 +1,43 @@
 <div class="mothership-map-viewer">
   <div class="mothership-map-viewer-container">
+    <div
+      class="map-controls"
+      style="padding: 0.5rem; background: #111; border-bottom: 1px solid #333; display: flex; align-items: center;"
+    >
+      <div
+        class="floor-controls"
+        style="display: flex; align-items: center; margin-right: 15px;"
+      >
+        <button
+          id="floor-down-btn"
+          title="Floor Down"
+          style="width: 30px; padding: 0;"
+        ><i class="fas fa-arrow-down"></i></button>
+        <span
+          id="currentFloorDisplay"
+          style="margin: 0 8px; font-weight: bold; color: white;"
+        >Floor 1</span>
+        <button
+          id="floor-up-btn"
+          title="Floor Up"
+          style="width: 30px; padding: 0;"
+        ><i class="fas fa-arrow-up"></i></button>
+      </div>
+      <button id="toggle-3d-btn" title="Toggle 3D Mode">
+        <i class="fas fa-cube"></i>
+        3D Mode
+      </button>
+      <button
+        id="center-view-btn"
+        title="Center View"
+        style="margin-left: 10px;"
+      >
+        <i class="fas fa-crosshairs"></i>
+        Center View
+      </button>
+    </div>
     <div class="map-content">
-      <div class="canvas-container">
+      <div class="canvas-container" id="map-container">
         <canvas id="player-map-canvas"></canvas>
       </div>
     </div>

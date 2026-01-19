@@ -28,9 +28,30 @@
         "ClosePlayerView": "Close Player View",
         "NoMapLoaded": "No map loaded. Import a map to begin.",
         "HallwayVisibility": "Hallway Visibility",
+        "ShowName": "Show Name",
         "StandaloneWalls": "Standalone Walls",
         "CommunityMaps": "Community Maps",
-        "GoToMapCreator": "Map Creator"
+        "GoToMapCreator": "Map Creator",
+        "NoPlayersViewing": "No players currently viewing",
+        "FilterRooms": "Filter rooms...",
+        "FloorDown": "Floor Down",
+        "FloorUp": "Floor Up",
+        "Floor": "Floor",
+        "Toggle3DMode": "Toggle 3D Mode",
+        "Mode3D": "3D Mode",
+        "CenterView": "Center View",
+        "CurrentMap": "Current Map",
+        "DeleteCurrentMap": "Delete current map",
+        "DeleteMap": "Delete Map",
+        "ActiveViewers": "Active Viewers",
+        "Update": "Update",
+        "RoomSettings": "Room Settings",
+        "RoomColor": "Room Color",
+        "DefaultColor": "Default (Green)",
+        "Red": "Red",
+        "Orange": "Orange",
+        "Yellow": "Yellow",
+        "Blue": "Blue"
       }
     }
   }

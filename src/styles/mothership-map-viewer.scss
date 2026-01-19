@@ -33,6 +33,12 @@
     border-radius: 4px;
     flex-shrink: 0;
 
+    .map-button-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
     button {
       //prevent button text from wrapping
       white-space: nowrap;
@@ -554,4 +560,17 @@
   50% {
     opacity: 0.6;
   }
+}
+
+.room-settings {
+  transition: color 0.2s;
+
+  &:hover {
+    color: #fff !important;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  }
+}
+
+.room-color-label {
+  white-space: nowrap;
 }
