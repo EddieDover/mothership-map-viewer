@@ -3057,6 +3057,92 @@ class MapCreator {
   }
 
   /**
+   * Align vertical markers (stairs/elevators)
+   *
+   * @param {object} selectedItem - The currently selected item
+   * @memberof MapCreator
+   */
+  alignVerticalMarkers(selectedItem) {
+    if (!selectedItem || !selectedItem.marker) return;
+
+    const type = selectedItem.marker.type;
+    const targetX =
+      selectedItem.type === "marker"
+        ? selectedItem.room.x + selectedItem.marker.x
+        : selectedItem.marker.x;
+    const targetY =
+      selectedItem.type === "marker"
+        ? selectedItem.room.y + selectedItem.marker.y
+        : selectedItem.marker.y;
+
+    this.pushUndoState();
+    let alignCount = 0;
+    const TOLERANCE = 20; // 1 grid square
+
+    // Helper to check and move marker
+    const alignMarker = (marker, currentX, currentY) => {
+      if (marker.type !== type) return false;
+
+      const dx = Math.abs(currentX - targetX);
+      const dy = Math.abs(currentY - targetY);
+
+      // If close but not exact, move it
+      if (dx < TOLERANCE && dy < TOLERANCE && (dx > 0 || dy > 0)) {
+        return true;
+      }
+      return false;
+    };
+
+    // Check Room Markers
+    if (this.mapData.rooms) {
+      this.mapData.rooms.forEach((room) => {
+        if (room.markers) {
+          room.markers.forEach((m) => {
+            const currentX = room.x + m.x;
+            const currentY = room.y + m.y;
+
+            // Skip the selected marker itself
+            if (selectedItem.type === "marker" && selectedItem.marker === m)
+              return;
+
+            if (alignMarker(m, currentX, currentY)) {
+              // Move relative to room
+              m.x = targetX - room.x;
+              m.y = targetY - room.y;
+              alignCount++;
+            }
+          });
+        }
+      });
+    }
+
+    // Check Standalone Markers
+    if (this.mapData.standaloneMarkers) {
+      this.mapData.standaloneMarkers.forEach((m) => {
+        // Skip the selected marker itself
+        if (
+          selectedItem.type === "standaloneMarker" &&
+          selectedItem.marker === m
+        )
+          return;
+
+        if (alignMarker(m, m.x, m.y)) {
+          m.x = targetX;
+          m.y = targetY;
+          alignCount++;
+        }
+      });
+    }
+
+    if (alignCount > 0) {
+      alert(`Aligned ${alignCount} ${type}(s).`);
+      this.render();
+    } else {
+      alert("No other markers found nearby to align.");
+    }
+  }
+
+  /**
    * Update the item details panel based on selected item
    *
    * @memberof MapCreator
@@ -3119,6 +3205,11 @@ class MapCreator {
                 <input type="checkbox" id="detailsMarkerVisible" ${item.marker.visible !== false ? "checked" : ""}>
                 <label for="detailsMarkerVisible" style="margin: 0;">Visible by Default</label>
               </div>`;
+
+      // Add Align button for stairs and elevators
+      if (["stairs", "elevator"].includes(item.marker.type)) {
+        html += `<button id="detailsMarkerAlign" class="action-btn" style="margin-top: 8px;">Align Vertically</button>`;
+      }
     } else if (item.type === "standaloneMarker") {
       // Standalone marker details
       html += `<label>
@@ -3153,6 +3244,11 @@ class MapCreator {
                 <input type="checkbox" id="detailsStandaloneMarkerVisible" ${item.marker.visible !== false ? "checked" : ""}>
                 <label for="detailsStandaloneMarkerVisible" style="margin: 0;">Visible by Default</label>
               </div>`;
+
+      // Add Align button for stairs and elevators
+      if (["stairs", "elevator"].includes(item.marker.type)) {
+        html += `<button id="detailsStandaloneMarkerAlign" class="action-btn" style="margin-top: 8px;">Align Vertically</button>`;
+      }
     } else if (item.type === "standaloneLabel") {
       // Standalone label details
       html += `<label>
@@ -3333,6 +3429,13 @@ class MapCreator {
           }
         });
       }
+
+      // Align button listener
+      document
+        .getElementById("detailsMarkerAlign")
+        ?.addEventListener("click", () => {
+          this.alignVerticalMarkers(item);
+        });
     } else if (item.type === "standaloneMarker") {
       document
         .getElementById("detailsStandaloneMarkerType")
@@ -3395,6 +3498,13 @@ class MapCreator {
           }
         });
       }
+
+      // Align button listener
+      document
+        .getElementById("detailsStandaloneMarkerAlign")
+        ?.addEventListener("click", () => {
+          this.alignVerticalMarkers(item);
+        });
     } else if (item.type === "standaloneLabel") {
       const saLabelInput = document.getElementById(
         "detailsStandaloneLabelText"
