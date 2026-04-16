@@ -265,6 +265,7 @@ class MapData {
       );
       room.label = r.label || "";
       room.labelVisible = r.labelVisible !== false;
+      room.visible = r.visible !== false;
       room.markers = r.markers || [];
       room.labels = r.labels || [];
       room.walls = r.walls || [];
