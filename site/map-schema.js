@@ -187,6 +187,7 @@ class MapData {
         height: room.height,
         radius: room.radius,
         label: room.label,
+        labelVisible: room.labelVisible !== false,
         visible: room.visible,
         floor: room.floor !== undefined ? room.floor : 1,
         markers: room.markers || [],
@@ -263,6 +264,7 @@ class MapData {
         r.floor !== undefined ? r.floor : 1
       );
       room.label = r.label || "";
+      room.labelVisible = r.labelVisible !== false;
       room.markers = r.markers || [];
       room.labels = r.labels || [];
       room.walls = r.walls || [];
@@ -392,9 +394,15 @@ class MapData {
             ])
           : [],
         room.labels && room.labels.length > 0
-          ? room.labels.map((label) => [label.text || "", label.x, label.y])
+          ? room.labels.map((label) => [
+              label.text || "",
+              label.x,
+              label.y,
+              label.visible !== false ? 1 : 0,
+            ])
           : [],
         room.floor !== undefined ? room.floor : 1,
+        room.labelVisible !== false ? 1 : 0,
       ]),
       h: this.hallways.map((hallway) => [
         hallway.id,
@@ -487,6 +495,7 @@ class MapData {
         label: r[5] || "",
         visible: r[6] !== 0,
         floor: r[11] !== undefined ? r[11] : 1,
+        labelVisible: r[12] !== undefined ? r[12] !== 0 : true,
         markers: markers.map((i) => ({
           type: i[0],
           x: i[1],
@@ -499,6 +508,7 @@ class MapData {
           text: l[0] || "",
           x: l[1],
           y: l[2],
+          visible: l[3] !== undefined ? l[3] !== 0 : true,
         })),
         walls: wallsData.map((w) => ({
           id: w[0],
