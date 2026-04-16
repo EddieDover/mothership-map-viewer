@@ -4,6 +4,7 @@
  */
 
 import { BaseMapRenderer } from "./base-map-renderer.js";
+import { convertMapToScene } from "./scene-converter.js";
 import { decodeShareString } from "./utils.js";
 
 // Socket handler for syncing map data to players
@@ -491,6 +492,15 @@ class MothershipMapViewer extends BaseMapRenderer {
       centerBtn.addEventListener("click", () => this.centerView());
     }
 
+    const convertToSceneBtn = this.element.querySelector(
+      "#convert-to-scene-btn"
+    );
+    if (convertToSceneBtn) {
+      convertToSceneBtn.addEventListener("click", () =>
+        this._onConvertToScene()
+      );
+    }
+
     const floorUpBtn = this.element.querySelector("#floor-up-btn");
     if (floorUpBtn) {
       floorUpBtn.addEventListener("click", () => {
@@ -679,6 +689,26 @@ class MothershipMapViewer extends BaseMapRenderer {
         console.error(err);
       }
     }
+  }
+
+  async _onConvertToScene() {
+    const map = this._getCurrentMap();
+    if (!map) {
+      ui.notifications.warn(
+        game.i18n.localize(
+          "MOTHERSHIP_MAP_VIEWER.notifications.SceneExportNoMap"
+        )
+      );
+      return;
+    }
+
+    ui.notifications.info(
+      game.i18n.localize(
+        "MOTHERSHIP_MAP_VIEWER.notifications.SceneExportConverting"
+      )
+    );
+
+    await convertMapToScene(this.mapData, this.currentFloor, map.name);
   }
 
   _initializeVisibilityFlags(mapData = null) {

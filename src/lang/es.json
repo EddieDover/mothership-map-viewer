@@ -13,7 +13,13 @@
       "MapClosed": "Mapa cerrado para los jugadores.",
       "PlayerViewOpened": "Vista de jugador abierta.",
       "PlayerViewUpdated": "Vista de jugador actualizada.",
-      "PlayerViewClosed": "Vista de jugador cerrada."
+      "PlayerViewClosed": "Vista de jugador cerrada.",
+      "SceneExportNoMap": "No hay mapa cargado. Por favor, importa un mapa primero.",
+      "SceneExportConverting": "Creando escena de Foundry desde el piso actual...",
+      "SceneExportSuccess": "Escena '{name}' creada exitosamente.",
+      "SceneExportUpdated": "Escena '{name}' actualizada exitosamente.",
+      "SceneExportUploadError": "No se pudo subir la imagen de fondo de la escena. Revisa la consola para más detalles.",
+      "SceneExportError": "No se pudo crear la escena. Revisa la consola para más detalles."
     },
     "forms": {
       "viewer": {
@@ -51,7 +57,8 @@
         "Red": "Rojo",
         "Orange": "Naranja",
         "Yellow": "Amarillo",
-        "Blue": "Azul"
+        "Blue": "Azul",
+        "ConvertToScene": "Convertir a Escena"
       }
     }
   }

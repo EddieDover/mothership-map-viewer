@@ -13,7 +13,13 @@
       "MapClosed": "Map closed for players.",
       "PlayerViewOpened": "Player view opened.",
       "PlayerViewUpdated": "Player view updated.",
-      "PlayerViewClosed": "Player view closed."
+      "PlayerViewClosed": "Player view closed.",
+      "SceneExportNoMap": "No map loaded. Please import a map first.",
+      "SceneExportConverting": "Creating Foundry scene from current floor...",
+      "SceneExportSuccess": "Scene '{name}' created successfully.",
+      "SceneExportUpdated": "Scene '{name}' updated successfully.",
+      "SceneExportUploadError": "Failed to upload scene background image. Check console for details.",
+      "SceneExportError": "Failed to create scene. Check console for details."
     },
     "forms": {
       "viewer": {
@@ -51,7 +57,8 @@
         "Red": "Red",
         "Orange": "Orange",
         "Yellow": "Yellow",
-        "Blue": "Blue"
+        "Blue": "Blue",
+        "ConvertToScene": "Convert to Scene"
       }
     }
   }
