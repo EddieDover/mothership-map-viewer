@@ -1,4 +1,12 @@
 
+## [1.5.1](https://github.com/EddieDover/mothership-map-viewer/compare/v1.5.0...v1.5.1) (2026-04-16)
+
+
+### Bug Fixes
+
+* add label visibility to import function ([62851b8](https://github.com/EddieDover/mothership-map-viewer/commit/62851b8768cf0da7dc5cbdec62caf7d929dd9f76))
+* **site:** added room and label visibility to data export ([32d7082](https://github.com/EddieDover/mothership-map-viewer/commit/32d708231065dc5a8691b93012fe2318dddf55b5))
+
 ## [1.5.0](https://github.com/EddieDover/mothership-map-viewer/compare/v1.4.3...v1.5.0) (2026-01-19)
 
 
