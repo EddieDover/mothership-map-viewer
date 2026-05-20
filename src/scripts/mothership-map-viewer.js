@@ -4,6 +4,7 @@
  */
 
 import { BaseMapRenderer } from "./base-map-renderer.js";
+import { convertMapToScene, convertMapToScene3D } from "./scene-converter.js";
 import { decodeShareString } from "./utils.js";
 
 // Socket handler for syncing map data to players
@@ -491,6 +492,24 @@ class MothershipMapViewer extends BaseMapRenderer {
       centerBtn.addEventListener("click", () => this.centerView());
     }
 
+    const convertToSceneBtn = this.element.querySelector(
+      "#convert-to-scene-btn"
+    );
+    if (convertToSceneBtn) {
+      convertToSceneBtn.addEventListener("click", () =>
+        this._onConvertToScene()
+      );
+    }
+
+    const setExportCameraBtn = this.element.querySelector(
+      "#set-export-camera-btn"
+    );
+    if (setExportCameraBtn) {
+      setExportCameraBtn.addEventListener("click", () =>
+        this._onSetExportCamera()
+      );
+    }
+
     const floorUpBtn = this.element.querySelector("#floor-up-btn");
     if (floorUpBtn) {
       floorUpBtn.addEventListener("click", () => {
@@ -560,6 +579,19 @@ class MothershipMapViewer extends BaseMapRenderer {
     if (this.is3DMode) {
       this.set3DMode(true, true);
     }
+
+    this._updateExportCameraBtn();
+  }
+
+  _updateExportCameraBtn() {
+    const btn = this.element.querySelector("#set-export-camera-btn");
+    if (!btn) return;
+    btn.style.display = this.is3DMode ? "" : "none";
+  }
+
+  toggle3DMode() {
+    super.toggle3DMode();
+    this._updateExportCameraBtn();
   }
 
   _setupCollapsibleHeader(document) {
@@ -679,6 +711,95 @@ class MothershipMapViewer extends BaseMapRenderer {
         console.error(err);
       }
     }
+  }
+
+  async _onConvertToScene() {
+    const map = this._getCurrentMap();
+    if (!map) {
+      ui.notifications.warn(
+        game.i18n.localize(
+          "MOTHERSHIP_MAP_VIEWER.notifications.SceneExportNoMap"
+        )
+      );
+      return;
+    }
+
+    if (this.is3DMode) {
+      await this._onConvertToScene3D(map);
+      return;
+    }
+
+    ui.notifications.info(
+      game.i18n.localize(
+        "MOTHERSHIP_MAP_VIEWER.notifications.SceneExportConverting"
+      )
+    );
+
+    await convertMapToScene(this.mapData, this.currentFloor, map.name);
+  }
+
+  async _onConvertToScene3D(map) {
+    if (!this.renderer3d) {
+      ui.notifications.error(
+        game.i18n.localize(
+          "MOTHERSHIP_MAP_VIEWER.notifications.SceneExportError"
+        )
+      );
+      return;
+    }
+
+    const sceneName = `${map.name} – 3D`;
+    const storedState = map.cameraState3D || null;
+
+    const currentState = this.renderer3d.getCameraState();
+
+    if (storedState) {
+      this.renderer3d.setCameraState(storedState);
+    }
+
+    // Rebuild scene with current visibility state before capture
+    this.renderer3d.update(this.mapData, this.currentFloor);
+
+    ui.notifications.info(
+      game.i18n.localize("MOTHERSHIP_MAP_VIEWER.notifications.Scene3DCapturing")
+    );
+
+    const result = await this.renderer3d.captureScreenshot();
+
+    if (storedState) {
+      this.renderer3d.setCameraState(currentState);
+    } else {
+      map.cameraState3D = currentState;
+      this._saveMaps();
+    }
+
+    if (!result || !result.blob) {
+      ui.notifications.error(
+        game.i18n.localize(
+          "MOTHERSHIP_MAP_VIEWER.notifications.SceneExportError"
+        )
+      );
+      return;
+    }
+
+    await convertMapToScene3D(
+      result.blob,
+      sceneName,
+      result.width,
+      result.height,
+      this.currentFloor
+    );
+  }
+
+  _onSetExportCamera() {
+    if (!this.renderer3d) return;
+    const map = this._getCurrentMap();
+    if (!map) return;
+    map.cameraState3D = this.renderer3d.getCameraState();
+    this._saveMaps();
+    ui.notifications.info(
+      game.i18n.localize("MOTHERSHIP_MAP_VIEWER.notifications.SceneCameraSaved")
+    );
   }
 
   _initializeVisibilityFlags(mapData = null) {
