@@ -19,7 +19,9 @@
       "SceneExportSuccess": "Escena '{name}' creada exitosamente.",
       "SceneExportUpdated": "Escena '{name}' actualizada exitosamente.",
       "SceneExportUploadError": "No se pudo subir la imagen de fondo de la escena. Revisa la consola para más detalles.",
-      "SceneExportError": "No se pudo crear la escena. Revisa la consola para más detalles."
+      "SceneExportError": "No se pudo crear la escena. Revisa la consola para más detalles.",
+      "Scene3DCapturing": "Capturando escena 3D...",
+      "SceneCameraSaved": "Posición de cámara de escena guardada."
     },
     "forms": {
       "viewer": {
@@ -58,7 +60,8 @@
         "Orange": "Naranja",
         "Yellow": "Amarillo",
         "Blue": "Azul",
-        "ConvertToScene": "Convertir a Escena"
+        "ConvertToScene": "Convertir a Escena",
+        "SetExportCamera": "Establecer Cámara de Exportación"
       }
     }
   }

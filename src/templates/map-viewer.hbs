@@ -44,13 +44,8 @@
         <button id="floor-up-btn" title="{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.FloorUp'}}" style="width: 30px; padding: 0;"><i class="fas fa-arrow-up"></i></button>
     </div>
 
-    <button
-      id="convert-to-scene-btn"
-      title="{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.ConvertToScene'}}"
-    >
-      <i class="fas fa-map-marked-alt"></i>
-      {{localize "MOTHERSHIP_MAP_VIEWER.forms.viewer.ConvertToScene"}}
-    </button>
+    <div class="" style="display: flex; flex-direction: column">
+    <div class="" style="display: flex; flex-direction: row">
 
     <button
       id="toggle-3d-btn"
@@ -59,6 +54,7 @@
       <i class="fas fa-cube"></i>
       {{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.Mode3D'}}
     </button>
+    
     <button
       id="center-view-btn"
       title="{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.CenterView'}}"
@@ -66,6 +62,25 @@
       <i class="fas fa-crosshairs"></i>
       {{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.CenterView'}}
     </button>
+    </div>
+    <div class="" style="display: flex; flex-direction: row">
+      <button
+        id="convert-to-scene-btn"
+        title="{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.ConvertToScene'}}"
+      >
+        <i class="fas fa-map-marked-alt"></i>
+        {{localize "MOTHERSHIP_MAP_VIEWER.forms.viewer.ConvertToScene"}}
+      </button>
+      <button
+        id="set-export-camera-btn"
+        title="{{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.SetExportCamera'}}"
+        style="display:none"
+      >
+        <i class="fas fa-camera"></i>
+        {{localize 'MOTHERSHIP_MAP_VIEWER.forms.viewer.SetExportCamera'}}
+      </button>
+    </div>
+    </div>
     <div style="flex-grow:1"></div>
     <button
       data-action="onFeedback"

@@ -90,8 +90,8 @@ function renderFloorToCanvas(mapData, floor) {
   }
 
   const padding = MAP_GRID_SIZE * 2;
-  const offsetX = minX - padding;
-  const offsetY = minY - padding;
+  const offsetX = Math.floor((minX - padding) / MAP_GRID_SIZE) * MAP_GRID_SIZE;
+  const offsetY = Math.floor((minY - padding) / MAP_GRID_SIZE) * MAP_GRID_SIZE;
   const width = maxX - minX + padding * 2;
   const height = maxY - minY + padding * 2;
 
@@ -323,6 +323,101 @@ function buildWallData(mapData, floor, offsetX, offsetY) {
   };
 
   const itemFloor = (item) => (item.floor !== undefined ? item.floor : 1);
+  const TOLERANCE = MAP_GRID_SIZE / 2;
+
+  const doorCuts = [];
+  mapData.hallways.forEach((hallway) => {
+    if (itemFloor(hallway) !== floor) return;
+    if (hallway.visible === false) return;
+    if (!hallway.nodes || hallway.nodes.length < 2) return;
+
+    const halfW = Math.max(hallway.width / 2, MAP_GRID_SIZE / 2);
+    const segs = hallway.segments;
+
+    const collectCut = (node, markerDef, refSeg) => {
+      if (!markerDef || markerDef.type === "none" || markerDef.type !== "door")
+        return;
+      if (markerDef.visible === false) return;
+      if (!refSeg) return;
+      const dx = refSeg.x2 - refSeg.x1;
+      const dy = refSeg.y2 - refSeg.y1;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      if (len === 0) return;
+      const nx = (-dy / len) * halfW;
+      const ny = (dx / len) * halfW;
+      doorCuts.push({ cx: node.x, cy: node.y, nx, ny });
+    };
+
+    collectCut(hallway.nodes[0], hallway.startMarker, segs[0]);
+    collectCut(
+      hallway.nodes[hallway.nodes.length - 1],
+      hallway.endMarker,
+      segs[segs.length - 1]
+    );
+  });
+
+  const addEdgeWithCuts = (ax, ay, bx, by) => {
+    const isHoriz = Math.abs(ay - by) < TOLERANCE;
+    const cuts = [];
+
+    doorCuts.forEach(({ cx, cy, nx, ny }) => {
+      if (isHoriz) {
+        // Door is horizontal if ny ≈ 0 and the cut's y matches the edge
+        if (Math.abs(ny) < TOLERANCE && Math.abs(cy - ay) < TOLERANCE) {
+          const minX = Math.min(cx + nx, cx - nx);
+          const maxX = Math.max(cx + nx, cx - nx);
+          const eMinX = Math.min(ax, bx);
+          const eMaxX = Math.max(ax, bx);
+          if (maxX > eMinX && minX < eMaxX) {
+            cuts.push({
+              from: Math.max(minX, eMinX),
+              to: Math.min(maxX, eMaxX),
+            });
+          }
+        }
+      } else {
+        // Door is vertical if nx ≈ 0 and the cut's x matches the edge
+        if (Math.abs(nx) < TOLERANCE && Math.abs(cx - ax) < TOLERANCE) {
+          const minY = Math.min(cy + ny, cy - ny);
+          const maxY = Math.max(cy + ny, cy - ny);
+          const eMinY = Math.min(ay, by);
+          const eMaxY = Math.max(ay, by);
+          if (maxY > eMinY && minY < eMaxY) {
+            cuts.push({
+              from: Math.max(minY, eMinY),
+              to: Math.min(maxY, eMaxY),
+            });
+          }
+        }
+      }
+    });
+
+    if (cuts.length === 0) {
+      addSeg(ax, ay, bx, by);
+      return;
+    }
+
+    cuts.sort((a, b) => a.from - b.from);
+    let pos = isHoriz ? Math.min(ax, bx) : Math.min(ay, by);
+    const end = isHoriz ? Math.max(ax, bx) : Math.max(ay, by);
+
+    for (const cut of cuts) {
+      if (cut.from > pos) {
+        // Wall segment before this door
+        if (isHoriz) addSeg(pos, ay, cut.from, ay);
+        else addSeg(ax, pos, ax, cut.from);
+      }
+      // Door segment
+      if (isHoriz) addSeg(cut.from, ay, cut.to, ay, true);
+      else addSeg(ax, cut.from, ax, cut.to, true);
+      pos = cut.to;
+    }
+
+    if (pos < end) {
+      if (isHoriz) addSeg(pos, ay, end, ay);
+      else addSeg(ax, pos, ax, end);
+    }
+  };
 
   // Room borders
   mapData.rooms.forEach((room) => {
@@ -344,20 +439,20 @@ function buildWallData(mapData, floor, offsetX, offsetY) {
         );
       }
     } else {
-      addSeg(room.x, room.y, room.x + room.width, room.y);
-      addSeg(
+      addEdgeWithCuts(room.x, room.y, room.x + room.width, room.y);
+      addEdgeWithCuts(
         room.x + room.width,
         room.y,
         room.x + room.width,
         room.y + room.height
       );
-      addSeg(
+      addEdgeWithCuts(
         room.x + room.width,
         room.y + room.height,
         room.x,
         room.y + room.height
       );
-      addSeg(room.x, room.y + room.height, room.x, room.y);
+      addEdgeWithCuts(room.x, room.y + room.height, room.x, room.y);
     }
 
     // Internal walls
@@ -370,52 +465,41 @@ function buildWallData(mapData, floor, offsetX, offsetY) {
     }
   });
 
+  // Hallway walls intentionally omitted since they block player movement.
   mapData.hallways.forEach((hallway) => {
     if (itemFloor(hallway) !== floor) return;
     if (hallway.visible === false) return;
+    if (!hallway.nodes || hallway.nodes.length < 2) return;
 
-    const halfW = hallway.width / 2;
+    const halfW = Math.max(hallway.width / 2, MAP_GRID_SIZE / 2);
+    const segs = hallway.segments;
 
-    hallway.segments.forEach((seg) => {
-      const dx = seg.x2 - seg.x1;
-      const dy = seg.y2 - seg.y1;
+    const addFreestandingDoor = (node, markerDef, refSeg) => {
+      if (!markerDef || markerDef.type === "none" || markerDef.type !== "door")
+        return;
+      if (markerDef.visible === false) return;
+      if (!refSeg) return;
+      const onRoomEdge = doorCuts.some(
+        (cut) =>
+          Math.abs(cut.cx - node.x) < TOLERANCE &&
+          Math.abs(cut.cy - node.y) < TOLERANCE
+      );
+      if (onRoomEdge) return;
+      const dx = refSeg.x2 - refSeg.x1;
+      const dy = refSeg.y2 - refSeg.y1;
       const len = Math.sqrt(dx * dx + dy * dy);
       if (len === 0) return;
       const nx = (-dy / len) * halfW;
       const ny = (dx / len) * halfW;
+      addSeg(node.x + nx, node.y + ny, node.x - nx, node.y - ny, true);
+    };
 
-      addSeg(seg.x1 + nx, seg.y1 + ny, seg.x2 + nx, seg.y2 + ny);
-      addSeg(seg.x1 - nx, seg.y1 - ny, seg.x2 - nx, seg.y2 - ny);
-    });
-
-    if (hallway.nodes && hallway.nodes.length >= 2) {
-      const addHallwayEndpointDoor = (node, markerDef) => {
-        if (!markerDef || markerDef.type === "none") return;
-        const isDoor = markerDef.type === "door";
-        const halfW2 = hallway.width / 2;
-        const segs = hallway.segments;
-        const refSeg =
-          node === hallway.nodes[0] ? segs[0] : segs[segs.length - 1];
-        if (!refSeg) return;
-        const dx = refSeg.x2 - refSeg.x1;
-        const dy = refSeg.y2 - refSeg.y1;
-        const len = Math.sqrt(dx * dx + dy * dy);
-        if (len === 0) return;
-        const nx2 = (-dy / len) * halfW2;
-        const ny2 = (dx / len) * halfW2;
-        addSeg(node.x + nx2, node.y + ny2, node.x - nx2, node.y - ny2, isDoor);
-      };
-
-      if (hallway.startMarker && hallway.startMarker.visible !== false) {
-        addHallwayEndpointDoor(hallway.nodes[0], hallway.startMarker);
-      }
-      if (hallway.endMarker && hallway.endMarker.visible !== false) {
-        addHallwayEndpointDoor(
-          hallway.nodes[hallway.nodes.length - 1],
-          hallway.endMarker
-        );
-      }
-    }
+    addFreestandingDoor(hallway.nodes[0], hallway.startMarker, segs[0]);
+    addFreestandingDoor(
+      hallway.nodes[hallway.nodes.length - 1],
+      hallway.endMarker,
+      segs[segs.length - 1]
+    );
   });
 
   if (mapData.walls) {
@@ -540,8 +624,9 @@ export async function convertMapToScene(mapData, floor, sceneName) {
     const existing = game.scenes.find((s) => s.name === name);
 
     if (existing) {
+      const cacheBustedBgPath = `${backgroundPath}?v=${Date.now()}`;
       await existing.update({
-        background: { src: backgroundPath },
+        background: { src: cacheBustedBgPath },
         width: canvas.width,
         height: canvas.height,
         walls: wallData,
@@ -553,7 +638,6 @@ export async function convertMapToScene(mapData, floor, sceneName) {
           { name }
         )
       );
-      existing.sheet.render(true);
       return existing;
     }
 
@@ -564,13 +648,95 @@ export async function convertMapToScene(mapData, floor, sceneName) {
         { name }
       )
     );
-    scene.sheet.render(true);
     return scene;
   } catch (err) {
     ui.notifications.error(
       game.i18n.localize("MOTHERSHIP_MAP_VIEWER.notifications.SceneExportError")
     );
     console.error("Mothership Map Viewer | Scene creation failed:", err);
+    return null;
+  }
+}
+
+export async function convertMapToScene3D(
+  screenshotBlob,
+  sceneName,
+  width,
+  height,
+  floor
+) {
+  try {
+    const folderPath = "mothership-maps";
+    const safeBaseName = sceneName.replace(/[^a-z0-9_-]/gi, "_").toLowerCase();
+    const safeFileName = `${safeBaseName}_floor_${floor}.png`;
+    const file = new File([screenshotBlob], safeFileName, {
+      type: "image/png",
+    });
+
+    const FP = foundry.applications.apps.FilePicker.implementation;
+
+    try {
+      await FP.createDirectory("data", folderPath, {});
+    } catch {
+      // ignore – directory likely already exists
+    }
+
+    let bgPath;
+    try {
+      const result = await FP.upload("data", folderPath, file, {});
+      bgPath = result.path;
+    } catch (uploadErr) {
+      ui.notifications.error(
+        game.i18n.localize(
+          "MOTHERSHIP_MAP_VIEWER.notifications.SceneExportUploadError"
+        )
+      );
+      console.error(
+        "Mothership Map Viewer | 3D screenshot upload failed:",
+        uploadErr
+      );
+      return null;
+    }
+
+    const sceneData = {
+      name: sceneName,
+      width,
+      height,
+      background: { src: bgPath },
+      grid: { type: 1, size: MAP_GRID_SIZE },
+      padding: 0,
+    };
+
+    const existing = game.scenes.find((s) => s.name === sceneName);
+    if (existing) {
+      const cacheBustedPath = `${bgPath}?v=${Date.now()}`;
+      await existing.update({
+        background: { src: cacheBustedPath },
+        width,
+        height,
+      });
+      ui.notifications.info(
+        game.i18n.format(
+          "MOTHERSHIP_MAP_VIEWER.notifications.SceneExportUpdated",
+          { name: sceneName }
+        )
+      );
+      return existing;
+    }
+
+    const scene = await Scene.create(sceneData);
+    ui.notifications.info(
+      game.i18n.format(
+        "MOTHERSHIP_MAP_VIEWER.notifications.SceneExportSuccess",
+        { name: sceneName }
+      )
+    );
+    return scene;
+  } catch (err) {
+    ui.notifications.error(
+      game.i18n.localize("MOTHERSHIP_MAP_VIEWER.notifications.SceneExportError")
+    );
+    console.error("Mothership Map Viewer | 3D scene creation failed:", err);
     return null;
   }
 }

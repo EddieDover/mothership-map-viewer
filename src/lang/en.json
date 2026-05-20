@@ -19,7 +19,9 @@
       "SceneExportSuccess": "Scene '{name}' created successfully.",
       "SceneExportUpdated": "Scene '{name}' updated successfully.",
       "SceneExportUploadError": "Failed to upload scene background image. Check console for details.",
-      "SceneExportError": "Failed to create scene. Check console for details."
+      "SceneExportError": "Failed to create scene. Check console for details.",
+      "Scene3DCapturing": "Capturing 3D scene...",
+      "SceneCameraSaved": "Scene camera position saved."
     },
     "forms": {
       "viewer": {
@@ -58,7 +60,8 @@
         "Orange": "Orange",
         "Yellow": "Yellow",
         "Blue": "Blue",
-        "ConvertToScene": "Convert to Scene"
+        "ConvertToScene": "Convert to Scene",
+        "SetExportCamera": "Set Export Camera"
       }
     }
   }

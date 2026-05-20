@@ -30,7 +30,10 @@ export class MapRenderer3D {
     this.camera.lookAt(0, 0, 0);
 
     // Renderer
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      preserveDrawingBuffer: true,
+    });
     this.renderer.setSize(
       this.container.clientWidth,
       this.container.clientHeight
@@ -80,6 +83,69 @@ export class MapRenderer3D {
     if (!this.controls) return;
     this.controls.target.set(x, y, z);
     this.controls.update();
+  }
+
+  getCameraState() {
+    if (!this.camera || !this.controls) return null;
+    return {
+      position: {
+        x: this.camera.position.x,
+        y: this.camera.position.y,
+        z: this.camera.position.z,
+      },
+      target: {
+        x: this.controls.target.x,
+        y: this.controls.target.y,
+        z: this.controls.target.z,
+      },
+    };
+  }
+
+  setCameraState(state) {
+    if (!this.camera || !this.controls || !state) return;
+    this.camera.position.set(
+      state.position.x,
+      state.position.y,
+      state.position.z
+    );
+    this.controls.target.set(state.target.x, state.target.y, state.target.z);
+
+    const wasDamping = this.controls.enableDamping;
+    this.controls.enableDamping = false;
+    this.controls.update();
+    this.controls.enableDamping = wasDamping;
+  }
+
+  captureScreenshot() {
+    if (!this.renderer || !this.scene || !this.camera)
+      return Promise.resolve(null);
+
+    const TARGET_WIDTH = 1280;
+    const currentW = this.container.clientWidth || 800;
+    const currentH = this.container.clientHeight || 600;
+    const aspect = currentW / currentH;
+    const captureW = TARGET_WIDTH;
+    const captureH = Math.round(TARGET_WIDTH / aspect);
+
+    const wasDamping = this.controls?.enableDamping;
+    if (this.controls) this.controls.enableDamping = false;
+    if (this.controls) this.controls.update();
+
+    this.renderer.setSize(captureW, captureH, false);
+    this.camera.aspect = aspect;
+    this.camera.updateProjectionMatrix();
+    this.renderer.render(this.scene, this.camera);
+
+    if (this.controls) this.controls.enableDamping = wasDamping;
+
+    return new Promise((resolve) => {
+      this.renderer.domElement.toBlob((blob) => {
+        this.renderer.setSize(currentW, currentH, false);
+        this.camera.aspect = aspect;
+        this.camera.updateProjectionMatrix();
+        resolve({ blob, width: captureW, height: captureH });
+      }, "image/png");
+    });
   }
 
   update(mapData, currentFloor) {
@@ -424,7 +490,7 @@ export class MapRenderer3D {
       }
 
       // Room Label
-      if (room.label && room.labelVisible !== false) {
+      if (room.label && room.labelVisible === true) {
         // Check if we should show label based on floor
         if (floor === this.currentFloor || SHOW_INACTIVE_FLOOR_LABELS) {
           const sprite = this.createTextSprite(room.label, {

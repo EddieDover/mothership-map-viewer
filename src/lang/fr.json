@@ -19,7 +19,9 @@
       "SceneExportSuccess": "Scène '{name}' créée avec succès.",
       "SceneExportUpdated": "Scène '{name}' mise à jour avec succès.",
       "SceneExportUploadError": "Impossible de téléverser l'image de fond de la scène. Consultez la console pour plus de détails.",
-      "SceneExportError": "Impossible de créer la scène. Consultez la console pour plus de détails."
+      "SceneExportError": "Impossible de créer la scène. Consultez la console pour plus de détails.",
+      "Scene3DCapturing": "Capture de la scène 3D...",
+      "SceneCameraSaved": "Position de la caméra de scène sauvegardée."
     },
     "forms": {
       "viewer": {
@@ -58,7 +60,8 @@
         "Orange": "Orange",
         "Yellow": "Jaune",
         "Blue": "Bleu",
-        "ConvertToScene": "Convertir en Scène"
+        "ConvertToScene": "Convertir en Scène",
+        "SetExportCamera": "Définir la Caméra d'Exportation"
       }
     }
   }
