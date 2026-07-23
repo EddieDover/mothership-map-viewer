@@ -289,6 +289,56 @@ function _drawWallOnCtx(ctx, wall) {
   });
 }
 
+/**
+ * Build the update payload needed to change an existing scene's background
+ * image. In Foundry v14 the top-level `background` field was replaced by a
+ * `levels` embedded collection, fall back to the legacy field for v13.
+ */
+function _applyBackgroundUpdate(scene, src, extra = {}) {
+  const firstLevel = scene.levels?.size ? scene.firstLevel : null;
+  if (firstLevel) {
+    return {
+      levels: [{ _id: firstLevel.id, background: { src } }],
+      ...extra,
+    };
+  }
+  return { background: { src }, ...extra };
+}
+
+/**
+ * Regenerate the scene's navigation thumbnail from its current background.
+ */
+async function _refreshSceneThumbnail(scene) {
+  try {
+    if (typeof canvas === "undefined" || !canvas?.ready) return;
+    const thumbData = await scene.createThumbnail();
+    if (thumbData?.thumb) await scene.update({ thumb: thumbData.thumb });
+  } catch (err) {
+    console.error(
+      "Mothership Map Viewer | Scene thumbnail generation failed:",
+      err
+    );
+  }
+}
+
+/**
+ * Force the game canvas to redraw if the given scene is the one currently
+ * displayed.
+ */
+async function _redrawIfActive(scene) {
+  try {
+    if (
+      typeof canvas !== "undefined" &&
+      canvas?.ready &&
+      canvas.scene?.id === scene.id
+    ) {
+      await canvas.draw();
+    }
+  } catch (err) {
+    console.error("Mothership Map Viewer | Canvas redraw failed:", err);
+  }
+}
+
 async function uploadCanvasAsBackground(canvas, fileName, folderPath) {
   const blob = await canvas.convertToBlob({ type: "image/png" });
   const file = new File([blob], fileName, { type: "image/png" });
@@ -297,8 +347,8 @@ async function uploadCanvasAsBackground(canvas, fileName, folderPath) {
 
   try {
     await FP.createDirectory("data", folderPath, {});
-  } catch (_e) {
-    // ignore – directory likely already exists
+  } catch {
+    // ignore - directory likely already exists
   }
 
   const result = await FP.upload("data", folderPath, file, {});
@@ -578,7 +628,7 @@ function buildNoteData(mapData, floor, offsetX, offsetY) {
 
 export async function convertMapToScene(mapData, floor, sceneName) {
   const name =
-    sceneName || `${mapData.mapName || "Mothership Map"} – Floor ${floor}`;
+    sceneName || `${mapData.mapName || "Mothership Map"} - Floor ${floor}`;
 
   const { canvas, offsetX, offsetY } = renderFloorToCanvas(mapData, floor);
 
@@ -625,13 +675,17 @@ export async function convertMapToScene(mapData, floor, sceneName) {
 
     if (existing) {
       const cacheBustedBgPath = `${backgroundPath}?v=${Date.now()}`;
-      await existing.update({
-        background: { src: cacheBustedBgPath },
-        width: canvas.width,
-        height: canvas.height,
-        walls: wallData,
-        notes: noteData,
-      });
+      await existing.update(
+        _applyBackgroundUpdate(existing, cacheBustedBgPath, {
+          width: canvas.width,
+          height: canvas.height,
+          walls: wallData,
+          notes: noteData,
+        })
+      );
+      await _refreshSceneThumbnail(existing);
+      // Force a redraw if this scene is currently displayed.
+      await _redrawIfActive(existing);
       ui.notifications.info(
         game.i18n.format(
           "MOTHERSHIP_MAP_VIEWER.notifications.SceneExportUpdated",
@@ -642,6 +696,10 @@ export async function convertMapToScene(mapData, floor, sceneName) {
     }
 
     const scene = await Scene.create(sceneData);
+    const cacheBustedBgPath = `${backgroundPath}?v=${Date.now()}`;
+    await scene.update(_applyBackgroundUpdate(scene, cacheBustedBgPath));
+    await _refreshSceneThumbnail(scene);
+    await _redrawIfActive(scene);
     ui.notifications.info(
       game.i18n.format(
         "MOTHERSHIP_MAP_VIEWER.notifications.SceneExportSuccess",
@@ -678,7 +736,7 @@ export async function convertMapToScene3D(
     try {
       await FP.createDirectory("data", folderPath, {});
     } catch {
-      // ignore – directory likely already exists
+      // ignore - directory likely already exists
     }
 
     let bgPath;
@@ -710,11 +768,11 @@ export async function convertMapToScene3D(
     const existing = game.scenes.find((s) => s.name === sceneName);
     if (existing) {
       const cacheBustedPath = `${bgPath}?v=${Date.now()}`;
-      await existing.update({
-        background: { src: cacheBustedPath },
-        width,
-        height,
-      });
+      await existing.update(
+        _applyBackgroundUpdate(existing, cacheBustedPath, { width, height })
+      );
+      await _refreshSceneThumbnail(existing);
+      await _redrawIfActive(existing);
       ui.notifications.info(
         game.i18n.format(
           "MOTHERSHIP_MAP_VIEWER.notifications.SceneExportUpdated",
@@ -725,6 +783,10 @@ export async function convertMapToScene3D(
     }
 
     const scene = await Scene.create(sceneData);
+    const cacheBustedPath = `${bgPath}?v=${Date.now()}`;
+    await scene.update(_applyBackgroundUpdate(scene, cacheBustedPath));
+    await _refreshSceneThumbnail(scene);
+    await _redrawIfActive(scene);
     ui.notifications.info(
       game.i18n.format(
         "MOTHERSHIP_MAP_VIEWER.notifications.SceneExportSuccess",

@@ -748,7 +748,7 @@ class MothershipMapViewer extends BaseMapRenderer {
       return;
     }
 
-    const sceneName = `${map.name} – 3D`;
+    const sceneName = `${map.name} - 3D`;
     const storedState = map.cameraState3D || null;
 
     const currentState = this.renderer3d.getCameraState();
