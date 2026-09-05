@@ -39,6 +39,7 @@ function fromCompactJSON(compact) {
         label: r[5] || "",
         visible: r[6] !== 0,
         floor: r[11] !== undefined ? r[11] : 1,
+        labelVisible: r[12] !== undefined ? r[12] !== 0 : true,
         markers: markers.map((i) => ({
           type: i[0],
           x: i[1],

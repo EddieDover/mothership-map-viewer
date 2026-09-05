@@ -189,129 +189,156 @@
             <p><strong>Delete:</strong> Select an item and press Delete key</p>
           </div>
           <div class="canvas-container" id="map-container">
-            <!-- Floating toolbar -->
-            <div class="floating-toolbar">
-              <button
-                id="floatingSelectBtn"
-                class="floating-tool-btn active"
-                title="Select Object (Arrow)"
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
+            <!-- Left rail: tool icons on top, help panel pinned below them -->
+            <div class="canvas-rail">
+              <!-- Floating toolbar -->
+              <div class="floating-toolbar">
+                <button
+                  id="floatingSelectBtn"
+                  class="floating-tool-btn active"
+                  title="Select Object (Arrow)"
                 >
-                  <path d="M3 3 L3 17 L9 11 L12 16 L14 15 L11 10 L17 10 Z" />
-                </svg>
-              </button>
-              <button
-                id="floatingAddRoomBtn"
-                class="floating-tool-btn"
-                title="Add Room (Rectangle)"
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <rect x="3" y="3" width="14" height="14" />
-                </svg>
-              </button>
-              <button
-                id="floatingAddCircleBtn"
-                class="floating-tool-btn"
-                title="Add Circle Room"
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <circle cx="10" cy="10" r="7" />
-                </svg>
-              </button>
-              <button
-                id="floatingAddHallwayBtn"
-                class="floating-tool-btn"
-                title="Add Hallway"
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                >
-                  <path d="M3 10 L10 10 L10 17" />
-                </svg>
-              </button>
-              <button
-                id="floatingAddWallBtn"
-                class="floating-tool-btn"
-                title="Add Wall"
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="3"
-                >
-                  <path d="M3 10 L17 10" />
-                </svg>
-              </button>
-              <button
-                id="floatingAddStandaloneMarkerBtn"
-                class="floating-tool-btn"
-                title="Add Standalone Marker"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                  stroke-width="0"
-                  stroke="none"
-                  width="20"
-                  height="20"
-                >
-                  <path
-                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
-                  />
-                </svg>
-              </button>
-              <button
-                id="floatingAddStandaloneLabelBtn"
-                class="floating-tool-btn"
-                title="Add Standalone Label"
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <text
-                    x="5"
-                    y="15"
-                    font-size="14"
-                    font-weight="bold"
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
                     fill="currentColor"
                   >
-                    T
-                  </text>
-                </svg>
-              </button>
+                    <path d="M3 3 L3 17 L9 11 L12 16 L14 15 L11 10 L17 10 Z" />
+                  </svg>
+                </button>
+                <button
+                  id="floatingAddRoomBtn"
+                  class="floating-tool-btn"
+                  title="Add Room (Rectangle)"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <rect x="3" y="3" width="14" height="14" />
+                  </svg>
+                </button>
+                <button
+                  id="floatingAddCircleBtn"
+                  class="floating-tool-btn"
+                  title="Add Circle Room"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="10" cy="10" r="7" />
+                  </svg>
+                </button>
+                <button
+                  id="floatingAddHallwayBtn"
+                  class="floating-tool-btn"
+                  title="Add Hallway"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <path d="M3 10 L10 10 L10 17" />
+                  </svg>
+                </button>
+                <button
+                  id="floatingAddWallBtn"
+                  class="floating-tool-btn"
+                  title="Add Wall"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="3"
+                  >
+                    <path d="M3 10 L17 10" />
+                  </svg>
+                </button>
+                <button
+                  id="floatingAddStandaloneMarkerBtn"
+                  class="floating-tool-btn"
+                  title="Add Standalone Marker"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    stroke-width="0"
+                    stroke="none"
+                    width="20"
+                    height="20"
+                  >
+                    <path
+                      d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+                    />
+                  </svg>
+                </button>
+                <button
+                  id="floatingAddStandaloneLabelBtn"
+                  class="floating-tool-btn"
+                  title="Add Standalone Label"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <text
+                      x="5"
+                      y="15"
+                      font-size="14"
+                      font-weight="bold"
+                      fill="currentColor"
+                    >
+                      T
+                    </text>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Tool Info Panel -->
+              <div id="toolInfoPanel" class="floating-toolbar tool-info-panel">
+                <div class="info-content">
+                  <div class="info-header">
+                    <h4 class="info-title">Select Object</h4>
+                    <button
+                      type="button"
+                      class="info-toggle"
+                      aria-expanded="true"
+                      aria-controls="toolInfoBody"
+                      title="Hide tool help"
+                    >
+                      &minus;
+                    </button>
+                  </div>
+                  <div class="info-body" id="toolInfoBody">
+                    <p class="info-description">
+                      Click to select rooms, hallways, markers, or labels. Drag
+                      rooms to move them around the canvas.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Context-sensitive floating toolbar (appears when item is selected) -->
@@ -450,17 +477,6 @@
               style="display: none"
             >
               <!-- Content will be populated dynamically -->
-            </div>
-
-            <!-- Tool Info Panel -->
-            <div id="toolInfoPanel" class="floating-toolbar tool-info-panel">
-              <div class="info-content">
-                <h4 class="info-title">Select Object</h4>
-                <p class="info-description">
-                  Click to select rooms, hallways, markers, or labels. Drag
-                  rooms to move them around the canvas.
-                </p>
-              </div>
             </div>
 
             <canvas id="mapCanvas"></canvas>

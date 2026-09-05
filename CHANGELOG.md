@@ -1,23 +1,33 @@
-
-## [1.5.0](https://github.com/EddieDover/mothership-map-viewer/compare/v1.4.3...v1.5.0) (2026-01-19)
-
+## [1.6.0](https://github.com/EddieDover/mothership-map-viewer/compare/v1.5.0...v1.6.0) (2026-09-05)
 
 ### Features
 
-* active viewers now automatically updates when players log in/out ([341f562](https://github.com/EddieDover/mothership-map-viewer/commit/341f56250149e5ff63eea0a1e3a980f31bf81925))
-* add ability to hide/show room labels without hiding rooms ([2a918b1](https://github.com/EddieDover/mothership-map-viewer/commit/2a918b1a79865badf8a46481cfb02748611964ed))
-* add visibility filter ([6c0ffc8](https://github.com/EddieDover/mothership-map-viewer/commit/6c0ffc82bde6ef20cfa6cfce340ed5b3b416425d))
-* add visual indicator of stairwells and elevator shafts ([4073713](https://github.com/EddieDover/mothership-map-viewer/commit/40737135e60506e5cd5801f4a1269d9320903ede))
-* added 3D Map support with multiple floors ([3935d5d](https://github.com/EddieDover/mothership-map-viewer/commit/3935d5dd6b1ff622235bde649abbc58f4f3578ce))
-* added align button for sets of stairs or elevator markers ([7cf4e41](https://github.com/EddieDover/mothership-map-viewer/commit/7cf4e41c2d6644ef5dcdd4ed7b4418f3604703a0))
-* added center view button ([3052026](https://github.com/EddieDover/mothership-map-viewer/commit/3052026b054099325b8e6fc44a68190df1918911))
-* added Room Settings dialog so GMs can change room colors in 3D view ([d8a6d48](https://github.com/EddieDover/mothership-map-viewer/commit/d8a6d481defe19406fd37581202320bc20c5a824))
-* added stairs icon ([1705baa](https://github.com/EddieDover/mothership-map-viewer/commit/1705baa9757d085098a0968cee04708e163e15fa))
-* hidden room labels are still displayed with parenthesis for GMs ([85da6d8](https://github.com/EddieDover/mothership-map-viewer/commit/85da6d8d6df4ed8ca1a37807879f5cd64d563db6))
-* maps are preserved on refresh ([bc63ff9](https://github.com/EddieDover/mothership-map-viewer/commit/bc63ff9a8ac7cc46328e75320415a15b4d84f5a7))
-* **site:** add visibility toggle for room labels in the map creator ([a1037a9](https://github.com/EddieDover/mothership-map-viewer/commit/a1037a91e7cb5194a13ce02a8e1ac67d1e3db47c))
-* **site:** added loader ([dfde4f6](https://github.com/EddieDover/mothership-map-viewer/commit/dfde4f6a27d95192eb2dfe7e2d5b13d9f522677a))
-* **site:** added undo/redo support to map editor ([9cf8b08](https://github.com/EddieDover/mothership-map-viewer/commit/9cf8b0889d421e05cbdf817f2f28874df1d061ea))
+- add ability to convert maps to scenes ([be78598](https://github.com/EddieDover/mothership-map-viewer/commit/be7859825a2584d65e0ec520c1fd25bd4e75aba8))
+- implement collapsible tool info panel ([6cfcfe0](https://github.com/EddieDover/mothership-map-viewer/commit/6cfcfe0b7b7b70e214a07921967a6001aef309ce))
+
+### Bug Fixes
+
+- add label visibility to import function ([62851b8](https://github.com/EddieDover/mothership-map-viewer/commit/62851b8768cf0da7dc5cbdec62caf7d929dd9f76))
+- **site:** added room and label visibility to data export ([32d7082](https://github.com/EddieDover/mothership-map-viewer/commit/32d708231065dc5a8691b93012fe2318dddf55b5))
+
+## [1.5.0](https://github.com/EddieDover/mothership-map-viewer/compare/v1.4.3...v1.5.0) (2026-01-19)
+
+### Features
+
+- active viewers now automatically updates when players log in/out ([341f562](https://github.com/EddieDover/mothership-map-viewer/commit/341f56250149e5ff63eea0a1e3a980f31bf81925))
+- add ability to hide/show room labels without hiding rooms ([2a918b1](https://github.com/EddieDover/mothership-map-viewer/commit/2a918b1a79865badf8a46481cfb02748611964ed))
+- add visibility filter ([6c0ffc8](https://github.com/EddieDover/mothership-map-viewer/commit/6c0ffc82bde6ef20cfa6cfce340ed5b3b416425d))
+- add visual indicator of stairwells and elevator shafts ([4073713](https://github.com/EddieDover/mothership-map-viewer/commit/40737135e60506e5cd5801f4a1269d9320903ede))
+- added 3D Map support with multiple floors ([3935d5d](https://github.com/EddieDover/mothership-map-viewer/commit/3935d5dd6b1ff622235bde649abbc58f4f3578ce))
+- added align button for sets of stairs or elevator markers ([7cf4e41](https://github.com/EddieDover/mothership-map-viewer/commit/7cf4e41c2d6644ef5dcdd4ed7b4418f3604703a0))
+- added center view button ([3052026](https://github.com/EddieDover/mothership-map-viewer/commit/3052026b054099325b8e6fc44a68190df1918911))
+- added Room Settings dialog so GMs can change room colors in 3D view ([d8a6d48](https://github.com/EddieDover/mothership-map-viewer/commit/d8a6d481defe19406fd37581202320bc20c5a824))
+- added stairs icon ([1705baa](https://github.com/EddieDover/mothership-map-viewer/commit/1705baa9757d085098a0968cee04708e163e15fa))
+- hidden room labels are still displayed with parenthesis for GMs ([85da6d8](https://github.com/EddieDover/mothership-map-viewer/commit/85da6d8d6df4ed8ca1a37807879f5cd64d563db6))
+- maps are preserved on refresh ([bc63ff9](https://github.com/EddieDover/mothership-map-viewer/commit/bc63ff9a8ac7cc46328e75320415a15b4d84f5a7))
+- **site:** add visibility toggle for room labels in the map creator ([a1037a9](https://github.com/EddieDover/mothership-map-viewer/commit/a1037a91e7cb5194a13ce02a8e1ac67d1e3db47c))
+- **site:** added loader ([dfde4f6](https://github.com/EddieDover/mothership-map-viewer/commit/dfde4f6a27d95192eb2dfe7e2d5b13d9f522677a))
+- **site:** added undo/redo support to map editor ([9cf8b08](https://github.com/EddieDover/mothership-map-viewer/commit/9cf8b0889d421e05cbdf817f2f28874df1d061ea))
 
 ## [1.4.3](https://github.com/EddieDover/mothership-map-viewer/compare/v1.4.2...v1.4.3) (2025-11-06)
 

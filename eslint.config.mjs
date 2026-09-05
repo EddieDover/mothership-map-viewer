@@ -25,6 +25,7 @@ export default [
         Roll: "readonly",
         RollTable: "readonly",
         foundry: "readonly",
+        Scene: "readonly",
       },
     },
     rules: {

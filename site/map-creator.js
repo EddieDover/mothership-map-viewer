@@ -28,7 +28,12 @@ class MapCreator {
     this.redoStack = [];
     this.maxHistorySize = 50;
 
+    this.toolInfoCollapsed = this.loadToolInfoCollapsed();
+
     this.initializeEventListeners();
+
+    // Render the help panel so the restored collapsed state is applied
+    this.updateToolInfoPanel(this.currentTool);
 
     // Load saved map from localStorage if it exists (after initializing listeners)
     this.loadFromLocalStorage();
@@ -138,6 +143,17 @@ class MapCreator {
     document
       .getElementById("floatingAddStandaloneLabelBtn")
       .addEventListener("click", () => this.setTool("standaloneLabel"));
+
+    // Tool info panel collapse toggle. Delegated, because updateToolInfoPanel
+    // replaces the panel's contents whenever the tool changes.
+    const toolInfoPanel = document.getElementById("toolInfoPanel");
+    if (toolInfoPanel) {
+      toolInfoPanel.addEventListener("click", (e) => {
+        if (e.target.closest(".info-toggle")) {
+          this.setToolInfoCollapsed(!this.toolInfoCollapsed);
+        }
+      });
+    }
 
     // Context toolbar buttons
     document
@@ -493,13 +509,63 @@ class MapCreator {
     `
       : "";
 
+    const collapsed = this.toolInfoCollapsed;
+
+    panel.classList.toggle("collapsed", collapsed);
     panel.innerHTML = `
       <div class="info-content">
-        <h4 class="info-title">${info.title}</h4>
-        <p class="info-description">${info.description}</p>
-        ${tipsHTML}
+        <div class="info-header">
+          <h4 class="info-title">${info.title}</h4>
+          <button
+            type="button"
+            class="info-toggle"
+            aria-expanded="${!collapsed}"
+            aria-controls="toolInfoBody"
+            title="${collapsed ? "Show tool help" : "Hide tool help"}"
+          >${collapsed ? "&plus;" : "&minus;"}</button>
+        </div>
+        <div class="info-body" id="toolInfoBody">
+          <p class="info-description">${info.description}</p>
+          ${tipsHTML}
+        </div>
       </div>
     `;
+  }
+
+  /**
+   * Collapse or expand the tool info panel, persisting the choice
+   *
+   * @param {boolean} collapsed
+   * @memberof MapCreator
+   */
+  setToolInfoCollapsed(collapsed) {
+    this.toolInfoCollapsed = collapsed;
+
+    try {
+      localStorage.setItem(
+        "mothership-map-toolinfo-collapsed",
+        collapsed ? "1" : "0"
+      );
+    } catch (error) {
+      console.error("Failed to save tool info panel state:", error);
+    }
+
+    this.updateToolInfoPanel(this.currentTool);
+  }
+
+  /**
+   * Read the persisted collapsed state of the tool info panel
+   *
+   * @returns {boolean}
+   * @memberof MapCreator
+   */
+  loadToolInfoCollapsed() {
+    try {
+      return localStorage.getItem("mothership-map-toolinfo-collapsed") === "1";
+    } catch (error) {
+      console.error("Failed to load tool info panel state:", error);
+      return false;
+    }
   }
 
   /**
